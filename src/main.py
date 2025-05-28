@@ -37,6 +37,8 @@ async def on_command_error(ctx: commands.Context, error):
         await ctx.send(f"{header}*You do not have permission to use this command!*{footer}")
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(f"{header}*Missing argument!*{footer}")
+    elif isinstance(error, commands.CommandNotFound):
+        pass # do nothing
     else:
         await ctx.send(f"{header}*Unknown error:* `{error}`{footer}")
 

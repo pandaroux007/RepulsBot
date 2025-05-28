@@ -11,3 +11,5 @@ wheels/
 
 # development files
 src/private_data.py
+*.db
+dev/

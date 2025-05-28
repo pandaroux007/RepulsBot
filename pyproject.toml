@@ -1,6 +1,6 @@
 [project]
 name = "repulsbot"
-version = "0.1.0"
+version = "1.0"
 description = "The official bot for the repuls.io discord server"
 readme = "README.md"
 requires-python = ">=3.12"

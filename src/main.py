@@ -1,9 +1,10 @@
 import discord
 from discord.ext import commands
-# IDs and TOKEN file
-from private_data import *
+# bot files
+from private import *
 from constants import *
 
+# -------------------------------------------------------------------- discord bot creation
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 
 def admin_or_roles():
@@ -18,13 +19,37 @@ def admin_or_roles():
 async def ping(ctx: commands.Context):
     await ctx.send(f"{CHECK} **pong!**\n(*It took me {round(bot.latency * 1000, 2)}ms to respond to your command!*)")
 
+@bot.hybrid_command(name="aboutmember", description="displays information about a server member")
+async def aboutmember(ctx: commands.Context, member: discord.Member):
+    embed = discord.Embed(
+        title=f"Information about **{member.display_name}**",
+        color=discord.Color.dark_blue(),
+    )
+    embed.set_thumbnail(url=member.avatar.url)
+    if member.id == bot.user.id:
+        embed.title = f"Hi {ctx.author.mention}! How can I help you ?"
+        embed.description = BOT_DESCRIPTION.format(name=bot.user.mention,
+                                                   server=DISCORD_INVITE,
+                                                   game=REPULS_LINK)
+    else:
+        embed.add_field(name="Member name", value=f"{member.mention}", inline=False)
+        embed.add_field(name="Member id:", value=f"{member.id}", inline=False)
+        embed.add_field(name="Nickname:", value=f"{member.nick}", inline=False)
+        embed.add_field(name="Joined at:", value=f"{member.joined_at}", inline=False)
+        # https://stackoverflow.com/questions/68079391/discord-py-info-command-how-to-mention-roles-of-a-member
+        roles = " ".join([role.mention for role in member.roles if role.name != "@everyone"])
+        embed.add_field(name="Roles:", value=f"{roles}", inline=False)
+    embed.set_footer(text=FOOTER_EMBED)
+    
+    await ctx.send(embed=embed)
+
 @bot.hybrid_command(name="aboutserver", description="displays information about the server")
 async def aboutserver(ctx: commands.Context):
     guild = ctx.guild
     embed = discord.Embed(
         title=f"About *{guild.name}* server",
         description="Information about this discord server",
-        color=discord.Color.blue(),
+        color=discord.Color.dark_blue(),
     )
     embed.set_thumbnail(url = guild.icon.url if guild.icon else None)
     embed.add_field(name="Owner", value=guild.owner.mention, inline=True)
@@ -38,8 +63,8 @@ async def aboutserver(ctx: commands.Context):
     
     await ctx.send(embed=embed)
 
-@bot.hybrid_command(name="game", description="displays information about repuls.io game")
-async def game(ctx: commands.Context):
+@bot.hybrid_command(name="aboutgame", description="displays information about repuls.io game")
+async def aboutgame(ctx: commands.Context):
     play_btn_view = discord.ui.View()
     play_btn = discord.ui.Button(
         style=discord.ButtonStyle.link,
@@ -51,13 +76,30 @@ async def game(ctx: commands.Context):
         title=f"What is repuls.io ?",
         url=f"{REPULS_LINK}home",
         description=REPULS_DESCRIPTION,
-        color=discord.Color.dark_blue(),
+        color=discord.Color.blue(),
     )
     embed.add_field(name="Leaderboard", value=f"[Leaderboard]({REPULS_LINK}leaderboard)", inline=True)
     embed.add_field(name="Updates", value=f"[Updates]({REPULS_LINK}updates)", inline=True)
     embed.add_field(name="Terms & privacy", value=f"[Privacy]({REPULS_PRIVACY_LINK})", inline=True)
     embed.set_footer(text=FOOTER_EMBED)
+
     await ctx.send(embed=embed, view=play_btn_view)
+
+@bot.hybrid_command(name="avatar", description="displays a member's avatar")
+async def avatar(ctx: commands.Context, member: discord.Member):
+    embed = discord.Embed(
+        title=f"Avatar of {member.display_name}!",
+        color=discord.Color.dark_blue(),
+    )
+    if(member.avatar != None):
+        embed.add_field(name="Legal warning", value="*Please don't use other members' images without their permission*", inline=False)
+        embed.set_image(url=member.avatar.url)
+        embed.set_footer(text=FOOTER_EMBED)
+    else:
+        embed.add_field(name="This user has no avatar", value="*nothing to display...*")
+        embed.set_footer(text=FOOTER_EMBED)
+    
+    await ctx.send(embed=embed)
 
 @bot.tree.command(name="clean", description="allows you to clean a certain number of messages in a channel")
 @admin_or_roles()
@@ -77,21 +119,27 @@ async def on_command_error(ctx: commands.Context, error):
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(f"{header}*Missing argument!*{footer}")
     elif isinstance(error, commands.CommandNotFound):
+        # print(error)
         pass # do nothing
     else:
         await ctx.send(f"{header}*Unknown error:* `{error}`{footer}")
 
 @bot.event
 async def on_ready():
-    status_channel = bot.get_channel(STATUS_CHANNEL)
-    if status_channel:
-        await status_channel.send(f"{bot.user.mention} is now **online**! <:connecte:{CONNECTE_EMOJI}>")
     # sync of slash and hybrid commands
     try:
         synced = await bot.tree.sync()
         print(f"{len(synced)} command(s) have been synchronized")
     except Exception as e:
         print(e)
+        exit(1)
+    
+    status_channel = bot.get_channel(STATUS_CHANNEL)
+    if status_channel:
+        await status_channel.send(f"{bot.user.mention} is now **online**! <:connecte:{CONNECTE_EMOJI}>")
+    
+    game = discord.Game("repuls.io")
+    await bot.change_presence(activity=game)
 
 if __name__ == "__main__":
     bot.run(TOKEN)

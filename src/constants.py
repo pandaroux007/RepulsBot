@@ -1,6 +1,15 @@
+# regex for youtube links
+import re
+# https://stackoverflow.com/questions/19377262/regex-for-youtube-url
+YOUTUBE_REGEX = re.compile(
+    r'((?:https?:)?\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtu\.be)\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?[\w\-]+(?:\S+)?)',
+    re.IGNORECASE
+)
+
 # emojis
 CHECK = ":white_check_mark:"
 ERROR = ":x:"
+REACTION_VALIDATION = "✅"
 
 # links
 REPULS_PRIVACY_LINK = "https://docskigames.com/privacy/"

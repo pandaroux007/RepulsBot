@@ -27,8 +27,10 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] aboutserver and aboutgame command
 - [x] aboutmember and avatar command
 ___
+## 🕑️ Objectives in progress:
+- vote for best video with reactions all 48h
+___
 ## 🔥 Objectives to be achieved:
-- [ ] use cogs in the code before create the other commands
-- [ ] Help command
-- [ ] FAQ command
-- [ ] vote for best video, with storage and automatization
+- [ ] use `discord.py` cogs in the code before create the other commands
+- [ ] Help command, FAQ command and youtubers' commands
+- [ ] clear command (clean command but with messages' links)

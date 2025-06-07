@@ -27,7 +27,7 @@ async def aboutmember(ctx: commands.Context, member: discord.Member):
     )
     embed.set_thumbnail(url=member.avatar.url)
     if member.id == bot.user.id:
-        embed.title = f"Hi {ctx.author.mention}! How can I help you ?"
+        embed.title = f"Hi {ctx.author.display_name}! How can I help you ?"
         embed.description = BOT_DESCRIPTION.format(name=bot.user.mention,
                                                    server=DISCORD_INVITE,
                                                    game=REPULS_LINK)
@@ -91,7 +91,7 @@ async def avatar(ctx: commands.Context, member: discord.Member):
         title=f"Avatar of {member.display_name}!",
         color=discord.Color.dark_blue(),
     )
-    if(member.avatar != None):
+    if member.avatar != None:
         embed.add_field(name="Legal warning", value="*Please don't use other members' images without their permission*", inline=False)
         embed.set_image(url=member.avatar.url)
         embed.set_footer(text=FOOTER_EMBED)
@@ -107,6 +107,17 @@ async def clean(interaction: discord.Interaction, number: int):
     await interaction.response.defer(ephemeral=True)
     deleted = await interaction.channel.purge(limit=number)
     await interaction.followup.send(f"{CHECK} {len(deleted)} messages removed!", ephemeral=True)
+
+# ---------------------------------- events
+@bot.event
+async def on_message(message: discord.Message):
+    if message.author.bot:
+        return
+    elif message.channel.id == VIDEO_CHANNEL:
+        if re.search(YOUTUBE_REGEX, message.content):
+            await message.add_reaction(REACTION_VALIDATION)
+    
+    await bot.process_commands(message)
 
 # ---------------------------------- bot run
 @bot.event
@@ -135,7 +146,7 @@ async def on_ready():
         exit(1)
     
     status_channel = bot.get_channel(STATUS_CHANNEL)
-    if status_channel:
+    if status_channel != None:
         await status_channel.send(f"{bot.user.mention} is now **online**! <:connecte:{CONNECTE_EMOJI}>")
     
     game = discord.Game("repuls.io")

@@ -56,3 +56,9 @@ Hey there! :waving_hand:
 It's me, {name}, the official Discord bot for [this server]({server})! If you need help, type "!help" or help command to see what I can do!\n
 If you don't feel like chatting with our amazing community, you can always play a game of [repuls.io]({game}) :wink:
 """
+
+# cogs name
+EVENT_COG = "event_cog"
+VOTE_COG = "vote_cog"
+SERVER_COG = "server_cog"
+ABOUT_COG = "about_cog"

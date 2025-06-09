@@ -10,7 +10,7 @@
 
 # ✨ About
 ## What's repuls.io ?
-[Repuls.io](https://repuls.io) is the future of browser games.
+[Repuls.io](https://repuls.io/home) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!
 
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
@@ -32,11 +32,28 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] command errors handling
 - [x] aboutserver and aboutgame command
 - [x] aboutmember and avatar command
+- [x] use `discord.py` cogs in the code before create the other commands
 ___
 ### 🕑️ Objectives in progress:
 - [ ] vote for best video with reactions all 48h
-- [ ] use `discord.py` cogs in the code before create the other commands
 ___
 ### 🔥 Objectives to be achieved:
 - [ ] Help command, FAQ command and youtubers' help commands
 - [ ] clear command (clean command but with messages' links)
+
+## Discord.py cogs
+- About cog (in [`src/cogs/about_cog.py`](src/cogs/about_cog.py)) : This cog contains information commands about members and the server;
+  - aboutgame
+  - aboutmember
+  - aboutserver
+  - avatar
+- Server cog (in [`src/cogs/server_cog.py`](src/cogs/server_cog.py)) : Contains commands useful for server management;
+  - clean
+  - ping
+- Event cog (in [`src/cogs/event_cog.py`](src/cogs/event_cog.py)) : Contains all events raised by the discord bot;
+  - on_message
+  - on_command_error
+  - on_ready
+- Vote cog (in [`src/cogs/vote_cog.py`](src/cogs/vote_cog.py)) : Contains all the elements relating to the management of votes for the best YouTube video every 48 hours;
+  - addvideo (command)
+  - discord [tasks](https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html)

@@ -2,12 +2,7 @@ from discord.ext import tasks, commands
 from datetime import datetime, timedelta, timezone
 # bot files
 from constants import *
-
-class YouTubeLink(commands.Converter):
-    async def convert(self, ctx: commands.Context, argument):
-        if not re.match(YOUTUBE_REGEX, argument):
-            raise commands.BadArgument(f"Your YouTube link is invalid. Please try again.")
-        return argument
+from utils import YouTubeLink
 
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
 class VoteCog(commands.Cog, name=VOTE_COG):

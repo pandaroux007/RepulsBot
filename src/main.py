@@ -4,6 +4,7 @@ from discord.ext import commands
 from private import TOKEN
 from constants import *
 
+# https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html
 cogs_list = [EVENT_COG, SERVER_COG, ABOUT_COG, VOTE_COG]
 
 # ---------------------------------- bot creation

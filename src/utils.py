@@ -1,5 +1,5 @@
 from discord.ext import commands
-from constants import ADMIN_ROLE_ID, DEVELOPER_ROLE_ID
+from constants import *
 
 def check_admin_or_roles():
     async def predicate(ctx: commands.Context):
@@ -8,3 +8,9 @@ def check_admin_or_roles():
         has_role = any(role.id in allowed_role_ids for role in ctx.author.roles)
         return has_admin or has_role
     return commands.check(predicate)
+
+class YouTubeLink(commands.Converter):
+    async def convert(self, ctx: commands.Context, argument):
+        if not re.match(YOUTUBE_REGEX, argument):
+            raise commands.BadArgument(f"Your YouTube link is invalid. Please try again.")
+        return argument

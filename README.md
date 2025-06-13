@@ -22,7 +22,7 @@ Tired of the same run, aim, shoot gameplay that every shooter does??! Played one
 To run the project, install the `uv` tool (a more secure and faster equivalent to `pip`), and run `uv run "src/main.py"`.
 
 > [!WARNING]
-> *The token is hidden in a file not included with the other files on GitHub. Please recreate it with your own token before running the program if you wish to use this project or contribute to its development. Also change the IDs in [`constants.py`](src/constants.py)*
+> *The token is hidden in a file not included with the other files on GitHub (`private.py`). Please recreate it with your own token before running the program if you wish to use this project or contribute to its development. Also change the IDs in [`constants.py`](src/constants.py)*
 
 ## 🚀 Development goals
 ### ✅ Objectives achieved:
@@ -33,12 +33,16 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] aboutserver and aboutgame command
 - [x] aboutmember and avatar command
 - [x] use `discord.py` cogs in the code before create the other commands
+- [x] help command
 ___
 ### 🕑️ Objectives in progress:
 - [ ] vote for best video with reactions all 48h
+- [ ] fix double send bug of addvideo command
 ___
 ### 🔥 Objectives to be achieved:
-- [ ] Help command, FAQ command and youtubers' help commands
+- [ ] FAQ command and youtubers' help commands
+
+### ⛔️ Abandoned objectives (for now):
 - [ ] clear command (clean command but with messages' links)
 
 ## Discord.py cogs
@@ -48,6 +52,7 @@ ___
   - aboutserver
   - avatar
 - Server cog (in [`src/cogs/server_cog.py`](src/cogs/server_cog.py)) : Contains commands useful for server management;
+  - help
   - clean
   - ping
 - Event cog (in [`src/cogs/event_cog.py`](src/cogs/event_cog.py)) : Contains all events raised by the discord bot;

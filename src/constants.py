@@ -49,7 +49,7 @@ The best free instantly accessible multiplayer first-person shooter for your bro
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
 """
 BOT_NAME = "RepulsBot"
-BOT_VERSION = "0.1.7"
+BOT_VERSION = "0.1.8"
 BOT_DESCRIPTION = """
 Hey there! :waving_hand:
 It's me, {name}, the official Discord bot for [this server]({server})! If you need help, type "!help" or help command to see what I can do!\n

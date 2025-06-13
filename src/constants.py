@@ -1,5 +1,3 @@
-VOTE_HOURS = 48
-
 # regex for youtube links
 import re
 # https://stackoverflow.com/questions/19377262/regex-for-youtube-url
@@ -33,7 +31,7 @@ REPULS_EMOJI_ID = 1376134874595065906
 
 # default emojis
 CHECK = ":white_check_mark:"
-ERROR = ":x:"
+ERROR = ":no_entry:"
 VALIDATION_UNICODE = "✅"
 
 # ------------------------------------- constants texts and links
@@ -42,20 +40,23 @@ ENDPOINT_URL = "" # nothing for now
 REPULS_PRIVACY_LINK = "https://docskigames.com/privacy/"
 REPULS_LINK = "https://repuls.io/"
 DISCORD_INVITE_LINK = "https://discord.com/invite/2YKgx2HSfR"
-DISCORD_YOUTUBE_CHANNEL_LINK = f"https://discord.com/channels/1370706439491817563/{VIDEO_CHANNEL_ID}" # f"https://discord.com/channels/603655329120518223/{VIDEO_CHANNEL}"
 
-# texts
+# texts (and bot info)
 FOOTER_EMBED = "repuls.io is developed with ♥️ by docski"
 REPULS_DESCRIPTION = f"""
 [Repuls.io]({REPULS_LINK}) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
 """
+BOT_NAME = "RepulsBot"
+BOT_VERSION = "0.1.7"
 BOT_DESCRIPTION = """
 Hey there! :waving_hand:
 It's me, {name}, the official Discord bot for [this server]({server})! If you need help, type "!help" or help command to see what I can do!\n
 If you don't feel like chatting with our amazing community, you can always play a game of [repuls.io]({game}) :wink:
 """
+BOT_PREFIX = '!'
+VOTE_HOURS = 48
 
 # cogs name
 EVENT_COG = "event_cog"

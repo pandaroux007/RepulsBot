@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import platform
 # bot files
 from constants import *
 
@@ -13,13 +14,16 @@ class AboutCog(commands.Cog, name=ABOUT_COG):
             title=f"Information about **{member.display_name}**",
             color=discord.Color.dark_blue(),
         )
-        embed.set_thumbnail(url=member.avatar.url)
-        if member.id == self.bot.user.id:
+        if member.id == self.bot.user.id: # bot presentation
             embed.title = f"Hi {ctx.author.display_name}! How can I help you ?"
             embed.description = BOT_DESCRIPTION.format(name=self.bot.user.mention,
-                                                    server=DISCORD_INVITE_LINK,
-                                                    game=REPULS_LINK)
-        else:
+                                                       server=DISCORD_INVITE_LINK,
+                                                       game=REPULS_LINK)
+            embed.add_field(name=f"{BOT_NAME}", value=f"v{BOT_VERSION}")
+            embed.add_field(name="discord.py", value=f"v{discord.__version__}")
+            embed.add_field(name="python", value=f"v{platform.python_version()}")
+        else: # other member's informations
+            embed.set_thumbnail(url=member.avatar.url)
             embed.add_field(name="Member name", value=f"{member.mention}", inline=False)
             embed.add_field(name="Member id:", value=f"{member.id}", inline=False)
             embed.add_field(name="Nickname:", value=f"{member.nick}", inline=False)

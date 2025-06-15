@@ -35,9 +35,9 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] use `discord.py` cogs in the code before create the other commands
 - [x] help command
 - [x] vote for best video with reactions all 48h
+- [x] fix double send bug of addvideo command
 ___
 ### 🕑️ Objectives in progress:
-- [ ] fix double send bug of addvideo command
 - [ ] send the best video to the main site via a secure endpoint
 ___
 ### 🔥 Objectives to be achieved:

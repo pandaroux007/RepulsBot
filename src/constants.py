@@ -55,7 +55,7 @@ BETTER_VIDEO_MESSAGE = """
 ***I come and check the best video every {time} hours, you have every chance!***)
 """
 BOT_NAME = "RepulsBot"
-BOT_VERSION = "0.1.8"
+BOT_VERSION = "0.1.9"
 BOT_DESCRIPTION = """
 Hey there! :waving_hand:
 It's me, {name}, the official Discord bot for [this server]({server})! If you need help, type "!help" or help command to see what I can do!\n

@@ -14,9 +14,7 @@ class EventCog(commands.Cog, name=EVENT_COG):
         elif message.channel.id == VIDEO_CHANNEL_ID:
             if re.search(YOUTUBE_REGEX, message.content):
                 await message.add_reaction(VALIDATION_UNICODE)
-        
-        await self.bot.process_commands(message)
-
+    
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):
         header = f"{ERROR} **Check failure**!\n"

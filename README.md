@@ -34,13 +34,15 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] aboutmember and avatar command
 - [x] use `discord.py` cogs in the code before create the other commands
 - [x] help command
+- [x] vote for best video with reactions all 48h
 ___
 ### 🕑️ Objectives in progress:
-- [ ] vote for best video with reactions all 48h
 - [ ] fix double send bug of addvideo command
+- [ ] send the best video to the main site via a secure endpoint
 ___
 ### 🔥 Objectives to be achieved:
 - [ ] FAQ command and youtubers' help commands
+- [ ] permanent online posting of the bot
 
 ### ⛔️ Abandoned objectives (for now):
 - [ ] clear command (clean command but with messages' links)

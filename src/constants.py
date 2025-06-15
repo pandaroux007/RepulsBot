@@ -7,7 +7,7 @@ YOUTUBE_REGEX = re.compile(
 )
 
 # ------------------------------------- IDs
-# roles and channels
+# roles and channels ("<@&role_id>")
 #     -----    test server IDs   -----     /    -----   real server IDs
 STATUS_CHANNEL_ID = 1370716216863227924    # 849711794032214087 (info channel)
 VIDEO_CHANNEL_ID = 1370706473155563581     # 800108276004028446
@@ -47,6 +47,12 @@ REPULS_DESCRIPTION = f"""
 [Repuls.io]({REPULS_LINK}) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
+"""
+BETTER_VIDEO_MESSAGE = """
+## New featured video ➜ {url} 🎉
+(*And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,*
+*and cross your fingers that the community votes for your message with the reaction {reaction} just below!*
+***I come and check the best video every {time} hours, you have every chance!***)
 """
 BOT_NAME = "RepulsBot"
 BOT_VERSION = "0.1.8"

@@ -14,3 +14,9 @@ class YouTubeLink(commands.Converter):
         if not re.match(YOUTUBE_REGEX, argument):
             raise commands.BadArgument(f"Your YouTube link is invalid. Please try again.")
         return argument
+    
+async def send_hidden_message(ctx: commands.Context, text: str):
+    if ctx.interaction: # slash command
+        await ctx.interaction.followup.send(text, ephemeral=True)
+    else:
+        await ctx.send(text, delete_after=10.0)

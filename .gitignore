@@ -10,6 +10,7 @@ wheels/
 .venv
 
 # development files
-private*.*
-*.db
+# private*.* # deprecated
+# *.db # deprecated
 dev/
+.env

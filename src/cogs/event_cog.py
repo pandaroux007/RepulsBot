@@ -17,28 +17,27 @@ class EventCog(commands.Cog, name=EVENT_COG):
     
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):
-        header = f"{ERROR} **Check failure**!\n"
-        footer = f"\n**Ask an administrator for help!**"
+        message = f"*Unknown error:* {error}" # default
 
         if isinstance(error, commands.CheckFailure):
-            await ctx.send(f"{header}*You do not have permission to use this command!*{footer}")
+            message = f"*You do not have permission to use this command!*"
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(f"{header}*Missing argument!*{footer}")
+            message = f"*Missing argument!*{ASK_HELP}"
         elif isinstance(error, commands.CommandNotFound):
-            # print(error)
-            pass # do nothing
-        else:
-            await ctx.send(f"{header}*Unknown error:* {error}{footer}")
+            return # do nothing
+
+        embed = discord.Embed(
+            title=f"{ERROR} Check failure!",
+            color=discord.Color.brand_red(),
+            description=f"{message}{ASK_HELP}"
+        )
+        await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):
         # sync of slash and hybrid commands
-        try:
-            synced = await self.bot.tree.sync()
-            print(f"{len(synced)} command(s) have been synchronized")
-        except Exception as e:
-            print(e)
-            exit(1)
+        synced = await self.bot.tree.sync()
+        print(f"{len(synced)} command(s) have been synchronized")
         
         status_channel = self.bot.get_channel(STATUS_CHANNEL_ID)
         if status_channel != None:

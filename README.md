@@ -36,9 +36,12 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] help command
 - [x] vote for best video with reactions all 48h
 - [x] fix double send bug of addvideo command
+- [x] retrieving private information from a `.env` file
+- [x] membercount command
+- [x] send the best video to the main site via a secure endpoint
 ___
 ### 🕑️ Objectives in progress:
-- [ ] send the best video to the main site via a secure endpoint
+- ***nothing here yet***
 ___
 ### 🔥 Objectives to be achieved:
 - [ ] FAQ command and youtubers' help commands
@@ -53,6 +56,7 @@ ___
   - aboutmember
   - aboutserver
   - avatar
+  - membercount
 - Server cog (in [`src/cogs/server_cog.py`](src/cogs/server_cog.py)) : Contains commands useful for server management;
   - help
   - clean

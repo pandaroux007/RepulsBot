@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 # bot files
-from private import TOKEN
 from constants import *
 
 # https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html
@@ -18,4 +17,4 @@ bot = RepulsBot(command_prefix=BOT_PREFIX, intents=INTENTS, help_command=None)
 
 # ---------------------------------- bot run
 if __name__ == "__main__":
-    bot.run(TOKEN)
+    bot.run(DISCORD_TOKEN)

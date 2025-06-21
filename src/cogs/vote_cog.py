@@ -1,10 +1,13 @@
+import discord
 from discord.ext import tasks, commands
 from datetime import datetime, timedelta, timezone
 # bot files
 from constants import *
 from utils import (
     YouTubeLink,
-    send_hidden_message
+    send_hidden_message,
+    send_video_to_endpoint,
+    SUCCESS_CODE
 )
 
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
@@ -30,7 +33,7 @@ class VoteCog(commands.Cog, name=VOTE_COG):
 
         limit_time = datetime.now(timezone.utc) - timedelta(hours=VOTE_HOURS)
         better_video_msg = None
-        last_better_votes = -1
+        last_better_votes = -1 # -1 for bot vote
 
         async for message in video_channel.history(limit=50, after=limit_time):
             if not re.search(YOUTUBE_REGEX, message.content):
@@ -45,8 +48,22 @@ class VoteCog(commands.Cog, name=VOTE_COG):
                     break
 
         if better_video_msg and last_better_votes > 0:
-            better_video_url = better_video_msg.jump_url
-            await video_channel.send(BETTER_VIDEO_MESSAGE.format(url=better_video_url, reaction=CHECK, time=VOTE_HOURS))
+            embed = discord.Embed(
+                title=f"New featured video! 🎉",
+                color=discord.Color.dark_blue(),
+                timestamp=datetime.now(timezone.utc),
+                description=BETTER_VIDEO_MESSAGE.format(reaction=CHECK, time=VOTE_HOURS).replace('\n', ' ')
+            )
+            embed.add_field(name="Watch it now!", value=better_video_msg.jump_url)
+
+            match = re.search(YOUTUBE_REGEX, better_video_msg.content)
+            code = await send_video_to_endpoint(video_url=match.group(0))
+            if code == SUCCESS_CODE:
+                embed.add_field(name="Website state", value=f"{CHECK} Video sent to [repuls.io]({REPULS_LINK})!")
+            else:
+                embed.add_field(name="Website state", value=f"{WARN} Video failed to send to repuls.io ({code} error)!")
+
+            await video_channel.send(embed=embed)
         else:
             await video_channel.send(f"I couldn't find any videos to display on the game's homepage 🫤...\n**<@&{YOUTUBER_ROLE_ID}>, it's your turns!** 💪")
     
@@ -60,11 +77,11 @@ class VoteCog(commands.Cog, name=VOTE_COG):
         video_channel = self.bot.get_channel(VIDEO_CHANNEL_ID)
         if video_channel != None:
             # the link is already verified as a correct youtube link
-            message = await video_channel.send(f"### New video posted by {ctx.author.mention}!\n{youtube_url}")
+            message: discord.Message = await video_channel.send(f"### 📢 New YouTube video! 🎉\n{youtube_url}\n(*Posted by {ctx.author.mention}!*)")
             await message.add_reaction(VALIDATION_UNICODE)
             await send_hidden_message(ctx=ctx, text=f"{CHECK} video posted in {video_channel.mention}!")
         else:
-            await send_hidden_message(ctx=ctx, text=f"{ERROR} Unable to find video channel (whose ID is supposed to be {VIDEO_CHANNEL_ID}).\n**Ask an administrator for help!**")
+            await send_hidden_message(ctx=ctx, text=f"{ERROR} Unable to find video channel (whose ID is supposed to be {VIDEO_CHANNEL_ID})!{ASK_HELP}")
         
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoteCog(bot))

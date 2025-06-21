@@ -25,11 +25,11 @@ class ServerCog(commands.Cog, name=SERVER_COG):
 
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(name="ping", description="displays latency of the bot")
+    @commands.hybrid_command(name="ping", description="Displays latency of the bot")
     async def ping(self, ctx: commands.Context):
         await ctx.send(f"{CHECK} **pong!**\n(*It took me {round(self.bot.latency * 1000, 2)}ms to respond to your command!*)")
 
-    @app_commands.command(name="clean", description="Allows you to clean a certain number of messages in a channel")
+    @app_commands.command(name="clean", description="Allows you to clean a certain number of messages (request admin role)")
     @check_admin_or_roles()
     async def clean(self, interaction: discord.Interaction, number: int):
         await interaction.response.defer(ephemeral=True)

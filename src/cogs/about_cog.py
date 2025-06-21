@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import platform
+from datetime import datetime, timezone
 # bot files
 from constants import *
 
@@ -92,6 +93,16 @@ class AboutCog(commands.Cog, name=ABOUT_COG):
             embed.add_field(name="This user has no avatar", value="*nothing to display...*")
             embed.set_footer(text=FOOTER_EMBED)
         
+        await ctx.send(embed=embed)
+
+    @commands.hybrid_command(name="membercount", description="Get the server member count")
+    async def membercount(self, ctx: commands.Context):
+        embed = discord.Embed(
+            title=f"Members",
+            color=discord.Color.dark_blue(),
+            timestamp=datetime.now(timezone.utc)
+        )
+        embed.add_field(name=None, value=ctx.guild.member_count)
         await ctx.send(embed=embed)
 
 async def setup(bot: commands.Bot):

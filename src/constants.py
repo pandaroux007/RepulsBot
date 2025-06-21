@@ -1,3 +1,14 @@
+# https://stackoverflow.com/questions/41546883/what-is-the-use-of-python-dotenv
+from dotenv import load_dotenv
+import os, sys
+
+_current_dir = os.path.dirname(os.path.abspath(os.path.realpath(sys.argv[0])))
+load_dotenv(os.path.join(_current_dir, ".env"))
+
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+API_ENDPOINT_URL = os.getenv("API_ENDPOINT_URL")
+API_TOKEN = os.getenv("API_TOKEN")
+
 # regex for youtube links
 import re
 # https://stackoverflow.com/questions/19377262/regex-for-youtube-url
@@ -31,6 +42,7 @@ REPULS_EMOJI_ID = 1376134874595065906
 
 # default emojis
 CHECK = ":white_check_mark:"
+WARN = ":warning:"
 ERROR = ":no_entry:"
 VALIDATION_UNICODE = "✅"
 
@@ -49,11 +61,11 @@ The best free instantly accessible multiplayer first-person shooter for your bro
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
 """
 BETTER_VIDEO_MESSAGE = """
-## New featured video ➜ {url} 🎉
-(*And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,*
-*and cross your fingers that the community votes for your message with the reaction {reaction} just below!*
+(And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,
+and cross your fingers that the community votes for your message with the reaction {reaction} just below!
 ***I come and check the best video every {time} hours, you have every chance!***)
 """
+ASK_HELP = "\n**Ask an administrator for help!**"
 BOT_NAME = "RepulsBot"
 BOT_VERSION = "0.1.9"
 BOT_DESCRIPTION = """

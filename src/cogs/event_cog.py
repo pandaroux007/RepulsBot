@@ -1,12 +1,13 @@
 import discord
 from discord.ext import commands
-# bot files
+# bot file
 from constants import *
 
 class EventCog(commands.Cog, name=EVENT_COG):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    """ # Obsolete auto-reaction system with check emoji (to vote for the better video)
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot:
@@ -14,6 +15,7 @@ class EventCog(commands.Cog, name=EVENT_COG):
         elif message.channel.id == VIDEO_CHANNEL_ID:
             if re.search(YOUTUBE_REGEX, message.content):
                 await message.add_reaction(VALIDATION_UNICODE)
+    """
     
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):

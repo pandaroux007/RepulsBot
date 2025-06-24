@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-# bot files
+# bot file
 from constants import *
 
 # https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html

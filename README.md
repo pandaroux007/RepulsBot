@@ -39,12 +39,12 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] retrieving private information from a `.env` file
 - [x] membercount command
 - [x] send the best video to the main site via a secure endpoint
+- [x] FAQ command
 ___
 ### 🕑️ Objectives in progress:
 - ***nothing here yet***
 ___
 ### 🔥 Objectives to be achieved:
-- [ ] FAQ command and youtubers' help commands
 - [ ] permanent online posting of the bot
 
 ### ⛔️ Abandoned objectives (for now):
@@ -59,10 +59,10 @@ ___
   - membercount
 - Server cog (in [`src/cogs/server_cog.py`](src/cogs/server_cog.py)) : Contains commands useful for server management;
   - help
+  - faq
   - clean
   - ping
 - Event cog (in [`src/cogs/event_cog.py`](src/cogs/event_cog.py)) : Contains all events raised by the discord bot;
-  - on_message
   - on_command_error
   - on_ready
 - Vote cog (in [`src/cogs/vote_cog.py`](src/cogs/vote_cog.py)) : Contains all the elements relating to the management of votes for the best YouTube video every 48 hours;

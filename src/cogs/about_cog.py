@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import platform
 from datetime import datetime, timezone
-# bot files
+# bot file
 from constants import *
 
 class AboutCog(commands.Cog, name=ABOUT_COG):

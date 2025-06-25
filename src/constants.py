@@ -54,19 +54,18 @@ REPULS_LINK = "https://repuls.io/"
 DISCORD_INVITE_LINK = "https://discord.com/invite/2YKgx2HSfR"
 
 # texts (and bot info)
+ASK_HELP = "\n**Ask an administrator for help!**"
 FOOTER_EMBED = "repuls.io is developed with ♥️ by docski"
 REPULS_DESCRIPTION = f"""
 [Repuls.io]({REPULS_LINK}) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
 """
-BETTER_VIDEO_MESSAGE = """
-Please note, if you don't use my `!addvideo` command, **I only retrieve the first link in the message**, so make sure it's the link to your video!
-(And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,
-and cross your fingers that the community votes for your message with the reaction {reaction} just below!
+FEATURED_VIDEO_MSG = """
+*(And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,
+and cross your fingers that the community votes for your message with the reaction {reaction} just below!*
 ***I come and check the best video every {time} hours, you have every chance!***)
 """
-ASK_HELP = "\n**Ask an administrator for help!**"
 BOT_NAME = "RepulsBot"
 BOT_VERSION = "0.1.9"
 BOT_LINK = "https://github.com/pandaroux007/RepulsBot"

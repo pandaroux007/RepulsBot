@@ -21,8 +21,10 @@ Tired of the same run, aim, shoot gameplay that every shooter does??! Played one
 # ⚙️ Development
 To run the project, install the `uv` tool (a more secure and faster equivalent to `pip`), and run `uv run "src/main.py"`.
 
+Check the `pyproject.toml` file for dependencies. To mock an endpoint for the bot, use **Mockoon** software.
+
 > [!WARNING]
-> *The token is hidden in a file not included with the other files on GitHub (`private.py`). Please recreate it with your own token before running the program if you wish to use this project or contribute to its development. Also change the IDs in [`constants.py`](src/constants.py)*
+> *The token is hidden in a file not included with the other files on GitHub (`.env`). Please recreate it in [`./src/`](src/) with your own token before running the program if you wish to use this project or contribute to its development. Also change the IDs in [`constants.py`](src/constants.py)*
 
 ## 🚀 Development goals
 ### ✅ Objectives achieved:

@@ -33,7 +33,7 @@ class YouTubeLink(commands.Converter):
 async def send_video_to_endpoint(video_url: str):
     payload = {"video_url": video_url}
     headers = {
-        "Authorization": f"Bearer {API_TOKEN}",
+        "Authorization": f"Bearer {API_TOKEN}", # Developers, comment out this line to debug the endpoint.
         "Content-Type": "application/json"
     }
 

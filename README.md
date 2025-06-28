@@ -16,12 +16,22 @@ The best free instantly accessible multiplayer first-person shooter for your bro
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
 ## And what about RepulsBot
 - Authors : [pandaroux007](https://github.com/pandaroux007), [itsdocski](https://github.com/tahirG)
-- License : the bot and everything that composes it (icon, code, etc.) are under the MIT license (see [LICENSE.txt](LICENSE.txt) file) - for more information go [there](https://opensource.org/license/mit). 
+- License : the bot and everything that composes it (icon, code, etc.) are under the MIT license (see [LICENSE.txt](LICENSE.txt) file) - for more information go [there](https://opensource.org/license/mit).
 
+## RepulsBot credits
+### Question/answer creators for the FAQ
+- *snipertoad*
+- *BratzelBrezel*
+- *Abyss 🇺🇦*
+### Other contributors
+- No one here yet 😉... But it won't be long!
+___
 # ⚙️ Development
 To run the project, install the `uv` tool (a more secure and faster equivalent to `pip`), and run `uv run "src/main.py"`.
 
-Check the `pyproject.toml` file for dependencies. To mock an endpoint for the bot, use **Mockoon** software.
+> [!NOTE]
+> Check the `pyproject.toml` file for dependencies. To mock an endpoint for the bot, use **Mockoon** software.
+**Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!**
 
 > [!WARNING]
 > *The token is hidden in a file not included with the other files on GitHub (`.env`). Please recreate it in [`./src/`](src/) with your own token before running the program if you wish to use this project or contribute to its development. Also change the IDs in [`constants.py`](src/constants.py)*

@@ -8,7 +8,7 @@ This guide will help you participate effectively in development.
 - Discord account with [developer portal](https://discord.com/developers/applications) enabled,
 - [Mockoon](https://mockoon.com) to simulate API endpoints
 
-## 🚀 Develop
+## 🚀 Development
 1. Fork the repository and clone it locally with:
 ```sh
 git clone https://github.com/your-user/RepulsBot.git

@@ -105,5 +105,22 @@ class AboutCog(commands.Cog, name=ABOUT_COG):
         embed.add_field(name=None, value=ctx.guild.member_count)
         await ctx.send(embed=embed)
 
+    @commands.hybrid_command(name="wiki", description="Everything you need to know about the game")
+    async def wiki(self, ctx: commands.Context):
+        wiki_btn_view = discord.ui.View()
+        wiki_btn = discord.ui.Button(
+            style=discord.ButtonStyle.link,
+            label="Go to the repuls.io Wiki!",
+            url=REPULS_WIKI_LINK
+        )
+        wiki_btn_view.add_item(wiki_btn)
+        embed = discord.Embed(
+            title=f"Everything you need to know about repuls.io",
+            description=REPULS_WIKI_DESCRIPTION,
+            color=discord.Color.blue(),
+        )
+
+        await ctx.send(embed=embed, view=wiki_btn_view)
+
 async def setup(bot: commands.Bot):
     await bot.add_cog(AboutCog(bot))

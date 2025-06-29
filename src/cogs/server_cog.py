@@ -3,7 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 # bot files
 from constants import *
-from faq_data import FAQ_ENTRIES
+from faq_data import *
 from utils import (
     check_admin_or_roles,
     FAQView,
@@ -34,14 +34,24 @@ class ServerCog(commands.Cog, name=SERVER_COG):
 
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(name="faq", description="Launch the server's interactive FAQ")
-    async def faq(self, ctx: commands.Context):
+    @commands.hybrid_command(name="serverfaq", description="Launch the server's interactive FAQ")
+    async def serverfaq(self, ctx: commands.Context):
         embed = discord.Embed(
-            title=f"{ctx.guild.name}{"\'" if ctx.guild.name.endswith('s') else "'s"} FAQ",
+            title=f"{ctx.guild.name}{"\'" if ctx.guild.name.endswith('s') else "'s"} server FAQ",
             description="👉️ Select a question from the drop-down menu below!",
             color=discord.Color.blue()
         )
-        view = FAQView(FAQ_ENTRIES)
+        view = FAQView(SERVER_FAQ, custom_id=SERVER_FAQ_ID)
+        await ctx.send(embed=embed, view=view)
+
+    @commands.hybrid_command(name="gamefaq", description="Frequently Asked Questions about the repuls.io game")
+    async def gamefaq(self, ctx: commands.Context):
+        embed = discord.Embed(
+            title=f"Repuls.io game FAQ",
+            description="👉️ Select a question from the drop-down menu below!",
+            color=discord.Color.blue()
+        )
+        view = FAQView(GAME_FAQ, custom_id=GAME_FAQ_ID)
         await ctx.send(embed=embed, view=view)
     
     # ---------------------------------- admin command
@@ -54,5 +64,6 @@ class ServerCog(commands.Cog, name=SERVER_COG):
 
 async def setup(bot: commands.Bot):
     # https://github.com/Rapptz/discord.py/blob/master/examples/views/persistent.py
-    bot.add_view(FAQView(FAQ_ENTRIES))
+    bot.add_view(FAQView(SERVER_FAQ, custom_id=SERVER_FAQ_ID))
+    bot.add_view(FAQView(GAME_FAQ, custom_id=GAME_FAQ_ID))
     await bot.add_cog(ServerCog(bot))

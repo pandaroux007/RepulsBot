@@ -28,8 +28,10 @@ STREAMER_ROLE_ID = 1381223990349004850     # 781295771894153266
 ADMIN_ROLE_ID = 1376617317382754456        # 800091356974022677
 TRUSTED_ROLE_ID = 1381224331685920930      # 910540568164188252
 DEVELOPER_ROLE_ID = 1381224153478336553    # 682090620726411304
+CONDUCTOR_ROLE_ID = 1388550692213362879    # 1317870046726324284
+SWATTEAM_ROLE_ID = 1388550925353877685     # 862318347542724679
+CONTRIBUTOR_ROLE_ID = 1388551885476204655  # 850775875821109298
 
-# ------------------------------------- emojis
 # custom bot emojis ("<:emiji_name:emoji_id>")
 CONNECTE_EMOJI_ID = 1376214233041080410
 DECONNECTE_EMOJI_ID = 1376214242424000583
@@ -40,6 +42,10 @@ ESPORTS_EMOJI_ID = 1376135172034007102
 RWNC_EMOJI_ID = 1376135129960939575
 REPULS_EMOJI_ID = 1376134874595065906
 
+# members
+GRAPHIC_DESIGNER_ID = 896507294983020574 # caracal
+MAIN_DEVELOPER_ID = 213028561584521216 # docski
+
 # default emojis
 CHECK = ":white_check_mark:"
 WARN = ":warning:"
@@ -48,10 +54,11 @@ VALIDATION_UNICODE = "✅"
 
 # ------------------------------------- constants texts and links
 # links
-ENDPOINT_URL = "" # nothing for now
+REPULS_WIKI_LINK = "https://repulsio.fandom.com/wiki/Repuls.io_Wiki"
 REPULS_PRIVACY_LINK = "https://docskigames.com/privacy/"
 REPULS_LINK = "https://repuls.io/"
 DISCORD_INVITE_LINK = "https://discord.com/invite/2YKgx2HSfR"
+CLEAR_DATA_TUTORIAL = "https://its.uiowa.edu/services/how-clear-cache-and-cookies-your-web-browser"
 
 # texts (and bot info)
 ASK_HELP = "\n**Ask an administrator for help!**"
@@ -65,6 +72,10 @@ FEATURED_VIDEO_MSG = """
 *(And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,
 and cross your fingers that the community votes for your message with the reaction {reaction} just below!*
 ***I come and check the best video every {time} hours, you have every chance!***)
+"""
+REPULS_WIKI_DESCRIPTION = """
+Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are?\n
+Then you'll find everything you need on the official Wiki!
 """
 BOT_NAME = "RepulsBot"
 BOT_VERSION = "0.1.9"

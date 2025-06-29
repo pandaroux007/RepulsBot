@@ -45,18 +45,18 @@ async def send_video_to_endpoint(video_url: str):
 # https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=select#discord.ui.Select
 # https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=view#discord.ui.View
 class FAQView(discord.ui.View):
-    def __init__(self, faq_entries):
+    def __init__(self, faq_entries, custom_id):
         super().__init__(timeout=None)
         self.faq_entries = faq_entries
         options = [
             discord.SelectOption(label=entry["question"], value=str(idx))
             for idx, entry in enumerate(faq_entries)
         ]
-        self.add_item(FAQSelect(options, faq_entries))
+        self.add_item(FAQSelect(options, faq_entries, custom_id))
 
 class FAQSelect(discord.ui.Select):
-    def __init__(self, options, faq_entries):
-        super().__init__(placeholder="Choose a question...", options=options, custom_id="faq_select")
+    def __init__(self, options, faq_entries, custom_id):
+        super().__init__(placeholder="Choose a question...", options=options, custom_id=custom_id)
         self.faq_entries = faq_entries
 
     async def callback(self, interaction: discord.Interaction):

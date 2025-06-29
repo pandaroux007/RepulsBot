@@ -52,9 +52,10 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] membercount command
 - [x] send the best video to the main site via a secure endpoint
 - [x] FAQ command
+- [x] "Repuls wiki" command
 ___
 ### 🕑️ Objectives in progress:
-- ***nothing here yet***
+- [ ] Updated FAQs with new questions
 ___
 ### 🔥 Objectives to be achieved:
 - [ ] permanent online posting of the bot
@@ -69,11 +70,13 @@ ___
   - aboutserver
   - avatar
   - membercount
+  - wiki
 - Server cog (in [`src/cogs/server_cog.py`](src/cogs/server_cog.py)) : Contains commands useful for server management;
   - help
-  - faq
   - clean
   - ping
+  - serverfaq
+  - gamefaq
 - Event cog (in [`src/cogs/event_cog.py`](src/cogs/event_cog.py)) : Contains all events raised by the discord bot;
   - on_command_error
   - on_ready

@@ -23,6 +23,7 @@ Tired of the same run, aim, shoot gameplay that every shooter does??! Played one
 - *snipertoad*
 - *BratzelBrezel*
 - *Abyss 🇺🇦*
+- *eagoose*
 ### Other contributors
 - No one here yet 😉... But it won't be long!
 ___
@@ -53,12 +54,14 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] send the best video to the main site via a secure endpoint
 - [x] FAQ command
 - [x] "Repuls wiki" command
+- [x] Updated FAQs with new questions
 ___
 ### 🕑️ Objectives in progress:
-- [ ] Updated FAQs with new questions
+- ***nothing here yet***
 ___
 ### 🔥 Objectives to be achieved:
 - [ ] permanent online posting of the bot
+- [ ] Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
 
 ### ⛔️ Abandoned objectives (for now):
 - [ ] clear command (clean command but with messages' links)

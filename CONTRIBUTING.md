@@ -33,6 +33,9 @@ cd src
 uv main.py
 ```
 
+## Endpoint Test
+Create a new local environment in Mockoon, then configure a new HTTP route, set the method to POST, and configure the route to the one you defined in the `.env`. Finally, launch the environment.
+
 ## 🪲 Report a problem/suggest an idea
 Open an issue specifying:
 1. Expected vs. Observed Bot Behavior

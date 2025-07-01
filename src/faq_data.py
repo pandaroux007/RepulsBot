@@ -1,6 +1,6 @@
 from constants import *
 
-# faq s custom IDs
+# faq's custom IDs
 SERVER_FAQ_ID = "server_faq_select"
 GAME_FAQ_ID = "game_faq_select"
 
@@ -17,8 +17,7 @@ SERVER_FAQ = [
     {
         "question": "How to get a role ?",
         "answer": f"""
-- To become a <@&{YOUTUBER_ROLE_ID}>, you must have a channel that primarily publishes Repuls-related content and have at least 75 subscribers. Videos must be at least 720p in quality and include editing (no gameplay recordings).
-- To become a <@&{STREAMER_ROLE_ID}>, you must stream repuls.io once a week.
+- To become a <@&{YOUTUBER_ROLE_ID}> or a <@&{STREAMER_ROLE_ID}>, please read this message https://discord.com/channels/603655329120518223/800107070614405120/1389262601740877925 and follow the instructions.
 - To become a <@&{CONTRIBUTOR_ROLE_ID}>, you must donate to the game in some way.
 - To become a <@&{TRUSTED_ROLE_ID}> member, you must send at least 500 messages and be active.
 - *Staff no longer offers the <@&{ADMIN_ROLE_ID}>, <@&{SWATTEAM_ROLE_ID}>, or <@&{CONDUCTOR_ROLE_ID}> roles.*"""

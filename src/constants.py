@@ -1,6 +1,8 @@
 # https://stackoverflow.com/questions/41546883/what-is-the-use-of-python-dotenv
 from dotenv import load_dotenv
-import os, sys
+import os
+import sys
+import re
 
 _current_dir = os.path.dirname(os.path.abspath(os.path.realpath(sys.argv[0])))
 load_dotenv(os.path.join(_current_dir, ".env"))
@@ -10,62 +12,88 @@ API_ENDPOINT_URL = os.getenv("API_ENDPOINT_URL")
 API_TOKEN = os.getenv("API_TOKEN")
 
 # regex for youtube links
-import re
 # https://stackoverflow.com/questions/19377262/regex-for-youtube-url
 YOUTUBE_REGEX = re.compile(
     r'((?:https?:)?\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtu\.be)\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?[\w\-]+(?:\S+)?)',
     re.IGNORECASE
 )
 
+CMD_PREFIX = '!'
+VOTE_HOURS = 48
+
+# https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html
+# cogs name
+class CogsNames:
+    EVENT = "event_cog"
+    VOTE = "vote_cog"
+    SERVER = "server_cog"
+    ABOUT = "about_cog"
+
+COGS_LIST = [
+    CogsNames.EVENT,
+    CogsNames.SERVER,
+    CogsNames.ABOUT,
+    CogsNames.VOTE
+]
+
 # ------------------------------------- IDs
-# roles and channels ("<@&role_id>")
-#     -----    test server IDs   -----     /    -----   real server IDs
-STATUS_CHANNEL_ID = 1370716216863227924         # 849711794032214087 (info channel)
-VIDEO_CHANNEL_ID = 1370706473155563581          # 800108276004028446
+class ServerChannelIDs:
+    STATUS_CHANNEL = 1370716216863227924 # 849711794032214087 (info channel)
+    VIDEO_CHANNEL = 1370706473155563581  # 800108276004028446
 
-YOUTUBER_ROLE_ID = 1381223948854759494          # 781295509331116054
-STREAMER_ROLE_ID = 1381223990349004850          # 781295771894153266
-ADMIN_ROLE_ID = 1376617317382754456             # 800091356974022677
-TRUSTED_ROLE_ID = 1381224331685920930           # 910540568164188252
-DEVELOPER_ROLE_ID = 1381224153478336553         # 682090620726411304
-CONDUCTOR_ROLE_ID = 1388550692213362879         # 1317870046726324284
-SWATTEAM_ROLE_ID = 1388550925353877685          # 862318347542724679
-CONTRIBUTOR_ROLE_ID = 1388551885476204655       # 850775875821109298
-ESPORTS_ORGANIZER_ROLE_ID = 1388880454479904808 # 1371212276421496925
+class ServerRoleIDs: # "<@&role_id>"
+    YOUTUBER = 1381223948854759494          # 781295509331116054
+    STREAMER = 1381223990349004850          # 781295771894153266
+    ADMIN = 1376617317382754456             # 800091356974022677
+    TRUSTED = 1381224331685920930           # 910540568164188252
+    DEVELOPER = 1381224153478336553         # 682090620726411304
+    CONDUCTOR = 1388550692213362879         # 1317870046726324284
+    SWATTEAM = 1388550925353877685          # 862318347542724679
+    CONTRIBUTOR = 1388551885476204655       # 850775875821109298
+    ESPORTS_ORGANIZER = 1388880454479904808 # 1371212276421496925
 
-# custom bot emojis ("<:emiji_name:emoji_id>")
-CONNECTE_EMOJI_ID = 1376214233041080410
-DECONNECTE_EMOJI_ID = 1376214242424000583
-LOADER_EMOJI_ID = 1376135761757470791
-RC_EMOJI_ID = 1376135351353086002
-RANK_EMOJI_ID = 1376135312669151232
-ESPORTS_EMOJI_ID = 1376135172034007102
-RWNC_EMOJI_ID = 1376135129960939575
-REPULS_EMOJI_ID = 1376134874595065906
+class CustomEmojisIDs: # "<:emiji_name:emoji_id>"
+    CONNECTE_EMOJI = 1376214233041080410
+    DECONNECTE_EMOJI = 1376214242424000583
+    LOADER_EMOJI = 1376135761757470791
+    RC_EMOJI = 1376135351353086002
+    RANK_EMOJI = 1376135312669151232
+    ESPORTS_EMOJI = 1376135172034007102
+    RWNC_EMOJI = 1376135129960939575
+    REPULS_EMOJI = 1376134874595065906
 
-# members
-GRAPHIC_DESIGNER_ID = 896507294983020574 # caracal
-MAIN_DEVELOPER_ID = 213028561584521216 # docski
+class RepulsTeamMembersIDs: # "<@member_id>"
+    GRAPHIC_DESIGNER = 896507294983020574 # caracal
+    MAIN_DEVELOPER = 213028561584521216 # docski
 
-# default emojis
-CHECK = ":white_check_mark:"
-WARN = ":warning:"
-ERROR = ":no_entry:"
-VALIDATION_UNICODE = "✅"
+# ------------------------------------- texts and links
+class DefaultEmojis:
+    CHECK = ":white_check_mark:"
+    WARN = ":warning:"
+    ERROR = ":no_entry:"
+    VALIDATION_UNICODE = "✅"
 
-# ------------------------------------- constants texts and links
-# links
-REPULS_WIKI_LINK = "https://repulsio.fandom.com/wiki/Repuls.io_Wiki"
-REPULS_PRIVACY_LINK = "https://docskigames.com/privacy/"
-REPULS_LINK = "https://repuls.io/"
-DISCORD_INVITE_LINK = "https://discord.com/invite/2YKgx2HSfR"
-CLEAR_DATA_TUTORIAL = "https://its.uiowa.edu/services/how-clear-cache-and-cookies-your-web-browser"
+class BotInfo():
+    NAME = "RepulsBot"
+    VERSION = "0.1.9"
+    GITHUB = "https://github.com/pandaroux007/RepulsBot"
+    DESCRIPTION = """
+    Hey there! :waving_hand:
+    It's me, {name}, the official Discord bot for [this server]({server})! If you need help, type "!help" or help command to see what I can do!\n
+    If you don't feel like chatting with our amazing community, you can always play a game of [repuls.io]({game}) :wink:
+    """
 
-# texts (and bot info)
+class Links:
+    REPULS_WIKI = "https://repulsio.fandom.com/wiki/Repuls.io_Wiki"
+    GAME_PRIVACY = "https://docskigames.com/privacy/"
+    REPULS_GAME = "https://repuls.io/"
+    DISCORD_INVITE = "https://discord.com/invite/2YKgx2HSfR"
+    CLEAR_DATA_TUTORIAL = "https://its.uiowa.edu/services/how-clear-cache-and-cookies-your-web-browser"
+
 ASK_HELP = "\n**Ask an administrator for help!**"
 FOOTER_EMBED = "repuls.io is developed with ♥️ by docski"
 REPULS_DESCRIPTION = f"""
-[Repuls.io]({REPULS_LINK}) is the future of browser games.
+[Repuls.io]({Links.REPULS_GAME}) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
 """
@@ -78,19 +106,3 @@ REPULS_WIKI_DESCRIPTION = """
 Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are?\n
 Then you'll find everything you need on the official Wiki!
 """
-BOT_NAME = "RepulsBot"
-BOT_VERSION = "0.1.9"
-BOT_LINK = "https://github.com/pandaroux007/RepulsBot"
-BOT_DESCRIPTION = """
-Hey there! :waving_hand:
-It's me, {name}, the official Discord bot for [this server]({server})! If you need help, type "!help" or help command to see what I can do!\n
-If you don't feel like chatting with our amazing community, you can always play a game of [repuls.io]({game}) :wink:
-"""
-BOT_PREFIX = '!'
-VOTE_HOURS = 48
-
-# cogs name
-EVENT_COG = "event_cog"
-VOTE_COG = "vote_cog"
-SERVER_COG = "server_cog"
-ABOUT_COG = "about_cog"

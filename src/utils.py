@@ -1,14 +1,20 @@
 import aiohttp
 import discord
 from discord.ext import commands
+import re
 # bot file
-from constants import *
+from constants import (
+    ServerRoleIDs,
+    API_TOKEN,
+    API_ENDPOINT_URL,
+    YOUTUBE_REGEX
+)
 
-# ---------------------------------- check decorator and hidden msg function
+# ---------------------------------- check decorator and hidden message function
 def check_admin_or_roles():
     async def predicate(ctx: commands.Context):
         has_admin = ctx.author.guild_permissions.administrator
-        allowed_role_ids = {ADMIN_ROLE_ID, DEVELOPER_ROLE_ID}
+        allowed_role_ids = {ServerRoleIDs.ADMIN, ServerRoleIDs.DEVELOPER}
         has_role = any(role.id in allowed_role_ids for role in ctx.author.roles)
         return has_admin or has_role
     return commands.check(predicate)
@@ -25,7 +31,7 @@ SUCCESS_CODE = 200
 class YouTubeLink(commands.Converter):
     async def convert(self, ctx: commands.Context, argument):
         if not re.match(YOUTUBE_REGEX, argument):
-            raise commands.BadArgument(f"Your YouTube link is invalid. Please try again.")
+            raise commands.BadArgument("Your YouTube link is invalid. Please try again.")
         return argument
 
 # https://apidog.com/blog/aiohttp-request/

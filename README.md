@@ -55,16 +55,17 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] FAQ command
 - [x] "Repuls wiki" command
 - [x] Updated FAQs with new questions
+- [x] used Ruff linter on the project
 ___
 ### 🕑️ Objectives in progress:
 - ***nothing here yet***
 ___
 ### 🔥 Objectives to be achieved:
 - [ ] permanent online posting of the bot
-- [ ] Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
 
 ### ⛔️ Abandoned objectives (for now):
 - [ ] clear command (clean command but with messages' links)
+- [ ] Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
 
 ## Discord.py cogs
 - About cog (in [`src/cogs/about_cog.py`](src/cogs/about_cog.py)) : This cog contains information commands about members and the server;

@@ -3,9 +3,17 @@ from discord.ext import commands
 import platform
 from datetime import datetime, timezone
 # bot file
-from constants import *
+from constants import (
+    CogsNames,
+    BotInfo,
+    Links,
+    FOOTER_EMBED,
+    REPULS_DESCRIPTION,
+    REPULS_WIKI_DESCRIPTION
+)
 
-class AboutCog(commands.Cog, name=ABOUT_COG):
+# ---------------------------------- about cog (see README.md)
+class AboutCog(commands.Cog, name=CogsNames.ABOUT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -17,10 +25,10 @@ class AboutCog(commands.Cog, name=ABOUT_COG):
         )
         if member.id == self.bot.user.id: # bot presentation
             embed.title = f"Hi {ctx.author.display_name}! How can I help you ?"
-            embed.description = BOT_DESCRIPTION.format(name=self.bot.user.mention,
-                                                       server=DISCORD_INVITE_LINK,
-                                                       game=REPULS_LINK)
-            embed.add_field(name=f"{BOT_NAME}", value=f"v{BOT_VERSION}")
+            embed.description = BotInfo.DESCRIPTION.format(name=self.bot.user.mention,
+                                                       server=Links.DISCORD_INVITE,
+                                                       game=Links.REPULS_GAME)
+            embed.add_field(name=f"{BotInfo.NAME}", value=f"v{BotInfo.VERSION}")
             embed.add_field(name="discord.py", value=f"v{discord.__version__}")
             embed.add_field(name="python", value=f"v{platform.python_version()}")
         else: # other member's informations
@@ -63,18 +71,18 @@ class AboutCog(commands.Cog, name=ABOUT_COG):
         play_btn = discord.ui.Button(
             style=discord.ButtonStyle.link,
             label="PLAY NOW!",
-            url=REPULS_LINK
+            url=Links.REPULS_GAME
         )
         play_btn_view.add_item(play_btn)
         embed = discord.Embed(
-            title=f"What is repuls.io ?",
-            url=f"{REPULS_LINK}home",
+            title="What is repuls.io ?",
+            url=f"{Links.REPULS_GAME}home",
             description=REPULS_DESCRIPTION,
             color=discord.Color.blue(),
         )
-        embed.add_field(name="Leaderboard", value=f"[Leaderboard]({REPULS_LINK}leaderboard)", inline=True)
-        embed.add_field(name="Updates", value=f"[Updates]({REPULS_LINK}updates)", inline=True)
-        embed.add_field(name="Terms & privacy", value=f"[Privacy]({REPULS_PRIVACY_LINK})", inline=True)
+        embed.add_field(name="Leaderboard", value=f"[Leaderboard]({Links.REPULS_GAME}leaderboard)", inline=True)
+        embed.add_field(name="Updates", value=f"[Updates]({Links.REPULS_GAME}updates)", inline=True)
+        embed.add_field(name="Terms & privacy", value=f"[Privacy]({Links.GAME_PRIVACY})", inline=True)
         embed.set_footer(text=FOOTER_EMBED)
 
         await ctx.send(embed=embed, view=play_btn_view)
@@ -85,7 +93,7 @@ class AboutCog(commands.Cog, name=ABOUT_COG):
             title=f"Avatar of {member.display_name}!",
             color=discord.Color.dark_blue(),
         )
-        if member.avatar != None:
+        if member.avatar is not None:
             embed.add_field(name="Legal warning", value="*Please don't use other members' images without their permission*", inline=False)
             embed.set_image(url=member.avatar.url)
             embed.set_footer(text=FOOTER_EMBED)
@@ -98,7 +106,7 @@ class AboutCog(commands.Cog, name=ABOUT_COG):
     @commands.hybrid_command(name="membercount", description="Get the server member count")
     async def membercount(self, ctx: commands.Context):
         embed = discord.Embed(
-            title=f"Members",
+            title="Members",
             color=discord.Color.dark_blue(),
             timestamp=datetime.now(timezone.utc)
         )
@@ -111,11 +119,11 @@ class AboutCog(commands.Cog, name=ABOUT_COG):
         wiki_btn = discord.ui.Button(
             style=discord.ButtonStyle.link,
             label="Go to the repuls.io Wiki!",
-            url=REPULS_WIKI_LINK
+            url=Links.REPULS_WIKI
         )
         wiki_btn_view.add_item(wiki_btn)
         embed = discord.Embed(
-            title=f"Everything you need to know about repuls.io",
+            title="Everything you need to know about repuls.io",
             description=REPULS_WIKI_DESCRIPTION,
             color=discord.Color.blue(),
         )

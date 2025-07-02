@@ -1,8 +1,21 @@
 import discord
 from discord.ext import tasks, commands
 from datetime import datetime, timedelta, timezone
+import re
 # bot files
-from constants import *
+from constants import (
+    CogsNames,
+    ServerChannelIDs,
+    DefaultEmojis,
+    CustomEmojisIDs,
+    ServerRoleIDs,
+    Links,
+    FEATURED_VIDEO_MSG,
+    VOTE_HOURS,
+    YOUTUBE_REGEX,
+    ASK_HELP
+)
+
 from utils import (
     YouTubeLink,
     send_hidden_message,
@@ -10,8 +23,9 @@ from utils import (
     SUCCESS_CODE
 )
 
+# ---------------------------------- vote cog (see README.md)
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
-class VoteCog(commands.Cog, name=VOTE_COG):
+class VoteCog(commands.Cog, name=CogsNames.VOTE):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.vote_task.start()
@@ -28,8 +42,9 @@ class VoteCog(commands.Cog, name=VOTE_COG):
         await self.bot.wait_until_ready()
 
     async def check_better_video(self):
-        self.video_channel = self.bot.get_channel(VIDEO_CHANNEL_ID)
-        if not self.video_channel: return
+        self.video_channel = self.bot.get_channel(ServerChannelIDs.VIDEO_CHANNEL)
+        if not self.video_channel:
+            return
 
         limit_time = datetime.now(timezone.utc) - timedelta(hours=VOTE_HOURS)
         better_video_msg = None
@@ -39,7 +54,7 @@ class VoteCog(commands.Cog, name=VOTE_COG):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue
             for reaction in message.reactions:
-                if str(reaction.emoji) == VALIDATION_UNICODE:
+                if str(reaction.emoji) == DefaultEmojis.VALIDATION_UNICODE:
                     count = reaction.count
                     
                     if count > last_better_votes:
@@ -52,38 +67,38 @@ class VoteCog(commands.Cog, name=VOTE_COG):
     async def process_winner(self, msg: discord.Message, vote_count: int):
         if msg and vote_count > 0:
             embed = discord.Embed(
-                title=f"New featured video! 🎉",
+                title="New featured video! 🎉",
                 color=discord.Color.dark_blue(),
                 timestamp=datetime.now(timezone.utc),
-                description=FEATURED_VIDEO_MSG.format(reaction=CHECK, time=VOTE_HOURS).replace('\n', ' ').strip()
+                description=FEATURED_VIDEO_MSG.format(reaction=DefaultEmojis.CHECK, time=VOTE_HOURS).replace('\n', ' ').strip()
             )
             embed.add_field(name="Watch it now!", value=msg.jump_url)
 
             match = re.search(YOUTUBE_REGEX, msg.content)
             code = await send_video_to_endpoint(video_url=match.group(0))
             if code == SUCCESS_CODE:
-                embed.add_field(name="Website state", value=f"{await self.bot.fetch_application_emoji(CONNECTE_EMOJI_ID)} Video sent to [repuls.io]({REPULS_LINK})!")
+                embed.add_field(name="Website state", value=f"{await self.bot.fetch_application_emoji(CustomEmojisIDs.CONNECTE_EMOJI)} Video sent to [repuls.io]({Links.REPULS_GAME})!")
             else:
-                embed.add_field(name="Website state", value=f"{WARN} Video failed to send to repuls.io ({code} error)!")
+                embed.add_field(name="Website state", value=f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)!")
 
             await self.video_channel.send(embed=embed)
         else:
-            await self.video_channel.send(f"I couldn't find any videos to display on the game's homepage 🫤...\n**<@&{YOUTUBER_ROLE_ID}>, it's your turns!** 💪")
+            await self.video_channel.send(f"I couldn't find any videos to display on the game's homepage 🫤...\n**<@&{ServerRoleIDs.YOUTUBER}>, it's your turns!** 💪")
     
     # ---------------------------------- commands
     @commands.hybrid_command(name="addvideo", description="Post a new YouTube video (request for special roles)")
-    @commands.has_any_role(YOUTUBER_ROLE_ID, STREAMER_ROLE_ID, ADMIN_ROLE_ID, DEVELOPER_ROLE_ID)
+    @commands.has_any_role(ServerRoleIDs.YOUTUBER, ServerRoleIDs.STREAMER, ServerRoleIDs.ADMIN, ServerRoleIDs.DEVELOPER)
     async def addvideo(self, ctx: commands.Context, youtube_url: YouTubeLink):
         if ctx.interaction:
             await ctx.interaction.response.defer(ephemeral=True)
 
-        video_channel = self.bot.get_channel(VIDEO_CHANNEL_ID)
-        if video_channel != None:
+        video_channel = self.bot.get_channel(ServerChannelIDs.VIDEO_CHANNEL)
+        if video_channel is not None:
             # the link is already verified as a correct youtube link
             await video_channel.send(f"### 📢 New YouTube video! 🎉\n{youtube_url}\n(*Posted by {ctx.author.mention}!*)")
-            await send_hidden_message(ctx=ctx, text=f"{CHECK} video posted in {video_channel.mention}!")
+            await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.CHECK} video posted in {video_channel.mention}!")
         else:
-            await send_hidden_message(ctx=ctx, text=f"{ERROR} Unable to find video channel (whose ID is supposed to be {VIDEO_CHANNEL_ID})!{ASK_HELP}")
+            await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.ERROR} Unable to find video channel (whose ID is supposed to be {ServerChannelIDs.VIDEO_CHANNEL})!{ASK_HELP}")
         
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoteCog(bot))

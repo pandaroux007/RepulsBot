@@ -48,6 +48,7 @@ Open an issue specifying:
 - **Cogs**: Structure the code into modules (`/src/cogs/`)
 - **Test** locally with [Mockoon](https://mockoon.com) for endpoints
 - **Security**: Never commit tokens/secrets
+- Use **RUFF linter**
 - Open a **Pull Request** with:
   - Purpose of changes/bug fixed
   - Added commands and features/bug fixes

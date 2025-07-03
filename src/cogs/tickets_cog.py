@@ -89,7 +89,8 @@ class TicketModal(discord.ui.Modal):
         else:
             overwrites = {guild.default_role: discord.PermissionOverwrite(view_channel=False)}
             return await guild.create_category(TICKETS_CATEGORY_NAME, overwrites=overwrites)
-        
+    
+    # https://stackoverflow.com/questions/7591117/what-is-the-probability-of-collision-with-a-6-digit-random-alphanumeric-code
     def _make_ticket_channel_name(self, ticket_type: str):
         abbr = next((abbr for label, _, abbr in TICKET_TYPES if label == ticket_type), "Other")
         code = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))

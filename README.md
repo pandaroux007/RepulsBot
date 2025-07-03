@@ -81,8 +81,13 @@ ___
   - serverfaq
   - gamefaq
 - Event cog (in [`src/cogs/event_cog.py`](src/cogs/event_cog.py)) : Contains all events raised by the discord bot;
+  - on_message
   - on_command_error
   - on_ready
 - Vote cog (in [`src/cogs/vote_cog.py`](src/cogs/vote_cog.py)) : Contains all the elements relating to the management of votes for the best YouTube video every 48 hours;
   - addvideo (command)
-  - discord [tasks](https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html)
+  - discord ([tasks](https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html))
+- Tickets cog (in [`src/cogs/tickets_cog.py`](src/cogs/tickets_cog.py)) : Contains the commands and management of messages, modals and selectors of the server moderation ticket system
+  - open_ticket
+  - close_ticket
+  - setup_ticket

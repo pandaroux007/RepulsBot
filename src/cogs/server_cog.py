@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 # bot files
+from utils import check_admin_or_roles
 from constants import (
     CogsNames,
     BotInfo,
@@ -15,17 +16,40 @@ from faq_data import (
     GameFAQ
 )
 
-from utils import (
-    check_admin_or_roles,
-    FAQView,
-)
+# ---------------------------------- faq selector
+# https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=select#discord.ui.Select
+# https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=view#discord.ui.View
+class FAQView(discord.ui.View):
+    def __init__(self, faq_entries, custom_id):
+        super().__init__(timeout=None)
+        self.faq_entries = faq_entries
+        options = [
+            discord.SelectOption(label=entry["question"], value=str(idx))
+            for idx, entry in enumerate(faq_entries)
+        ]
+        self.add_item(FAQSelect(options, faq_entries, custom_id))
+
+class FAQSelect(discord.ui.Select):
+    def __init__(self, options, faq_entries, custom_id):
+        super().__init__(placeholder="Choose a question...", options=options, custom_id=custom_id)
+        self.faq_entries = faq_entries
+
+    async def callback(self, interaction: discord.Interaction):
+        idx = int(self.values[0])
+        entry = self.faq_entries[idx]
+        embed = discord.Embed(
+            title=entry["question"],
+            description=entry["answer"],
+            color=discord.Color.dark_blue()
+        )
+        await interaction.response.edit_message(embed=embed, view=self.view)
 
 # ---------------------------------- server cog (see README.md)
 class ServerCog(commands.Cog, name=CogsNames.SERVER):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # ---------------------------------- members commands
+    # ---------------------------------- members' commands
     @commands.hybrid_command(name="ping", description="Displays latency of the bot")
     async def ping(self, ctx: commands.Context):
         await ctx.send(f"{DefaultEmojis.CHECK} **pong!**\n(*It took me {round(self.bot.latency * 1000, 2)}ms to respond to your command!*)")

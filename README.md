@@ -56,9 +56,8 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] "Repuls wiki" command
 - [x] Updated FAQs with new questions
 - [x] used Ruff linter on the project
-___
-### 🕑️ Objectives in progress:
-- ***nothing here yet***
+- [x] message management in the rules room
+- [x] Added ticket system
 ___
 ### 🔥 Objectives to be achieved:
 - [ ] permanent online posting of the bot

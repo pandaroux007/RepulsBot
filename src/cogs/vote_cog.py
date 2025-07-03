@@ -1,8 +1,10 @@
 import discord
 from discord.ext import tasks, commands
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 import re
+import aiohttp
 # bot files
+from utils import send_hidden_message
 from constants import (
     CogsNames,
     ServerChannelIDs,
@@ -11,17 +13,33 @@ from constants import (
     ServerRoleIDs,
     Links,
     FEATURED_VIDEO_MSG,
-    VOTE_HOURS,
     YOUTUBE_REGEX,
-    ASK_HELP
+    ASK_HELP,
+    API_TOKEN,
+    API_ENDPOINT_URL
 )
 
-from utils import (
-    YouTubeLink,
-    send_hidden_message,
-    send_video_to_endpoint,
-    SUCCESS_CODE
-)
+VOTE_HOURS = 48
+SUCCESS_CODE = 200
+
+class YouTubeLink(commands.Converter):
+    async def convert(self, ctx: commands.Context, argument):
+        if not re.match(YOUTUBE_REGEX, argument):
+            raise commands.BadArgument("Your YouTube link is invalid. Please try again.")
+        return argument
+
+# https://apidog.com/blog/aiohttp-request/
+# https://docs.aiohttp.org/en/stable/client_quickstart.html
+async def send_video_to_endpoint(video_url: str):
+    payload = {"video_url": video_url}
+    headers = {
+        "Authorization": f"Bearer {API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(API_ENDPOINT_URL, json=payload, headers=headers) as resp:
+            return resp.status
 
 # ---------------------------------- vote cog (see README.md)
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
@@ -42,11 +60,11 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await self.bot.wait_until_ready()
 
     async def check_better_video(self):
-        self.video_channel = self.bot.get_channel(ServerChannelIDs.VIDEO_CHANNEL)
+        self.video_channel = self.bot.get_channel(ServerChannelIDs.VIDEO)
         if not self.video_channel:
             return
 
-        limit_time = datetime.now(timezone.utc) - timedelta(hours=VOTE_HOURS)
+        limit_time = discord.utils.utcnow() - timedelta(hours=VOTE_HOURS)
         better_video_msg = None
         last_better_votes = 0
 
@@ -69,7 +87,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             embed = discord.Embed(
                 title="New featured video! 🎉",
                 color=discord.Color.dark_blue(),
-                timestamp=datetime.now(timezone.utc),
+                timestamp=discord.utils.utcnow(),
                 description=FEATURED_VIDEO_MSG.format(reaction=DefaultEmojis.CHECK, time=VOTE_HOURS).replace('\n', ' ').strip()
             )
             embed.add_field(name="Watch it now!", value=msg.jump_url)
@@ -92,13 +110,13 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         if ctx.interaction:
             await ctx.interaction.response.defer(ephemeral=True)
 
-        video_channel = self.bot.get_channel(ServerChannelIDs.VIDEO_CHANNEL)
+        video_channel = self.bot.get_channel(ServerChannelIDs.VIDEO)
         if video_channel is not None:
             # the link is already verified as a correct youtube link
             await video_channel.send(f"### 📢 New YouTube video! 🎉\n{youtube_url}\n(*Posted by {ctx.author.mention}!*)")
             await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.CHECK} video posted in {video_channel.mention}!")
         else:
-            await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.ERROR} Unable to find video channel (whose ID is supposed to be {ServerChannelIDs.VIDEO_CHANNEL})!{ASK_HELP}")
+            await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.ERROR} Unable to find video channel (whose ID is supposed to be {ServerChannelIDs.VIDEO})!{ASK_HELP}")
         
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoteCog(bot))

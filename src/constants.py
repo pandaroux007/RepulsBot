@@ -19,7 +19,6 @@ YOUTUBE_REGEX = re.compile(
 )
 
 CMD_PREFIX = '!'
-VOTE_HOURS = 48
 
 # https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html
 # cogs name
@@ -28,18 +27,21 @@ class CogsNames:
     VOTE = "vote_cog"
     SERVER = "server_cog"
     ABOUT = "about_cog"
+    TICKETS = "tickets_cog"
 
 COGS_LIST = [
     CogsNames.EVENT,
     CogsNames.SERVER,
     CogsNames.ABOUT,
-    CogsNames.VOTE
+    CogsNames.VOTE,
+    CogsNames.TICKETS
 ]
 
 # ------------------------------------- IDs
 class ServerChannelIDs:
-    STATUS_CHANNEL = 1370716216863227924 # 849711794032214087 (info channel)
-    VIDEO_CHANNEL = 1370706473155563581  # 800108276004028446
+    RULES = 1389989335318794420  # 758364818348048444
+    STATUS = 1370716216863227924 # 849711794032214087 (info channel)
+    VIDEO = 1370706473155563581  # 800108276004028446
 
 class ServerRoleIDs: # "<@&role_id>"
     YOUTUBER = 1381223948854759494          # 781295509331116054
@@ -105,4 +107,8 @@ and cross your fingers that the community votes for your message with the reacti
 REPULS_WIKI_DESCRIPTION = """
 Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are?\n
 Then you'll find everything you need on the official Wiki!
+"""
+OPEN_TICKET_MSG = """
+Use the selector below to open a private ticket between you and the moderation team. Simply click on the type of ticket you want to open. This way, you can request in-game support, make a report, request a role, or anything else. 
+**Only create a ticket if absolutely necessary. To report a game bug, you can use the channel https://discord.com/channels/603655329120518223/1076163933213311067 !**
 """

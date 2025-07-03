@@ -1,14 +1,6 @@
-import aiohttp
-import discord
 from discord.ext import commands
-import re
 # bot file
-from constants import (
-    ServerRoleIDs,
-    API_TOKEN,
-    API_ENDPOINT_URL,
-    YOUTUBE_REGEX
-)
+from constants import ServerRoleIDs
 
 # ---------------------------------- check decorator and hidden message function
 def check_admin_or_roles():
@@ -24,53 +16,3 @@ async def send_hidden_message(ctx: commands.Context, text: str):
         await ctx.interaction.followup.send(text, ephemeral=True)
     else:
         await ctx.send(text, delete_after=10.0)
-
-# ---------------------------------- youtube command and task
-SUCCESS_CODE = 200
-
-class YouTubeLink(commands.Converter):
-    async def convert(self, ctx: commands.Context, argument):
-        if not re.match(YOUTUBE_REGEX, argument):
-            raise commands.BadArgument("Your YouTube link is invalid. Please try again.")
-        return argument
-
-# https://apidog.com/blog/aiohttp-request/
-# https://docs.aiohttp.org/en/stable/client_quickstart.html
-async def send_video_to_endpoint(video_url: str):
-    payload = {"video_url": video_url}
-    headers = {
-        "Authorization": f"Bearer {API_TOKEN}", # Developers, comment out this line to debug the endpoint.
-        "Content-Type": "application/json"
-    }
-
-    async with aiohttp.ClientSession() as session:
-        async with session.post(API_ENDPOINT_URL, json=payload, headers=headers) as resp:
-            return resp.status
-
-# ---------------------------------- faq selector
-# https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=select#discord.ui.Select
-# https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=view#discord.ui.View
-class FAQView(discord.ui.View):
-    def __init__(self, faq_entries, custom_id):
-        super().__init__(timeout=None)
-        self.faq_entries = faq_entries
-        options = [
-            discord.SelectOption(label=entry["question"], value=str(idx))
-            for idx, entry in enumerate(faq_entries)
-        ]
-        self.add_item(FAQSelect(options, faq_entries, custom_id))
-
-class FAQSelect(discord.ui.Select):
-    def __init__(self, options, faq_entries, custom_id):
-        super().__init__(placeholder="Choose a question...", options=options, custom_id=custom_id)
-        self.faq_entries = faq_entries
-
-    async def callback(self, interaction: discord.Interaction):
-        idx = int(self.values[0])
-        entry = self.faq_entries[idx]
-        embed = discord.Embed(
-            title=entry["question"],
-            description=entry["answer"],
-            color=discord.Color.dark_blue()
-        )
-        await interaction.response.edit_message(embed=embed, view=self.view)

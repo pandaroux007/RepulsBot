@@ -13,6 +13,14 @@ from constants import (
 class EventCog(commands.Cog, name=CogsNames.EVENT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        elif message.channel.id == ServerChannelIDs.RULES:
+            await message.channel.send(message.content)
+            await message.delete()
     
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):
@@ -38,7 +46,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         synced = await self.bot.tree.sync()
         print(f"{len(synced)} command(s) have been synchronized")
         
-        status_channel = self.bot.get_channel(ServerChannelIDs.STATUS_CHANNEL)
+        status_channel = self.bot.get_channel(ServerChannelIDs.STATUS)
         if status_channel is not None:
             await status_channel.send(f"{self.bot.user.mention} is now **online**! {await self.bot.fetch_application_emoji(CustomEmojisIDs.CONNECTE_EMOJI)}")
         

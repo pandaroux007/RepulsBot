@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import platform
-from datetime import datetime, timezone
 # bot file
 from constants import (
     CogsNames,
@@ -108,7 +107,7 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         embed = discord.Embed(
             title="Members",
             color=discord.Color.dark_blue(),
-            timestamp=datetime.now(timezone.utc)
+            timestamp=discord.utils.utcnow()
         )
         embed.add_field(name=None, value=ctx.guild.member_count)
         await ctx.send(embed=embed)

@@ -2,26 +2,19 @@
 from dotenv import load_dotenv
 import os
 import sys
-import re
+
+CMD_PREFIX = '!'
 
 _current_dir = os.path.dirname(os.path.abspath(os.path.realpath(sys.argv[0])))
 load_dotenv(os.path.join(_current_dir, ".env"))
 
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-API_ENDPOINT_URL = os.getenv("API_ENDPOINT_URL")
-API_TOKEN = os.getenv("API_TOKEN")
-
-# regex for youtube links
-# https://stackoverflow.com/questions/19377262/regex-for-youtube-url
-YOUTUBE_REGEX = re.compile(
-    r'((?:https?:)?\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtu\.be)\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?[\w\-]+(?:\S+)?)',
-    re.IGNORECASE
-)
-
-CMD_PREFIX = '!'
+class PrivateData:
+    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+    API_ENDPOINT_URL = os.getenv("API_ENDPOINT_URL")
+    API_TOKEN = os.getenv("API_TOKEN")
 
 # https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html
-# cogs name
+# ------------------------------------- cogs
 class CogsNames:
     EVENT = "event_cog"
     VOTE = "vote_cog"
@@ -55,25 +48,29 @@ class ServerRoleIDs: # "<@&role_id>"
     ESPORTS_ORGANIZER = 1388880454479904808 # 1371212276421496925
 
 class CustomEmojisIDs: # "<:emiji_name:emoji_id>"
-    CONNECTE_EMOJI = 1376214233041080410
-    DECONNECTE_EMOJI = 1376214242424000583
-    LOADER_EMOJI = 1376135761757470791
-    RC_EMOJI = 1376135351353086002
-    RANK_EMOJI = 1376135312669151232
-    ESPORTS_EMOJI = 1376135172034007102
-    RWNC_EMOJI = 1376135129960939575
-    REPULS_EMOJI = 1376134874595065906
+    CONNECTE = 1376214233041080410
+    DECONNECTE = 1376214242424000583
+    LOADER = 1376135761757470791
+    RC = 1376135351353086002
+    RANK = 1376135312669151232
+    ESPORTS = 1376135172034007102
+    RWNC = 1376135129960939575
+    REPULS = 1376134874595065906
 
 class RepulsTeamMembersIDs: # "<@member_id>"
     GRAPHIC_DESIGNER = 896507294983020574 # caracal
     MAIN_DEVELOPER = 213028561584521216 # docski
 
+class IDs:
+    serverChannel = ServerChannelIDs
+    serverRoles = ServerRoleIDs
+    customEmojis = CustomEmojisIDs
+    repulsTeam = RepulsTeamMembersIDs
+
 # ------------------------------------- texts and links
 class DefaultEmojis:
-    CHECK = ":white_check_mark:"
-    WARN = ":warning:"
-    ERROR = ":no_entry:"
-    VALIDATION_UNICODE = "✅"
+    CHECK = "✅" # :white_check_mark:
+    WARN = "⚠️" # :warning:
 
 class BotInfo():
     NAME = "RepulsBot"
@@ -109,6 +106,7 @@ Do you love repuls.io but don't know how the game works, what maps, weapons, top
 Then you'll find everything you need on the official Wiki!
 """
 OPEN_TICKET_MSG = """
-Use the selector below to open a private ticket between you and the moderation team. Simply click on the type of ticket you want to open. This way, you can request in-game support, make a report, request a role, or anything else. 
-**Only create a ticket if absolutely necessary. To report a game bug, you can use the channel https://discord.com/channels/603655329120518223/1076163933213311067 !**
+Need help? Simply click on the type of ticket you want to open **in the selector below**, fill up the information needed and **send** (send your images and video after creating the ticket).\n
+It will create a private channel between you and **the moderation team**. This way, you can make a report, request a role, or anything else.
+**Only create a ticket if absolutely necessary. Check if the answer to your question is not in the two server FAQs! To report a game bug, you can use the channel https://discord.com/channels/603655329120518223/1076163933213311067 !**
 """

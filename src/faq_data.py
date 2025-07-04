@@ -1,9 +1,8 @@
 from constants import (
-    ServerRoleIDs as roles,
     BotInfo as bot,
     Links as links,
     DefaultEmojis,
-    RepulsTeamMembersIDs as team
+    IDs
 )
 
 # ---------------------------------- faq base class
@@ -29,19 +28,19 @@ class ServerFAQ(FAQBase):
         },
         {
             "question": "How to post a youtube video ?",
-            "answer": f"To post a YouTube video, you must have the <@&{roles.YOUTUBER}> role. Then, either post your link directly or use the `!addvideo` command. A moderator will have to add the {DefaultEmojis.VALIDATION_UNICODE} reaction if your video is valid."
+            "answer": f"To post a YouTube video, you must have the <@&{IDs.serverRoles.YOUTUBER}> role. Then, either post your link directly or use the `!addvideo` command. A moderator will have to add the {DefaultEmojis.CHECK} reaction if your video is valid."
         },
         {
             "question": "How to get a role ?",
             "answer": f"""
-- To become a <@&{roles.YOUTUBER}> or a <@&{roles.STREAMER}>, please read this message https://discord.com/channels/603655329120518223/800107070614405120/1389262601740877925 and follow the instructions.
-- To become a <@&{roles.CONTRIBUTOR}>, you must donate to the game in some way.
-- To become a <@&{roles.TRUSTED}> member, you must send at least 500 messages and be active.
-- *Staff no longer offers the <@&{roles.ADMIN}>, <@&{roles.SWATTEAM}>, or <@&{roles.CONDUCTOR}> roles.*"""
+- To become a <@&{IDs.serverRoles.YOUTUBER}> or a <@&{IDs.serverRoles.STREAMER}>, please read this message https://discord.com/channels/603655329120518223/800107070614405120/1389262601740877925 and follow the instructions.
+- To become a <@&{IDs.serverRoles.CONTRIBUTOR}>, you must donate to the game in some way.
+- To become a <@&{IDs.serverRoles.TRUSTED}> member, you must send at least 500 messages and be active.
+- *Staff no longer offers the <@&{IDs.serverRoles.ADMIN}>, <@&{IDs.serverRoles.SWATTEAM}>, or <@&{IDs.serverRoles.CONDUCTOR}> roles.*"""
         },
         {
             "question": "Need help ? Ask here.",
-            "answer": f"Please try asking in https://discord.com/channels/603655329120518223/603655329124712560 or in https://discord.com/channels/603655329120518223/1179111829788688434 first. If you don't get a clear answer, you can also ask <@&{roles.ADMIN}> members"
+            "answer": f"Please try asking in https://discord.com/channels/603655329120518223/603655329124712560 or in https://discord.com/channels/603655329120518223/1179111829788688434 first. If you don't get a clear answer, you can also ask <@&{IDs.serverRoles.ADMIN}> members"
         },
         {
             "question": "I would like to report someone.",
@@ -52,7 +51,7 @@ class ServerFAQ(FAQBase):
             "answer": f"""
                 The [repuls.io]({links.REPULS_GAME}) game is currently being rewritten. The current game code needs to be rewritten for greater stability and to accommodate more players in future seasons.\n
                 This code rewrite, called `R2` or `netcode v2`, will also add the basis for numerous bug fixes, as well as new features (training bots, tanks, new mechs, etc.), and new servers (e.g., in Asia).\n
-                Although we don't have the exact date for the next update, you can already test it in the beta! Any bugs discovered save time for <@{team.MAIN_DEVELOPER}>, so report them here: https://discord.com/channels/603655329120518223/1349635397155684446\n
+                Although we don't have the exact date for the next update, you can already test it in the beta! Any bugs discovered save time for <@{IDs.repulsTeam.MAIN_DEVELOPER}>, so report them here: https://discord.com/channels/603655329120518223/1349635397155684446\n
             """
         },
         {
@@ -70,7 +69,7 @@ class GameFAQ(FAQBase):
     faq_data = [
         {
             "question": "Where can I get 3D assets of the game?",
-            "answer": f"To prevent 3D assets in repuls from being stolen, please send a direct message or mention to <@{team.GRAPHIC_DESIGNER}>"
+            "answer": f"To prevent 3D assets in repuls from being stolen, please send a direct message or mention to <@{IDs.repulsTeam.GRAPHIC_DESIGNER}>"
         },
         {
             "question": "Why is the game not working/loading ?",
@@ -78,7 +77,7 @@ class GameFAQ(FAQBase):
         },
         {
             "question": "How do I reset my password ?",
-            "answer": f"To reset your password, you cannot do so through the game UI. Please send a direct message with your account name and the new password you wish to use to <@{team.MAIN_DEVELOPER}>. Once done, remember to delete your messages."
+            "answer": f"To reset your password, you cannot do so through the game UI. Please send a direct message with your account name and the new password you wish to use to <@{IDs.repulsTeam.MAIN_DEVELOPER}>. Once done, remember to delete your messages."
         },
         {
             "question": "How to improve in repuls.io ?",
@@ -107,6 +106,6 @@ Here are some helpful guides to help you improve your skills:
     **How do I become a clan leader ?**
     The requirements to become a clan leader are to have at least 10 members in the in-game clan.\n
     **How to host your own events/tournaments?**
-    To host your own tournaments, they must be approved by staff. Send a DM to an <@&{roles.ESPORTS_ORGANIZER}> with your plan, rules, and projected size."""
+    To host your own tournaments, they must be approved by staff. Send a DM to an <@&{IDs.serverRoles.ESPORTS_ORGANIZER}> with your plan, rules, and projected size."""
         },
     ]

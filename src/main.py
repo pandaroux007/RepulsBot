@@ -2,9 +2,9 @@ import discord
 from discord.ext import commands
 # bot file
 from constants import (
+    PrivateData,
     COGS_LIST,
-    CMD_PREFIX,
-    DISCORD_TOKEN
+    CMD_PREFIX
 )
 
 # ---------------------------------- bot creation
@@ -18,4 +18,4 @@ bot = RepulsBot(command_prefix=CMD_PREFIX, intents=INTENTS, help_command=None)
 
 # ---------------------------------- bot run
 if __name__ == "__main__":
-    bot.run(DISCORD_TOKEN)
+    bot.run(PrivateData.DISCORD_TOKEN)

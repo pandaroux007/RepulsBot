@@ -2,13 +2,21 @@
 Thank you for your interest in contributing to the official [repuls.io](https://repuls.io) bot!
 This guide will help you participate effectively in development.
 
+## 🪲 Report a problem/suggest an idea
+Open an issue specifying:
+1. Expected vs. Observed Bot Behavior
+2. Steps to reproduce the bug
+3. Screenshot if relevant
+4. Bot version (commit executed)
+
+# Development
 ## 🛠️ Prerequisites
 - Python 3.10+
 - [UV](https://github.com/astral-sh/uv) (modern and fast replacement for `pip`),
 - Discord account with [developer portal](https://discord.com/developers/applications) enabled,
 - [Mockoon](https://mockoon.com) to simulate API endpoints
 
-## 🚀 Development
+## 🚀 Fork and code
 1. Fork the repository and clone it locally with:
 ```sh
 git clone https://github.com/your-user/RepulsBot.git
@@ -33,15 +41,8 @@ cd src
 uv main.py
 ```
 
-## Endpoint Test
+## Endpoint test
 Create a new local environment in Mockoon, then configure a new HTTP route, set the method to POST, and configure the route to the one you defined in the `.env`. Finally, launch the environment.
-
-## 🪲 Report a problem/suggest an idea
-Open an issue specifying:
-1. Expected vs. Observed Bot Behavior
-2. Steps to reproduce the bug
-3. Screenshot if relevant
-4. Bot version (commit executed)
 
 ## ✅ Best practices
 - **Naming**: `snake_case` for variables/files
@@ -56,7 +57,7 @@ Open an issue specifying:
 
 ## 📜 License
 All contributions are subject to the [MIT License](LICENSE.txt).
-By participating, you agree to license your work under this license.
+**By participating, you agree to license your work under this license.**
 
 ## 🔗 Useful resources
 - [`discordpy` documentation](https://discordpy.readthedocs.io/)

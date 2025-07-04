@@ -7,7 +7,7 @@ import string
 from utils import send_hidden_message
 from constants import (
     CogsNames,
-    ServerRoleIDs,
+    IDs,
     DefaultEmojis,
     OPEN_TICKET_MSG,
 )
@@ -15,18 +15,28 @@ from constants import (
 SECONDS_BEFORE_TICKET_CLOSING = 3
 PERMS_ACCESS_GRANTED = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
 AUTHORIZED_MEMBERS = [
-    ServerRoleIDs.ADMIN,
-    ServerRoleIDs.DEVELOPER,
-    ServerRoleIDs.CONTRIBUTOR
+    IDs.serverRoles.ADMIN,
+    IDs.serverRoles.DEVELOPER,
+    IDs.serverRoles.CONTRIBUTOR
 ]
 
 TICKETS_CATEGORY_NAME = "Tickets"
 TICKET_TYPES = [
-    ("In-game assistance", "Get help with gameplay issues", "Ing.A"),
-    ("Make a report", "Report a player or server behavior", "Rep"),
-    ("Role related", "Request or report issues with roles", "Rol"),
-    ("Other", "Other inquiries or problems", "Other")
+    #   name         |     description           |   abbreviation
+    ("In-game report", "Hackers and chat reports", "ing-rep"),
+    ("Discord report", "Discord issues/report a member", "dis-rep"),
+    ("Role related", "Applications/promotion about roles", "rol"),
+    ("Other", "Other inquiries or problems", "other")
 ]
+
+class GoToTicketButton(discord.ui.View):
+    def __init__(self, channel: discord.TextChannel):
+        super().__init__(timeout=60)
+        self.add_item(discord.ui.Button(
+            label="Go to your ticket",
+            url=channel.jump_url,
+            style=discord.ButtonStyle.link
+        ))
 
 # ---------------------------------- title and description (modal)
 class TicketModal(discord.ui.Modal):
@@ -80,7 +90,7 @@ class TicketModal(discord.ui.Modal):
         embed.set_footer(text=f"Ticket type ・ {self.ticket_type_label}")
 
         await ticket_channel.send(content=f"Opened by {author.mention}", embed=embed)
-        await interaction.response.send_message(f"✅ Your ticket has been created: {ticket_channel.mention}", ephemeral=True)
+        await interaction.response.send_message(f"{DefaultEmojis.CHECK} Your ticket has been created: {ticket_channel.mention}", view=GoToTicketButton(ticket_channel), ephemeral=True)
 
     async def _get_tickets_category(self, guild: discord.Guild):
         category = discord.utils.get(guild.categories, name=TICKETS_CATEGORY_NAME)
@@ -142,7 +152,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
             await discord.utils.sleep_until(discord.utils.utcnow() + timedelta(seconds=SECONDS_BEFORE_TICKET_CLOSING))
             await ctx.channel.delete()
         else:
-            await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.ERROR} This command isn't available here. Try again in a ticket!")
+            await send_hidden_message(ctx=ctx, text=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} This command isn't available here. Try again in a ticket!")
     
     # ---------------------------------- admin command
     @commands.hybrid_command(name="setup_ticket", description="Post the unique ticket creation message (admin only)")

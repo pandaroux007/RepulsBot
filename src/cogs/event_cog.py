@@ -3,9 +3,7 @@ from discord.ext import commands
 # bot file
 from constants import (
     CogsNames,
-    DefaultEmojis,
-    ServerChannelIDs,
-    CustomEmojisIDs,
+    IDs,
     ASK_HELP
 )
 
@@ -18,7 +16,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
-        elif message.channel.id == ServerChannelIDs.RULES:
+        elif message.channel.id == IDs.serverChannel.RULES:
             await message.channel.send(message.content)
             await message.delete()
     
@@ -34,7 +32,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             return # do nothing
 
         embed = discord.Embed(
-            title=f"{DefaultEmojis.ERROR} Check failure!",
+            title=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} Check failure!",
             color=discord.Color.brand_red(),
             description=f"{message}{ASK_HELP}"
         )
@@ -46,9 +44,9 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         synced = await self.bot.tree.sync()
         print(f"{len(synced)} command(s) have been synchronized")
         
-        status_channel = self.bot.get_channel(ServerChannelIDs.STATUS)
+        status_channel = self.bot.get_channel(IDs.serverChannel.STATUS)
         if status_channel is not None:
-            await status_channel.send(f"{self.bot.user.mention} is now **online**! {await self.bot.fetch_application_emoji(CustomEmojisIDs.CONNECTE_EMOJI)}")
+            await status_channel.send(f"{self.bot.user.mention} is now **online**! {await self.bot.fetch_application_emoji(IDs.customEmojis.CONNECTE)}")
         
         game = discord.Game("🎮️ repuls.io browser game! 🕹️")
         await self.bot.change_presence(activity=game)

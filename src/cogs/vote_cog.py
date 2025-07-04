@@ -7,16 +7,19 @@ import aiohttp
 from utils import send_hidden_message
 from constants import (
     CogsNames,
-    ServerChannelIDs,
     DefaultEmojis,
-    CustomEmojisIDs,
-    ServerRoleIDs,
     Links,
+    PrivateData,
+    IDs,
     FEATURED_VIDEO_MSG,
-    YOUTUBE_REGEX,
-    ASK_HELP,
-    API_TOKEN,
-    API_ENDPOINT_URL
+    ASK_HELP
+)
+
+# regex for youtube links
+# https://stackoverflow.com/questions/19377262/regex-for-youtube-url
+YOUTUBE_REGEX = re.compile(
+    r'((?:https?:)?\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtu\.be)\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?[\w\-]+(?:\S+)?)',
+    re.IGNORECASE
 )
 
 VOTE_HOURS = 48
@@ -33,12 +36,12 @@ class YouTubeLink(commands.Converter):
 async def send_video_to_endpoint(video_url: str):
     payload = {"video_url": video_url}
     headers = {
-        "Authorization": f"Bearer {API_TOKEN}",
+        "Authorization": f"Bearer {PrivateData.API_TOKEN}",
         "Content-Type": "application/json"
     }
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(API_ENDPOINT_URL, json=payload, headers=headers) as resp:
+        async with session.post(PrivateData.API_ENDPOINT_URL, json=payload, headers=headers) as resp:
             return resp.status
 
 # ---------------------------------- vote cog (see README.md)
@@ -60,7 +63,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await self.bot.wait_until_ready()
 
     async def check_better_video(self):
-        self.video_channel = self.bot.get_channel(ServerChannelIDs.VIDEO)
+        self.video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
         if not self.video_channel:
             return
 
@@ -72,7 +75,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue
             for reaction in message.reactions:
-                if str(reaction.emoji) == DefaultEmojis.VALIDATION_UNICODE:
+                if str(reaction.emoji) == DefaultEmojis.CHECK:
                     count = reaction.count
                     
                     if count > last_better_votes:
@@ -95,28 +98,28 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             match = re.search(YOUTUBE_REGEX, msg.content)
             code = await send_video_to_endpoint(video_url=match.group(0))
             if code == SUCCESS_CODE:
-                embed.add_field(name="Website state", value=f"{await self.bot.fetch_application_emoji(CustomEmojisIDs.CONNECTE_EMOJI)} Video sent to [repuls.io]({Links.REPULS_GAME})!")
+                embed.add_field(name="Website state", value=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.CONNECTE)} Video sent to [repuls.io]({Links.REPULS_GAME})!")
             else:
                 embed.add_field(name="Website state", value=f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)!")
 
             await self.video_channel.send(embed=embed)
         else:
-            await self.video_channel.send(f"I couldn't find any videos to display on the game's homepage 🫤...\n**<@&{ServerRoleIDs.YOUTUBER}>, it's your turns!** 💪")
+            await self.video_channel.send(f"I couldn't find any videos to display on the game's homepage 🫤...\n**<@&{IDs.serverRoles.YOUTUBER}>, it's your turns!** 💪")
     
     # ---------------------------------- commands
     @commands.hybrid_command(name="addvideo", description="Post a new YouTube video (request for special roles)")
-    @commands.has_any_role(ServerRoleIDs.YOUTUBER, ServerRoleIDs.STREAMER, ServerRoleIDs.ADMIN, ServerRoleIDs.DEVELOPER)
+    @commands.has_any_role(IDs.serverRoles.YOUTUBER, IDs.serverRoles.STREAMER, IDs.serverRoles.ADMIN, IDs.serverRoles.DEVELOPER)
     async def addvideo(self, ctx: commands.Context, youtube_url: YouTubeLink):
         if ctx.interaction:
             await ctx.interaction.response.defer(ephemeral=True)
 
-        video_channel = self.bot.get_channel(ServerChannelIDs.VIDEO)
+        video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
         if video_channel is not None:
             # the link is already verified as a correct youtube link
             await video_channel.send(f"### 📢 New YouTube video! 🎉\n{youtube_url}\n(*Posted by {ctx.author.mention}!*)")
             await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.CHECK} video posted in {video_channel.mention}!")
         else:
-            await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.ERROR} Unable to find video channel (whose ID is supposed to be {ServerChannelIDs.VIDEO})!{ASK_HELP}")
+            await send_hidden_message(ctx=ctx, text=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} Unable to find video channel (whose ID is supposed to be {IDs.serverChannel.VIDEO})!{ASK_HELP}")
         
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoteCog(bot))

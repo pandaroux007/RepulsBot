@@ -96,17 +96,7 @@ REPULS_DESCRIPTION = f"""
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
 Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
 """
-FEATURED_VIDEO_MSG = """
-*(And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,
-and cross your fingers that the community votes for your message with the reaction {reaction} just below!*
-***I come and check the best video every {time} hours, you have every chance!***)
-"""
 REPULS_WIKI_DESCRIPTION = """
 Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are?\n
 Then you'll find everything you need on the official Wiki!
-"""
-OPEN_TICKET_MSG = """
-Need help? Simply click on the type of ticket you want to open **in the selector below**, fill up the information needed and **send** (send your images and video after creating the ticket).\n
-It will create a private channel between you and **the moderation team**. This way, you can make a report, request a role, or anything else.
-**Only create a ticket if absolutely necessary. Check if the answer to your question is not in the two server FAQs! To report a game bug, you can use the channel https://discord.com/channels/603655329120518223/1076163933213311067 !**
 """

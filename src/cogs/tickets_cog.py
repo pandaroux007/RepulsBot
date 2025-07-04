@@ -1,4 +1,5 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
 from datetime import timedelta
 import random
@@ -8,8 +9,7 @@ from utils import send_hidden_message
 from constants import (
     CogsNames,
     IDs,
-    DefaultEmojis,
-    OPEN_TICKET_MSG,
+    DefaultEmojis
 )
 
 SECONDS_BEFORE_TICKET_CLOSING = 3
@@ -28,6 +28,13 @@ TICKET_TYPES = [
     ("Role related", "Applications/promotion about roles", "rol"),
     ("Other", "Other inquiries or problems", "other")
 ]
+
+OPEN_TICKET_TITLE = "🎟️ Need help ? Open a Ticket"
+OPEN_TICKET_MSG = """
+Simply click on the type of ticket you want to open **in the selector below**, fill up the information needed and send (send your images and video after creating the ticket).\n
+It will create a private channel between you and **the moderation team**. This way, you can make a report, request a role, or anything else.\n
+**Only create a ticket if absolutely necessary!** If you need urgent assistance, please ping or send a DM to an administrator. Before creating a ticket, check if the answer to your question is not in the FAQs of both servers (e.g., the requirements for roles are indicated there)! To report a game bug, you can use the channel https://discord.com/channels/603655329120518223/1076163933213311067!
+"""
 
 class GoToTicketButton(discord.ui.View):
     def __init__(self, channel: discord.TextChannel):
@@ -135,15 +142,15 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="open_ticket", description="Opens the menu to create a ticket")
-    async def open_ticket(self, ctx: commands.Context):
+    @app_commands.command(name="open_ticket", description="Opens the menu to create a ticket")
+    async def open_ticket(self, interaction: discord.Interaction):
         embed = discord.Embed(
-            title="🎟️ Open a Ticket",
+            title=OPEN_TICKET_TITLE,
             description=OPEN_TICKET_MSG,
             color=discord.Color.dark_blue()
         )
         view = TicketTypeView()
-        await ctx.send(embed=embed, view=view, ephemeral=True)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @commands.hybrid_command(name="close_ticket", description="Close current ticket (only available in a ticket)")
     async def close_ticket(self, ctx: commands.Context):
@@ -159,7 +166,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
     @commands.has_permissions(administrator=True)
     async def setup_ticket(self, ctx: commands.Context):
         embed = discord.Embed(
-            title="🎟️ Open a Ticket",
+            title=OPEN_TICKET_TITLE,
             description=OPEN_TICKET_MSG,
             color=discord.Color.dark_blue()
         )

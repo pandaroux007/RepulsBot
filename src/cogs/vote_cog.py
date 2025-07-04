@@ -11,7 +11,6 @@ from constants import (
     Links,
     PrivateData,
     IDs,
-    FEATURED_VIDEO_MSG,
     ASK_HELP
 )
 
@@ -24,6 +23,12 @@ YOUTUBE_REGEX = re.compile(
 
 VOTE_HOURS = 48
 SUCCESS_CODE = 200
+
+FEATURED_VIDEO_MSG = """
+(And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,
+and cross your fingers that the community votes for your message with the reaction {reaction} just below!
+***I come and check the best video every {time} hours, you have every chance!***)
+"""
 
 class YouTubeLink(commands.Converter):
     async def convert(self, ctx: commands.Context, argument):

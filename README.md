@@ -24,6 +24,7 @@ Tired of the same run, aim, shoot gameplay that every shooter does??! Played one
 - *BratzelBrezel*
 - *Abyss 🇺🇦*
 - *eagoose*
+- *sergiolan55*
 ### Other contributors
 - No one here yet 😉... But it won't be long!
 ___

@@ -40,9 +40,12 @@ async def send_video_to_endpoint(video_url: str):
         "Content-Type": "application/json"
     }
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(PrivateData.API_ENDPOINT_URL, json=payload, headers=headers) as resp:
-            return resp.status
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(PrivateData.API_ENDPOINT_URL, json=payload, headers=headers) as resp:
+                return resp.status
+    except Exception:
+        return "unknown"
 
 # ---------------------------------- vote cog (see README.md)
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
@@ -73,17 +76,19 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
 
         async for message in self.video_channel.history(limit=50, after=limit_time):
             if not re.search(YOUTUBE_REGEX, message.content):
-                continue
-            for reaction in message.reactions:
+                continue # pass all messages without youtube links
+            
+            # update message cache (https://github.com/Rapptz/discord.py/issues/861)
+            msg = await self.video_channel.fetch_message(message.id)
+            for reaction in msg.reactions:
                 if str(reaction.emoji) == DefaultEmojis.CHECK:
-                    count = reaction.count
-                    
-                    if count > last_better_votes:
-                        last_better_votes = count
-                        better_video_msg = message
+                    vote = reaction.count
+                    if vote > last_better_votes:
+                        last_better_votes = vote
+                        better_video_msg = msg
                     break
 
-            await self.process_winner(msg=better_video_msg, vote_count=last_better_votes)
+        await self.process_winner(msg=better_video_msg, vote_count=last_better_votes)
 
     async def process_winner(self, msg: discord.Message, vote_count: int):
         if msg and vote_count > 0:
@@ -104,7 +109,9 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
 
             await self.video_channel.send(embed=embed)
         else:
-            await self.video_channel.send(f"I couldn't find any videos to display on the game's homepage 🫤...\n**<@&{IDs.serverRoles.YOUTUBER}>, it's your turns!** 💪")
+            await self.video_channel.send(f"""
+I couldn't find any videos to display on the game's homepage 🫤...\n
+**Become a <@&{IDs.serverRoles.YOUTUBER}> by respecting [the following conditions](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos!** 🚀""")
     
     # ---------------------------------- commands
     @commands.hybrid_command(name="addvideo", description="Post a new YouTube video (request for special roles)")

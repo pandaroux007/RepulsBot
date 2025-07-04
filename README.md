@@ -24,9 +24,8 @@ Tired of the same run, aim, shoot gameplay that every shooter does??! Played one
 - *BratzelBrezel*
 - *Abyss 🇺🇦*
 - *eagoose*
-- *sergiolan55*
 ### Other contributors
-- No one here yet 😉... But it won't be long!
+- *sergiolan55*
 ___
 # ⚙️ Development
 To run the project, install the `uv` tool (a more secure and faster equivalent to `pip`), and run `uv run "src/main.py"`.

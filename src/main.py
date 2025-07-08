@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
 # bot file
+from cogs.cogs_info import COGS_LIST
 from constants import (
     PrivateData,
-    COGS_LIST,
     CMD_PREFIX
 )
 

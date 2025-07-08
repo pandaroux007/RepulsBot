@@ -3,8 +3,8 @@ from discord import app_commands
 from discord.ext import commands
 # bot files
 from utils import check_admin_or_roles
+from cogs.cogs_info import CogsNames
 from constants import (
-    CogsNames,
     BotInfo,
     DefaultEmojis,
     CMD_PREFIX,

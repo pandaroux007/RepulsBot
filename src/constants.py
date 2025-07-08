@@ -8,64 +8,47 @@ CMD_PREFIX = '!'
 _current_dir = os.path.dirname(os.path.abspath(os.path.realpath(sys.argv[0])))
 load_dotenv(os.path.join(_current_dir, ".env"))
 
+ENV = os.getenv("ENV", "prod")
+
 class PrivateData:
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
     API_ENDPOINT_URL = os.getenv("API_ENDPOINT_URL")
     API_TOKEN = os.getenv("API_TOKEN")
 
-# https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html
-# ------------------------------------- cogs
-class CogsNames:
-    EVENT = "event_cog"
-    VOTE = "vote_cog"
-    SERVER = "server_cog"
-    ABOUT = "about_cog"
-    TICKETS = "tickets_cog"
+# ------------------------------------- IDs -------------------------------------
+#         official bot and server IDs       |          dev bot and server IDs   |
+# -------------------------------------------------------------------------------
+class ServerChannelID:
+    RULES = 1389989335318794420              if ENV == "dev" else 758364818348048444
+    STATUS = 1370716216863227924             if ENV == "dev" else 849711794032214087
+    VIDEO = 1370706473155563581              if ENV == "dev" else 800108276004028446
 
-COGS_LIST = [
-    CogsNames.EVENT,
-    CogsNames.SERVER,
-    CogsNames.ABOUT,
-    CogsNames.VOTE,
-    CogsNames.TICKETS
-]
+class ServerRoleID: # "<@&role_id>"
+    YOUTUBER = 1381223948854759494           if ENV == "dev" else 781295509331116054
+    STREAMER = 1381223990349004850           if ENV == "dev" else 781295771894153266
+    ADMIN = 1376617317382754456              if ENV == "dev" else 800091356974022677
+    TRUSTED = 1381224331685920930            if ENV == "dev" else 910540568164188252
+    DEVELOPER = 1381224153478336553          if ENV == "dev" else 682090620726411304
+    CONDUCTOR = 1388550692213362879          if ENV == "dev" else 1317870046726324284
+    SWATTEAM = 1388550925353877685           if ENV == "dev" else 862318347542724679
+    CONTRIBUTOR = 1388551885476204655        if ENV == "dev" else 850775875821109298
+    ESPORTS_ORGANIZER = 1388880454479904808  if ENV == "dev" else 1371212276421496925
 
-# ------------------------------------- IDs
-class ServerChannelIDs:
-    RULES = 1389989335318794420  # 758364818348048444
-    STATUS = 1370716216863227924 # 849711794032214087 (info channel)
-    VIDEO = 1370706473155563581  # 800108276004028446
+class CustomEmojiID: # "<:emiji_name:emoji_id>"
+    CONNECTE = 1392147094281916436           if ENV == "dev" else 1376214233041080410
+    DECONNECTE = 1392147110979305665         if ENV == "dev" else 1376214242424000583
 
-class ServerRoleIDs: # "<@&role_id>"
-    YOUTUBER = 1381223948854759494          # 781295509331116054
-    STREAMER = 1381223990349004850          # 781295771894153266
-    ADMIN = 1376617317382754456             # 800091356974022677
-    TRUSTED = 1381224331685920930           # 910540568164188252
-    DEVELOPER = 1381224153478336553         # 682090620726411304
-    CONDUCTOR = 1388550692213362879         # 1317870046726324284
-    SWATTEAM = 1388550925353877685          # 862318347542724679
-    CONTRIBUTOR = 1388551885476204655       # 850775875821109298
-    ESPORTS_ORGANIZER = 1388880454479904808 # 1371212276421496925
-
-class CustomEmojisIDs: # "<:emiji_name:emoji_id>"
-    CONNECTE = 1376214233041080410
-    DECONNECTE = 1376214242424000583
-    LOADER = 1376135761757470791
-    RC = 1376135351353086002
-    RANK = 1376135312669151232
-    ESPORTS = 1376135172034007102
-    RWNC = 1376135129960939575
-    REPULS = 1376134874595065906
-
-class RepulsTeamMembersIDs: # "<@member_id>"
+# these IDs do not change
+class RepulsTeamMemberID: # "<@member_id>"
     GRAPHIC_DESIGNER = 896507294983020574 # caracal
     MAIN_DEVELOPER = 213028561584521216 # docski
 
+# class grouping the different IDs
 class IDs:
-    serverChannel = ServerChannelIDs
-    serverRoles = ServerRoleIDs
-    customEmojis = CustomEmojisIDs
-    repulsTeam = RepulsTeamMembersIDs
+    serverChannel = ServerChannelID
+    serverRoles = ServerRoleID
+    customEmojis = CustomEmojiID
+    repulsTeam = RepulsTeamMemberID
 
 # ------------------------------------- texts and links
 class DefaultEmojis:
@@ -74,7 +57,7 @@ class DefaultEmojis:
 
 class BotInfo():
     NAME = "RepulsBot"
-    VERSION = "0.1.9"
+    VERSION = "1.0.1"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     DESCRIPTION = """
     Hey there! :waving_hand:

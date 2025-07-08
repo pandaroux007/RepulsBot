@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 # bot file
+from cogs.cogs_info import CogsNames
 from constants import (
-    CogsNames,
     IDs,
     ASK_HELP
 )

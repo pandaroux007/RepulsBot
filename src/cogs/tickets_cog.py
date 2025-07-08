@@ -6,8 +6,8 @@ import random
 import string
 # bot files
 from utils import send_hidden_message
+from cogs.cogs_info import CogsNames
 from constants import (
-    CogsNames,
     IDs,
     DefaultEmojis
 )

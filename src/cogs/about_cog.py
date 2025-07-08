@@ -2,8 +2,8 @@ import discord
 from discord.ext import commands
 import platform
 # bot file
+from cogs.cogs_info import CogsNames
 from constants import (
-    CogsNames,
     BotInfo,
     Links,
     FOOTER_EMBED,

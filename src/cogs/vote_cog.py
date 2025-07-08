@@ -5,8 +5,8 @@ import re
 import aiohttp
 # bot files
 from utils import send_hidden_message
+from cogs.cogs_info import CogsNames
 from constants import (
-    CogsNames,
     DefaultEmojis,
     Links,
     PrivateData,
@@ -115,7 +115,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             await self.video_channel.send(embed=embed)
         else:
             await self.video_channel.send(f"""
-I couldn't find any videos to display on the game's homepage 🫤...\n
+I couldn't find any videos to display on the game's homepage 🫤...
 **Become a <@&{IDs.serverRoles.YOUTUBER}> by respecting [the following conditions](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos!** 🚀""")
     
     # ---------------------------------- commands

@@ -26,6 +26,7 @@ TICKET_TYPES = [
     ("In-game report", "Hackers and chat reports", "ing-rep"),
     ("Discord report", "Discord issues/report a member", "dis-rep"),
     ("Role related", "Applications/promotion about roles", "rol"),
+    ("Admin report", "Report an admin's behavior", "admin"),
     ("Other", "Other inquiries or problems", "other")
 ]
 
@@ -50,6 +51,7 @@ class TicketModal(discord.ui.Modal):
     def __init__(self, ticket_type_label: str):
         super().__init__(title=f"New ticket: {ticket_type_label}")
         self.ticket_type_label = ticket_type_label
+        self.ticket_type_abbr = next((abbr for label, _, abbr in TICKET_TYPES if label == self.ticket_type_label), "other")
         self.title_input = discord.ui.TextInput(
             label="Ticket title",
             max_length=100,
@@ -69,15 +71,23 @@ class TicketModal(discord.ui.Modal):
         guild = interaction.guild
         author = interaction.user
 
+        # visible only to the server owner and author
+        if self.ticket_type_abbr == "admin":
+            overwrites = {
+                guild.default_role: discord.PermissionOverwrite(view_channel=False),
+                author: PERMS_ACCESS_GRANTED,
+                guild.get_member(guild.owner_id): PERMS_ACCESS_GRANTED
+            }
         # permissions to the ticket author and authorized members to view the private channel
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            author: PERMS_ACCESS_GRANTED,
-        }
-        for role_id in AUTHORIZED_MEMBERS:
-            role = guild.get_role(role_id)
-            if role:
-                overwrites[role] = PERMS_ACCESS_GRANTED
+        else:
+            overwrites = {
+                guild.default_role: discord.PermissionOverwrite(view_channel=False),
+                author: PERMS_ACCESS_GRANTED,
+            }
+            for role_id in AUTHORIZED_MEMBERS:
+                role = guild.get_role(role_id)
+                if role:
+                    overwrites[role] = PERMS_ACCESS_GRANTED
 
         # creation of the private channel
         category = await self._get_tickets_category(guild=guild)

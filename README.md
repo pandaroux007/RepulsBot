@@ -60,11 +60,10 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] used Ruff linter on the project
 - [x] message management in the rules room
 - [x] Added ticket system
+- [x] report an admin in tickets (visible only to the server owner)
 ___
 ### 🕑️ Objectives in progress:
-- [ ] permanent online posting of the bot
 - [ ] leaderboard command of votes for videos
-- [ ] report a moderator in tickets (visible only to the server owner)
 - [ ] commande msgcount
 
 ### ⛔️ Abandoned objectives (for now):

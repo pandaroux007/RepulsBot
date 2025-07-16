@@ -27,6 +27,7 @@ Tired of the same run, aim, shoot gameplay that every shooter does??! Played one
 - *eagoose*
 ### Other contributors
 - *sergiolan55*
+- *aman_and_cats*
 ___
 # ⚙️ Development
 To run the project, install the `uv` tool (a more secure and faster equivalent to `pip`), and run `uv run "src/main.py"`.
@@ -60,8 +61,11 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] message management in the rules room
 - [x] Added ticket system
 ___
-### 🔥 Objectives to be achieved:
+### 🕑️ Objectives in progress:
 - [ ] permanent online posting of the bot
+- [ ] leaderboard command of votes for videos
+- [ ] report a moderator in tickets (visible only to the server owner)
+- [ ] commande msgcount
 
 ### ⛔️ Abandoned objectives (for now):
 - [ ] clear command (clean command but with messages' links)

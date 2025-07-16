@@ -34,9 +34,9 @@ class ServerFAQ(FAQBase):
             "question": "How to get a role ?",
             "answer": f"""
 - To become a <@&{IDs.serverRoles.YOUTUBER}> or a <@&{IDs.serverRoles.STREAMER}>, please read this message https://discord.com/channels/603655329120518223/800107070614405120/1389262601740877925 and follow the instructions.
-- To become a <@&{IDs.serverRoles.CONTRIBUTOR}>, you must donate to the game in some way.
-- To become a <@&{IDs.serverRoles.TRUSTED}> member, you must send at least 500 messages and be active.
-- *Staff no longer offers the <@&{IDs.serverRoles.ADMIN}>, <@&{IDs.serverRoles.SWATTEAM}>, or <@&{IDs.serverRoles.CONDUCTOR}> roles.*"""
+- To become a <@&{IDs.serverRoles.CLAN_LEADER}>, simply have a clan of at least 10 members (they can play as guests and without discord). See https://discord.com/channels/603655329120518223/1377679009181335572 for details.
+- To become a <@&{IDs.serverRoles.CONTRIBUTOR}>, you must donate to the game in some way. Please contact docski in DM for this, the admins will not grant this role.
+- *Staff no longer offers the <@&{IDs.serverRoles.ADMIN}>, <@&{IDs.serverRoles.SWATTEAM}>, <@&{IDs.serverRoles.TRUSTED}> or <@&{IDs.serverRoles.CONDUCTOR}> roles.*"""
         },
         {
             "question": "Need help ? Ask here.",

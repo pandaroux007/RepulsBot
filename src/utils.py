@@ -1,8 +1,9 @@
+import discord
 from discord.ext import commands
+from datetime import datetime, timedelta
 # bot file
 from constants import IDs
 
-# ---------------------------------- check decorator and hidden message function
 def check_admin_or_roles():
     async def predicate(ctx: commands.Context):
         has_admin = ctx.author.guild_permissions.administrator
@@ -16,3 +17,6 @@ async def send_hidden_message(ctx: commands.Context, text: str):
         await ctx.interaction.followup.send(text, ephemeral=True)
     else:
         await ctx.send(text, delete_after=10.0)
+
+def hoursdelta(hours) -> datetime:
+    return discord.utils.utcnow() - timedelta(hours=hours)

@@ -1,17 +1,22 @@
 import discord
 from discord.ext import tasks, commands
-from datetime import timedelta
 import re
 import aiohttp
 # bot files
-from utils import send_hidden_message
+from utils import (
+    send_hidden_message,
+    hoursdelta
+)
+
 from cogs.cogs_info import CogsNames
 from constants import (
     DefaultEmojis,
     Links,
     PrivateData,
     IDs,
-    ASK_HELP
+    ASK_HELP,
+    ENV,
+    ENV_DEV_MODE
 )
 
 # regex for youtube links
@@ -21,7 +26,7 @@ YOUTUBE_REGEX = re.compile(
     re.IGNORECASE
 )
 
-VOTE_HOURS = 48
+VOTE_HOURS = 168 # hours (so one week)
 SUCCESS_CODE = 200
 
 FEATURED_VIDEO_MSG = """
@@ -71,20 +76,19 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await self.bot.wait_until_ready()
 
     async def check_better_video(self):
-        self.video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
-        if not self.video_channel:
+        video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
+        if not video_channel:
             return
 
-        limit_time = discord.utils.utcnow() - timedelta(hours=VOTE_HOURS)
         better_video_msg = None
         last_better_votes = 0
 
-        async for message in self.video_channel.history(limit=50, after=limit_time):
+        async for message in video_channel.history(limit=50, after=hoursdelta(VOTE_HOURS)):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue # pass all messages without youtube links
             
             # update message cache (https://github.com/Rapptz/discord.py/issues/861)
-            msg = await self.video_channel.fetch_message(message.id)
+            msg = await video_channel.fetch_message(message.id)
             for reaction in msg.reactions:
                 if str(reaction.emoji) == DefaultEmojis.CHECK:
                     vote = reaction.count
@@ -93,9 +97,9 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                         better_video_msg = msg
                     break
 
-        await self.process_winner(msg=better_video_msg, vote_count=last_better_votes)
+        await self.process_winner(video_channel=video_channel, msg=better_video_msg, vote_count=last_better_votes)
 
-    async def process_winner(self, msg: discord.Message, vote_count: int):
+    async def process_winner(self, video_channel: discord.TextChannel, msg: discord.Message, vote_count: int):
         if msg and vote_count > 0:
             embed = discord.Embed(
                 title="New featured video! 🎉",
@@ -112,9 +116,9 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             else:
                 embed.add_field(name="Website state", value=f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)!")
 
-            await self.video_channel.send(embed=embed)
+            await video_channel.send(embed=embed)
         else:
-            await self.video_channel.send(f"""
+            await video_channel.send(f"""
 I couldn't find any videos to display on the game's homepage 🫤...
 **Become a <@&{IDs.serverRoles.YOUTUBER}> by respecting [the following conditions](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos!** 🚀""")
     
@@ -131,7 +135,68 @@ I couldn't find any videos to display on the game's homepage 🫤...
             await video_channel.send(f"### 📢 New YouTube video! 🎉\n{youtube_url}\n(*Posted by {ctx.author.mention}!*)")
             await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.CHECK} video posted in {video_channel.mention}!")
         else:
-            await send_hidden_message(ctx=ctx, text=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} Unable to find video channel (whose ID is supposed to be {IDs.serverChannel.VIDEO})!{ASK_HELP}")
+            self._video_channel_not_found(ctx=ctx)
+
+    @commands.hybrid_command(name="video_leaderboard", description="Show the most voted YouTube videos")
+    async def video_leaderboard(self, ctx: commands.Context, hours: int = VOTE_HOURS, message_limit: int = 50, top: int = 6):
+        video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
+        if not video_channel:
+            self._video_channel_not_found(ctx=ctx)
+            return
+
+        video_votes = []
+        embed = discord.Embed(
+            title="👏 YouTube Video Leaderboard",
+            description=f"(within the last {hours}h, with a limit of {message_limit} message{"s" if message_limit > 1 else ""})",
+            color=discord.Color.gold(),
+            timestamp=discord.utils.utcnow()
+        )
+        embed.set_footer(text=f"Top {top} most voted YouTube videos")
+
+        async for message in video_channel.history(limit=message_limit, after=hoursdelta(hours)):
+            if not re.search(YOUTUBE_REGEX, message.content):
+                continue
+
+            msg = await video_channel.fetch_message(message.id)
+            for reaction in msg.reactions:
+                if str(reaction.emoji) == DefaultEmojis.CHECK:
+                    if ENV == ENV_DEV_MODE:
+                        video_votes.append((reaction.count, msg))
+                    elif reaction.count > 1: # prod mode
+                        video_votes.append((reaction.count, msg))
+                    break
+
+        if not video_votes:
+            embed.add_field(
+                name="Sorry, no voted videos found in the given timeframe...",
+                value="Try broadening my search scope?",
+                inline=False
+            )
+            await ctx.send(embed=embed)
+            return
+
+        video_votes.sort(key=lambda x: x[0], reverse=True)
+        top_videos = video_votes[:top]
+
+        for idx, (votes, msg) in enumerate(top_videos, start=1):
+            if idx == 1:
+                header = "🥇"
+            elif idx == 2:
+                header = "🥈"
+            elif idx == 3:
+                header = "🥉"
+            else:
+                header = f"#{str(idx)}"
+            embed.add_field(
+                name=f"{header} - {votes} votes",
+                value=f"[Watch video]({msg.jump_url}) here!" ,
+                inline=False
+            )
+
+        await ctx.send(embed=embed)
+
+    async def _video_channel_not_found(self, ctx: commands.Context):
+        await send_hidden_message(ctx=ctx, text=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} Unable to find video channel (whose ID is supposed to be {IDs.serverChannel.VIDEO})!{ASK_HELP}")
         
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoteCog(bot))

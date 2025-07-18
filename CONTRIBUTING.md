@@ -33,7 +33,7 @@ uv pip install -r pyproject.toml
     API_ENDPOINT_URL=your_endpoint_addr
     API_TOKEN=none_for_dev
     ```
-    - Change the IDs in `src/constants.py` for your test server, or join the official [test server](https://discord.gg/mkeUKZA2Am).
+    - Change the IDs in `src/constants.py` for your test server, or join the official [test server](https://discord.gg/mkeUKZA2Am) and add a line `ENV=dev` in `.env` if you want to use dev IDs and server.
 4. Develop new features, fix bugs!
 5. Test the bot by launching it with:
 ```sh

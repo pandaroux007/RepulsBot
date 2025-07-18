@@ -14,7 +14,7 @@
 [Repuls.io](https://repuls.io/home) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!
 
-Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
+Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
 ## And what about RepulsBot
 - Authors : [pandaroux007](https://github.com/pandaroux007), [itsdocski](https://github.com/tahirG)
 - License : the bot and everything that composes it (icon, code, etc.) are under the MIT license (see [LICENSE.txt](LICENSE.txt) file) - for more information go [there](https://opensource.org/license/mit).
@@ -88,9 +88,10 @@ ___
   - on_message
   - on_command_error
   - on_ready
-- Vote cog (in [`src/cogs/vote_cog.py`](src/cogs/vote_cog.py)) : Contains all the elements relating to the management of votes for the best YouTube video every 48 hours;
+- Vote cog (in [`src/cogs/vote_cog.py`](src/cogs/vote_cog.py)) : Contains all the elements relating to the management of votes for the best YouTube video regularly;
+  - discord ([task](https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html))
   - addvideo (command)
-  - discord ([tasks](https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html))
+  - video_leaderboard (command)
 - Tickets cog (in [`src/cogs/tickets_cog.py`](src/cogs/tickets_cog.py)) : Contains the commands and management of messages, modals and selectors of the server moderation ticket system
   - open_ticket
   - close_ticket

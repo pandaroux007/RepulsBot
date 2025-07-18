@@ -61,14 +61,12 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] message management in the rules room
 - [x] Added ticket system
 - [x] report an admin in tickets (visible only to the server owner)
+- [x] leaderboard command of votes for videos
 ___
-### 🕑️ Objectives in progress:
-- [ ] leaderboard command of votes for videos
-- [ ] commande msgcount
-
 ### ⛔️ Abandoned objectives (for now):
 - [ ] clear command (clean command but with messages' links)
 - [ ] Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
+- [ ] commande msgcount (with member of channel)
 
 ## Discord.py cogs
 - About cog (in [`src/cogs/about_cog.py`](src/cogs/about_cog.py)) : This cog contains information commands about members and the server;

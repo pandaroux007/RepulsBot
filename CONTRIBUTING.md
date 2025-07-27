@@ -30,10 +30,11 @@ uv pip install -r pyproject.toml
     - Create a `.env` file in `src/` with:
     ```env
     DISCORD_TOKEN=your_bot_token
-    API_ENDPOINT_URL=your_endpoint_addr
-    API_TOKEN=none_for_dev
+    API_ENDPOINT_URL=http://localhost:3001/api/community/setyoutubefeature # set on the route created in Mockoon
+    API_TOKEN=useless_for_dev
+    ENV=dev # on prod by default (official server IDs), dev allows to use (your) development IDs
     ```
-    - Change the IDs in `src/constants.py` for your test server, or join the official [test server](https://discord.gg/mkeUKZA2Am) and add a line `ENV=dev` in `.env` if you want to use dev IDs and server.
+    - Change the IDs in `src/constants.py` for your test server and bot emojis
 4. Develop new features, fix bugs!
 5. Test the bot by launching it with:
 ```sh

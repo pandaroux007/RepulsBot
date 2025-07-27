@@ -76,12 +76,3 @@ class Links:
 
 ASK_HELP = "\n**Ask an administrator for help!**"
 FOOTER_EMBED = "repuls.io is developed with ♥️ by docski"
-REPULS_DESCRIPTION = f"""
-[Repuls.io]({Links.REPULS_GAME}) is the future of browser games.
-The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
-Tired of the same run, aim, shoot gameplay that every shooter does??! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech!! THATS the repuls experience son!
-"""
-REPULS_WIKI_DESCRIPTION = """
-Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are?\n
-Then you'll find everything you need on the official Wiki!
-"""

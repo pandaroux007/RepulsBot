@@ -22,7 +22,7 @@ AUTHORIZED_MEMBERS = [
 
 TICKETS_CATEGORY_NAME = "Tickets"
 TICKET_TYPES = [
-    #   name         |     description           |   abbreviation
+    #     label       |       description         |   abbreviation
     ("In-game report", "Hackers and chat reports", "ing-rep"),
     ("Discord report", "Discord issues/report a member", "dis-rep"),
     ("Role related", "Applications/promotion about roles", "rol"),
@@ -32,7 +32,7 @@ TICKET_TYPES = [
 
 OPEN_TICKET_TITLE = "🎟️ Need help ? Open a Ticket"
 OPEN_TICKET_MSG = """
-Simply click on the type of ticket you want to open **in the selector below**, fill up the information needed and send (send your images and video after creating the ticket).\n
+Simply click on the type of ticket you want to open **in the selector below**, and fill up the information needed (send your images and video after creating the ticket).\n
 It will create a private channel between you and **the moderation team**. This way, you can make a report, request a role, or anything else.\n
 **Only create a ticket if absolutely necessary!** If you need urgent assistance, please ping or send a DM to an administrator. Before creating a ticket, check if the answer to your question is not in the server FAQs (e.g., the requirements for roles are indicated there)! To report a game bug, you can use the channel https://discord.com/channels/603655329120518223/1076163933213311067!
 """
@@ -48,10 +48,10 @@ class GoToTicketButton(discord.ui.View):
 
 # ---------------------------------- title and description (modal)
 class TicketModal(discord.ui.Modal):
-    def __init__(self, ticket_type_label: str):
-        super().__init__(title=f"New ticket: {ticket_type_label}")
-        self.ticket_type_label = ticket_type_label
-        self.ticket_type_abbr = next((abbr for label, _, abbr in TICKET_TYPES if label == self.ticket_type_label), "other")
+    def __init__(self, ticket_type_abbr: str):
+        self.ticket_type_abbr = ticket_type_abbr
+        super().__init__(title=f"New ticket {self._get_ticket_label()}")
+        
         self.title_input = discord.ui.TextInput(
             label="Ticket title",
             max_length=100,
@@ -71,31 +71,14 @@ class TicketModal(discord.ui.Modal):
         guild = interaction.guild
         author = interaction.user
 
-        # visible only to the server owner and author
-        if self.ticket_type_abbr == "admin":
-            overwrites = {
-                guild.default_role: discord.PermissionOverwrite(view_channel=False),
-                author: PERMS_ACCESS_GRANTED,
-                guild.get_member(guild.owner_id): PERMS_ACCESS_GRANTED
-            }
-        # permissions to the ticket author and authorized members to view the private channel
-        else:
-            overwrites = {
-                guild.default_role: discord.PermissionOverwrite(view_channel=False),
-                author: PERMS_ACCESS_GRANTED,
-            }
-            for role_id in AUTHORIZED_MEMBERS:
-                role = guild.get_role(role_id)
-                if role:
-                    overwrites[role] = PERMS_ACCESS_GRANTED
-
         # creation of the private channel
-        category = await self._get_tickets_category(guild=guild)
-        channel_name = self._make_ticket_channel_name(ticket_type=self.ticket_type_label)
+        category = await self._get_tickets_category(guild)
+        channel_name = self._build_ticket_channel_name()
+        overwrites = self._build_ticket_overwrites(guild, author)
 
         ticket_channel = await guild.create_text_channel(
             channel_name, category=category, overwrites=overwrites,
-            topic=f"Ticket by {author} ・ **{self.ticket_type_label}** ・ {self.title_input.value}"
+            topic=f"Ticket by {author} ・ **{self._get_ticket_label()}** ・ {self.title_input.value}"
         )
 
         # first channel's message
@@ -104,11 +87,35 @@ class TicketModal(discord.ui.Modal):
             description=self.description_input.value,
             color=discord.Color.dark_blue()
         )
-        embed.set_footer(text=f"Ticket type ・ {self.ticket_type_label}")
+        embed.set_footer(text=f"Ticket type ・ {self._get_ticket_label()}")
 
         await ticket_channel.send(content=f"Opened by {author.mention}", embed=embed)
         await interaction.response.send_message(f"{DefaultEmojis.CHECK} Your ticket has been created: {ticket_channel.mention}", view=GoToTicketButton(ticket_channel), ephemeral=True)
 
+    def _build_ticket_overwrites(self, guild: discord.Guild, author: discord.Member) -> dict:
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            author: PERMS_ACCESS_GRANTED
+        }
+
+        # visible only to the server owner and author
+        if self.ticket_type_abbr == "admin":
+            owner = guild.get_member(guild.owner_id)
+            if owner:
+                overwrites[owner] = PERMS_ACCESS_GRANTED
+        # permissions to the ticket author and authorized members to view the private channel
+        else:
+            for role_id in AUTHORIZED_MEMBERS:
+                role = guild.get_role(role_id)
+                if role:
+                    overwrites[role] = PERMS_ACCESS_GRANTED
+        return overwrites
+    
+    # https://stackoverflow.com/questions/7591117/what-is-the-probability-of-collision-with-a-6-digit-random-alphanumeric-code
+    def _build_ticket_channel_name(self):
+        code = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
+        return f"{self.ticket_type_abbr.lower()}-{code}"
+    
     async def _get_tickets_category(self, guild: discord.Guild):
         category = discord.utils.get(guild.categories, name=TICKETS_CATEGORY_NAME)
         if category:
@@ -117,17 +124,14 @@ class TicketModal(discord.ui.Modal):
             overwrites = {guild.default_role: discord.PermissionOverwrite(view_channel=False)}
             return await guild.create_category(TICKETS_CATEGORY_NAME, overwrites=overwrites)
     
-    # https://stackoverflow.com/questions/7591117/what-is-the-probability-of-collision-with-a-6-digit-random-alphanumeric-code
-    def _make_ticket_channel_name(self, ticket_type: str):
-        abbr = next((abbr for label, _, abbr in TICKET_TYPES if label == ticket_type), "Other")
-        code = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
-        return f"{abbr.lower()}-{code}"
+    def _get_ticket_label(self) -> str:
+        return next((label for label, _, abbr in TICKET_TYPES if abbr == self.ticket_type_abbr), "Other")
 
 # ---------------------------------- ticket type selector
 class TicketTypeSelect(discord.ui.Select):
     def __init__(self):
         options = [
-            discord.SelectOption(label=label, value=label, description=desc)
+            discord.SelectOption(label=label, value=abbr, description=desc)
             for label, desc, abbr in TICKET_TYPES
         ]
         super().__init__(
@@ -139,8 +143,8 @@ class TicketTypeSelect(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
-        ticket_type_label = self.values[0]
-        await interaction.response.send_modal(TicketModal(ticket_type_label))
+        ticket_type_abbr = self.values[0]
+        await interaction.response.send_modal(TicketModal(ticket_type_abbr))
 
 class TicketTypeView(discord.ui.View):
     def __init__(self):
@@ -172,7 +176,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
             await send_hidden_message(ctx=ctx, text=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} This command isn't available here. Try again in a ticket!")
     
     # ---------------------------------- admin command
-    @commands.hybrid_command(name="setup_ticket", description="Post the unique ticket creation message (admin only)")
+    @commands.command(name="setup_ticket", description="Post the unique ticket creation message (admin only)")
     @commands.has_permissions(administrator=True)
     async def setup_ticket(self, ctx: commands.Context):
         embed = discord.Embed(

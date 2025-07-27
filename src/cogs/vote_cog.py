@@ -120,7 +120,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         else:
             await video_channel.send(f"""
 I couldn't find any videos to display on the game's homepage 🫤...
-**Become a <@&{IDs.serverRoles.YOUTUBER}> by respecting [the following conditions](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos!** 🚀""")
+**Become a <@&{IDs.serverRoles.YOUTUBER}> by meeting [the following requirements](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos!** 🚀""")
     
     # ---------------------------------- commands
     @commands.hybrid_command(name="addvideo", description="Post a new YouTube video (request for special roles)")

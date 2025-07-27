@@ -41,32 +41,49 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 
 ## 🚀 Development goals
 ### ✅ Objectives achieved:
-- [x] clean command
-- [x] ping command
-- [x] status message and activity
-- [x] command errors handling
-- [x] aboutserver and aboutgame command
-- [x] aboutmember and avatar command
-- [x] use `discord.py` cogs in the code before create the other commands
-- [x] help command
-- [x] vote for best video with reactions all 48h
-- [x] fix double send bug of addvideo command
-- [x] retrieving private information from a `.env` file
-- [x] membercount command
-- [x] send the best video to the main site via a secure endpoint
+- [x] Clean command
+- [x] Ping command
+- [x] Status message and activity
+- [x] Command errors handling
+- [x] Aboutserver and aboutgame command
+- [x] Aboutmember and avatar command
+- [x] Use `discord.py` cogs in the code before create the other commands
+- [x] Help command
+- [x] Vote for best video with reactions all 48h
+- [x] Fix double send bug of addvideo command
+- [x] Retrieving private information from a `.env` file
+- [x] Membercount command
+- [x] Send the best video to the main site via a secure endpoint
 - [x] FAQ command
 - [x] "Repuls wiki" command
 - [x] Updated FAQs with new questions
-- [x] used Ruff linter on the project
-- [x] message management in the rules room
+- [x] Used Ruff linter on the project
+- [x] Message management in the rules room
 - [x] Added ticket system
-- [x] report an admin in tickets (visible only to the server owner)
-- [x] leaderboard command of votes for videos
+- [x] Report an admin in tickets (visible only to the server owner)
+- [x] Leaderboard command of votes for videos
+- [x] Permanent online posting of the bot
 ___
-### ⛔️ Abandoned objectives (for now):
-- [ ] clear command (clean command but with messages' links)
-- [ ] Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
-- [ ] commande msgcount (with member of channel)
+### 🔥 Objectives to be achieved:
+- Improve the help command
+- Basic moderation commands
+- Displaying eSports results
+- Discord 1v1s ([details here](https://discord.com/channels/603655329120518223/686216026412941429/1370057672304492554))
+- Replace all bots on the server, including mute functions with timer, etc.
+- For authorized players, 3D asset manager of the game from discord
+- Show game leaderboard with pagination via discord
+- View repuls.io player information from discord (level, stats, RC count)
+- Manage your clan and friends via bot commands
+
+**Lots of other amazing features!**
+___
+<details>
+<summary>⛔️ Abandoned objectives (for now)</summary>
+
+> - clear command (clean command but with messages' links)
+> - Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
+
+</details>
 
 ## Discord.py cogs
 - About cog (in [`src/cogs/about_cog.py`](src/cogs/about_cog.py)) : This cog contains information commands about members and the server;

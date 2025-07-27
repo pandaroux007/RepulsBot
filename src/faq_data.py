@@ -23,12 +23,16 @@ class ServerFAQ(FAQBase):
     faq_id = "server_faq_select"
     faq_data = [
         {
+            "question": "Need help ? Ask here.",
+            "answer": f"Please try asking in https://discord.com/channels/603655329120518223/603655329124712560 or in https://discord.com/channels/603655329120518223/1179111829788688434 first. If you don't get a clear answer, you can also ask <@&{IDs.serverRoles.ADMIN}> members"
+        },
+        {
             "question": "How to report a bug ?",
             "answer": f"If this is a RepulsBot bug, then you can create an issue [on github]({bot.GITHUB}/issues) (just make sure it's actually a bug first). Otherwise, if the bug is coming from the game, then you can create a topic [in this channel](https://discord.com/channels/603655329120518223/1076163933213311067) or in [this one](https://discord.com/channels/603655329120518223/1349635397155684446) as part of the v2 of the netcode. Videos and screenshots are welcome."
         },
         {
             "question": "How to post a youtube video ?",
-            "answer": f"To post a YouTube video, you must have the <@&{IDs.serverRoles.YOUTUBER}> role. Then, either post your link directly or use the `!addvideo` command. A moderator will have to add the {DefaultEmojis.CHECK} reaction if your video is valid."
+            "answer": f"To post a YouTube video, you must have the <@&{IDs.serverRoles.YOUTUBER}> role. Then, simply post your video along with a simple description in the  channel. A moderator will have to add the {DefaultEmojis.CHECK} reaction if your video is valid."
         },
         {
             "question": "How to get a role ?",
@@ -37,10 +41,6 @@ class ServerFAQ(FAQBase):
 - To become a <@&{IDs.serverRoles.CLAN_LEADER}>, simply have a clan of at least 10 members (they can play as guests and without discord). See https://discord.com/channels/603655329120518223/1377679009181335572 for details.
 - To become a <@&{IDs.serverRoles.CONTRIBUTOR}>, you must donate to the game in some way. Please contact docski in DM for this, the admins will not grant this role.
 - *Staff no longer offers the <@&{IDs.serverRoles.ADMIN}>, <@&{IDs.serverRoles.SWATTEAM}>, <@&{IDs.serverRoles.TRUSTED}> or <@&{IDs.serverRoles.CONDUCTOR}> roles.*"""
-        },
-        {
-            "question": "Need help ? Ask here.",
-            "answer": f"Please try asking in https://discord.com/channels/603655329120518223/603655329124712560 or in https://discord.com/channels/603655329120518223/1179111829788688434 first. If you don't get a clear answer, you can also ask <@&{IDs.serverRoles.ADMIN}> members"
         },
         {
             "question": "I would like to report someone.",

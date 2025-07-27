@@ -7,9 +7,18 @@ from constants import (
     BotInfo,
     Links,
     FOOTER_EMBED,
-    REPULS_DESCRIPTION,
-    REPULS_WIKI_DESCRIPTION
 )
+
+REPULS_WIKI_DESCRIPTION = """
+Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are?\n
+Then you'll find everything you need on the official Wiki!
+"""
+
+REPULS_DESCRIPTION = f"""
+[Repuls.io]({Links.REPULS_GAME}) is the future of browser games.
+The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
+Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
+"""
 
 # ---------------------------------- about cog (see README.md)
 class AboutCog(commands.Cog, name=CogsNames.ABOUT):
@@ -93,23 +102,20 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
             color=discord.Color.dark_blue(),
         )
         if member.avatar is not None:
-            embed.add_field(name="Legal warning", value="*Please don't use other members' images without their permission*", inline=False)
             embed.set_image(url=member.avatar.url)
-            embed.set_footer(text=FOOTER_EMBED)
         else:
             embed.add_field(name="This user has no avatar", value="*nothing to display...*")
-            embed.set_footer(text=FOOTER_EMBED)
         
+        embed.set_footer(text=FOOTER_EMBED)
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(name="membercount", description="Get the server member count")
     async def membercount(self, ctx: commands.Context):
         embed = discord.Embed(
-            title="Members",
             color=discord.Color.dark_blue(),
             timestamp=discord.utils.utcnow()
         )
-        embed.add_field(name=None, value=ctx.guild.member_count)
+        embed.add_field(name="Members", value=ctx.guild.member_count)
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(name="wiki", description="Everything you need to know about the game")

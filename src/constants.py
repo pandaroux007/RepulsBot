@@ -20,6 +20,7 @@ class PrivateData:
 #         official bot and server IDs       |          dev bot and server IDs   |
 # -------------------------------------------------------------------------------
 class ServerChannelID:
+    LOG = 1399029942221799475                if ENV == ENV_DEV_MODE else 1399017426880041141
     RULES = 1389989335318794420              if ENV == ENV_DEV_MODE else 758364818348048444
     STATUS = 1370716216863227924             if ENV == ENV_DEV_MODE else 849711794032214087
     VIDEO = 1370706473155563581              if ENV == ENV_DEV_MODE else 800108276004028446
@@ -59,7 +60,7 @@ class DefaultEmojis:
 
 class BotInfo():
     NAME = "RepulsBot"
-    VERSION = "1.0.1"
+    VERSION = "1.1.2"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     DESCRIPTION = """
     Hey there! :waving_hand:

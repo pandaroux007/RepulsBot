@@ -21,21 +21,23 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             await message.delete()
     
     @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error):
+    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         message = f"*Unknown error:* {error}" # default
 
         if isinstance(error, commands.CheckFailure):
-            message = "*You do not have permission to use this command!*"
+            message = "You do not have permission to use this command!"
         elif isinstance(error, commands.MissingRequiredArgument):
-            message = f"*Missing argument!*{ASK_HELP}"
+            message = "Missing argument!"
         elif isinstance(error, commands.CommandNotFound):
             return # do nothing
+        else:
+            # log system
+            log_channel = self.bot.get_channel(IDs.serverChannel.LOG)
+            if log_channel is not None:
+                await log_channel.send(f"User {ctx.author.mention} tried to use the {ctx.command} command, but it failed with the error:\n`{error}`", silent=True)
 
-        embed = discord.Embed(
-            title=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} Check failure!",
-            color=discord.Color.brand_red(),
-            description=f"{message}{ASK_HELP}"
-        )
+        error_emoji = await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE) or "❌"
+        embed = discord.Embed(title=f"{error_emoji} Check failure!", description=f"*{message}*{ASK_HELP}", color=discord.Color.brand_red())
         await ctx.send(embed=embed)
 
     @commands.Cog.listener()

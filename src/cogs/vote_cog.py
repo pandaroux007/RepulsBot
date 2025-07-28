@@ -26,7 +26,7 @@ YOUTUBE_REGEX = re.compile(
     re.IGNORECASE
 )
 
-VOTE_HOURS = 168 # hours (so one week)
+VOTE_HOURS = 24
 SUCCESS_CODE = 200
 
 FEATURED_VIDEO_MSG = """
@@ -122,21 +122,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
 I couldn't find any videos to display on the game's homepage 🫤...
 **Become a <@&{IDs.serverRoles.YOUTUBER}> by meeting [the following requirements](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos!** 🚀""")
     
-    # ---------------------------------- commands
-    @commands.hybrid_command(name="addvideo", description="Post a new YouTube video (request for special roles)")
-    @commands.has_any_role(IDs.serverRoles.YOUTUBER, IDs.serverRoles.STREAMER, IDs.serverRoles.ADMIN, IDs.serverRoles.DEVELOPER)
-    async def addvideo(self, ctx: commands.Context, youtube_url: YouTubeLink):
-        if ctx.interaction:
-            await ctx.interaction.response.defer(ephemeral=True)
-
-        video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
-        if video_channel is not None:
-            # the link is already verified as a correct youtube link
-            await video_channel.send(f"### 📢 New YouTube video! 🎉\n{youtube_url}\n(*Posted by {ctx.author.mention}!*)")
-            await send_hidden_message(ctx=ctx, text=f"{DefaultEmojis.CHECK} video posted in {video_channel.mention}!")
-        else:
-            self._video_channel_not_found(ctx=ctx)
-
+    # ---------------------------------- command
     @commands.hybrid_command(name="video_leaderboard", description="Show the most voted YouTube videos")
     async def video_leaderboard(self, ctx: commands.Context, hours: int = VOTE_HOURS, message_limit: int = 50, top: int = 6):
         video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)

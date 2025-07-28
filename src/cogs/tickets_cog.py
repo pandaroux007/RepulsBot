@@ -1,5 +1,4 @@
 import discord
-from discord import app_commands
 from discord.ext import commands
 from datetime import timedelta
 import random
@@ -9,10 +8,11 @@ from utils import send_hidden_message
 from cogs.cogs_info import CogsNames
 from constants import (
     IDs,
-    DefaultEmojis
+    DefaultEmojis,
+    ASK_HELP
 )
 
-SECONDS_BEFORE_TICKET_CLOSING = 3
+SECONDS_BEFORE_TICKET_CLOSING = 4
 PERMS_ACCESS_GRANTED = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
 AUTHORIZED_MEMBERS = [
     IDs.serverRoles.ADMIN,
@@ -68,34 +68,50 @@ class TicketModal(discord.ui.Modal):
         self.add_item(self.description_input)
 
     async def on_submit(self, interaction: discord.Interaction):
-        guild = interaction.guild
-        author = interaction.user
+        try:
+            guild = interaction.guild
+            author = interaction.user
 
-        # creation of the private channel
-        category = await self._get_tickets_category(guild)
-        channel_name = self._build_ticket_channel_name()
-        overwrites = self._build_ticket_overwrites(guild, author)
+            # creation of the private channel
+            category = await self._get_tickets_category(guild)
+            channel_name = self._build_ticket_channel_name()
+            overwrites = self._build_ticket_overwrites(guild, author)
 
-        ticket_channel = await guild.create_text_channel(
-            channel_name, category=category, overwrites=overwrites,
-            topic=f"Ticket by {author} ・ **{self._get_ticket_label()}** ・ {self.title_input.value}"
-        )
+            ticket_channel = await guild.create_text_channel(
+                channel_name, category=category, overwrites=overwrites,
+                topic=f"Ticket by {author} ・ **{self._get_ticket_label()}** ・ {self.title_input.value}"
+            )
 
-        # first channel's message
-        embed = discord.Embed(
-            title=f"🎟️ {self.title_input.value}",
-            description=self.description_input.value,
-            color=discord.Color.dark_blue()
-        )
-        embed.set_footer(text=f"Ticket type ・ {self._get_ticket_label()}")
+            # first channel's message
+            embed = discord.Embed(
+                title=f"🎟️ {self.title_input.value}",
+                description=self.description_input.value,
+                color=discord.Color.dark_blue()
+            )
+            embed.set_footer(text=f"Ticket type ・ {self._get_ticket_label()}")
 
-        await ticket_channel.send(content=f"Opened by {author.mention}", embed=embed)
-        await interaction.response.send_message(f"{DefaultEmojis.CHECK} Your ticket has been created: {ticket_channel.mention}", view=GoToTicketButton(ticket_channel), ephemeral=True)
+            await ticket_channel.send(content=f"Opened by {author.mention}", embed=embed)
+            await interaction.response.send_message(
+                f"{DefaultEmojis.CHECK} Your ticket has been created: {ticket_channel.mention}",
+                view=GoToTicketButton(ticket_channel),
+                ephemeral=True,
+                delete_after=600 # 10 minutes
+            )
+        
+        except Exception as error:
+            error_msg = "An error occurred while creating the ticket!"
+
+            log_channel = guild.get_channel(IDs.serverChannel.LOG)
+            if log_channel:
+                await log_channel.send(f"{error_msg}\n{error}", silent=True)
+
+            await interaction.response.send_message(f":x: {error_msg}{ASK_HELP}", ephemeral=True)
 
     def _build_ticket_overwrites(self, guild: discord.Guild, author: discord.Member) -> dict:
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            author: PERMS_ACCESS_GRANTED
+            author: PERMS_ACCESS_GRANTED,
+            guild.me: PERMS_ACCESS_GRANTED
         }
 
         # visible only to the server owner and author
@@ -112,7 +128,7 @@ class TicketModal(discord.ui.Modal):
         return overwrites
     
     # https://stackoverflow.com/questions/7591117/what-is-the-probability-of-collision-with-a-6-digit-random-alphanumeric-code
-    def _build_ticket_channel_name(self):
+    def _build_ticket_channel_name(self) -> str:
         code = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
         return f"{self.ticket_type_abbr.lower()}-{code}"
     
@@ -151,32 +167,59 @@ class TicketTypeView(discord.ui.View):
         super().__init__(timeout=None)
         self.add_item(TicketTypeSelect())
 
+# ---------------------------------- cancel closing button
+class CancelCloseView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=SECONDS_BEFORE_TICKET_CLOSING)
+        self.cancelled: bool = False
+        self.message: discord.Message = None
+
+    @discord.ui.button(style=discord.ButtonStyle.danger, label="Cancel closing", emoji="✋")
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.cancelled = True
+        if self.message:
+            new_embed = discord.Embed(
+                title="🔓 Ticket closure cancelled",
+                description="You have cancelled the ticket closing.",
+                color=discord.Color.dark_blue()
+            )
+            await self.message.edit(embed=new_embed, view=None)
+        else:
+            await interaction.response.send_message("Ticket closure cancelled.", ephemeral=True)
+        
+        self.stop()
+
 # ---------------------------------- tickets cog (see README.md)
 class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="open_ticket", description="Opens the menu to create a ticket")
-    async def open_ticket(self, interaction: discord.Interaction):
-        embed = discord.Embed(
-            title=OPEN_TICKET_TITLE,
-            description=OPEN_TICKET_MSG,
-            color=discord.Color.dark_blue()
-        )
-        view = TicketTypeView()
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
     @commands.hybrid_command(name="close_ticket", description="Close current ticket (only available in a ticket)")
     async def close_ticket(self, ctx: commands.Context):
         if ctx.channel.category and ctx.channel.category.name == TICKETS_CATEGORY_NAME:
-            await ctx.send(f"🔒 Ticket will be closed in {SECONDS_BEFORE_TICKET_CLOSING}s...", ephemeral=True)
-            await discord.utils.sleep_until(discord.utils.utcnow() + timedelta(seconds=SECONDS_BEFORE_TICKET_CLOSING))
-            await ctx.channel.delete()
+            view = CancelCloseView()
+            embed = discord.Embed(
+                title=f"🔒 Ticket will be closed in {SECONDS_BEFORE_TICKET_CLOSING}s...",
+                description="You can cancel with the button below",
+                color=discord.Color.brand_red()
+            )
+
+            close_msg = await ctx.send(embed=embed, view=view, ephemeral=True)
+            view.message = close_msg
+            
+            await view.wait() # wait view timeout (SECONDS_BEFORE_TICKET_CLOSING)
+
+            if view.cancelled: # cancel closing
+                await discord.utils.sleep_until(discord.utils.utcnow() + timedelta(seconds=SECONDS_BEFORE_TICKET_CLOSING))
+                await view.message.delete()
+                return
+            else: # close ticket
+                await ctx.channel.delete()
         else:
             await send_hidden_message(ctx=ctx, text=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} This command isn't available here. Try again in a ticket!")
     
     # ---------------------------------- admin command
-    @commands.command(name="setup_ticket", description="Post the unique ticket creation message (admin only)")
+    @commands.command(name="setup_ticket", description="Post the unique ticket creation message (admin only)") # context only
     @commands.has_permissions(administrator=True)
     async def setup_ticket(self, ctx: commands.Context):
         embed = discord.Embed(

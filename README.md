@@ -105,9 +105,7 @@ ___
   - on_ready
 - Vote cog (in [`src/cogs/vote_cog.py`](src/cogs/vote_cog.py)) : Contains all the elements relating to the management of votes for the best YouTube video regularly;
   - discord ([task](https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html))
-  - addvideo (command)
   - video_leaderboard (command)
 - Tickets cog (in [`src/cogs/tickets_cog.py`](src/cogs/tickets_cog.py)) : Contains the commands and management of messages, modals and selectors of the server moderation ticket system
-  - open_ticket
   - close_ticket
   - setup_ticket

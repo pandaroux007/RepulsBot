@@ -2,16 +2,17 @@ import discord
 from discord.ext import tasks, commands
 import re
 import aiohttp
+import random
 # bot files
 from utils import (
     send_hidden_message,
-    hoursdelta
+    hoursdelta,
+    nl
 )
 
 from cogs.cogs_info import CogsNames
 from constants import (
     DefaultEmojis,
-    Links,
     PrivateData,
     IDs,
     ASK_HELP,
@@ -26,13 +27,14 @@ YOUTUBE_REGEX = re.compile(
     re.IGNORECASE
 )
 
-VOTE_HOURS = 24
+VOTE_HOURS = 48
 SUCCESS_CODE = 200
+REACTION = DefaultEmojis.CHECK
 
-FEATURED_VIDEO_MSG = """
-(And you, do you want your video to appear on the game's main page? Then hurry up and post the link here,
-and cross your fingers that the community votes for your message with the reaction {reaction} just below!
-***I come and check the best video every {time} hours, you have every chance!***)
+FEATURED_VIDEO_MSG = f"""
+And you, do you want your video to appear on the game's main page?
+Then hurry up and post the link here, and cross your fingers...
+I come and check the best video every {VOTE_HOURS} hours, you have every chance!
 """
 
 class YouTubeLink(commands.Converter):
@@ -80,47 +82,74 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         if not video_channel:
             return
 
-        better_video_msg = None
+        better_video_msgs = []
         last_better_votes = 0
+        after_time = hoursdelta(5 * 24) # 5 days
 
-        async for message in video_channel.history(limit=50, after=hoursdelta(VOTE_HOURS)):
+        async for message in video_channel.history(limit=50, after=after_time):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue # pass all messages without youtube links
             
             # update message cache (https://github.com/Rapptz/discord.py/issues/861)
             msg = await video_channel.fetch_message(message.id)
             for reaction in msg.reactions:
-                if str(reaction.emoji) == DefaultEmojis.CHECK:
+                if str(reaction.emoji) == REACTION:
                     vote = reaction.count
                     if vote > last_better_votes:
                         last_better_votes = vote
-                        better_video_msg = msg
+                        better_video_msgs = [msg]
+                    elif vote == last_better_votes:
+                        better_video_msgs.append(msg)
                     break
 
-        await self.process_winner(video_channel=video_channel, msg=better_video_msg, vote_count=last_better_votes)
+        await self.process_winner(video_channel, better_video_msgs, last_better_votes)
 
-    async def process_winner(self, video_channel: discord.TextChannel, msg: discord.Message, vote_count: int):
-        if msg and vote_count > 0:
-            embed = discord.Embed(
-                title="New featured video! 🎉",
-                color=discord.Color.dark_blue(),
-                timestamp=discord.utils.utcnow(),
-                description=FEATURED_VIDEO_MSG.format(reaction=DefaultEmojis.CHECK, time=VOTE_HOURS).replace('\n', ' ').strip()
-            )
-            embed.add_field(name="Watch it now!", value=msg.jump_url)
-
-            match = re.search(YOUTUBE_REGEX, msg.content)
-            code = await send_video_to_endpoint(video_url=match.group(0))
-            if code == SUCCESS_CODE:
-                embed.add_field(name="Website state", value=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.CONNECTE)} Video sent to [repuls.io]({Links.REPULS_GAME})!")
-            else:
-                embed.add_field(name="Website state", value=f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)!")
-
-            await video_channel.send(embed=embed)
+    async def process_winner(self, video_channel: discord.abc.Messageable, messages: list[discord.Message], vote_count: int):
+        embed = discord.Embed(
+            title="New featured video! 🎉",
+            color=discord.Color.brand_red(),
+            timestamp=discord.utils.utcnow()
+        )
+        # no videos to send, notify youtubers
+        if len(messages) < 1:
+            embed.title = "I couldn't find any videos to display on the game's homepage 🫤..."
+            embed.description = f"Become a <@&{IDs.serverRoles.YOUTUBER}> by meeting [these conditions](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos! 🚀"
+            embed.timestamp = None
+        # one or more videos found to send
         else:
-            await video_channel.send(f"""
-I couldn't find any videos to display on the game's homepage 🫤...
-**Become a <@&{IDs.serverRoles.YOUTUBER}> by meeting [the following requirements](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos!** 🚀""")
+            winner: discord.Message = None
+            # only one winning video
+            if len(messages) == 1:
+                winner = messages[0]
+                embed.add_field(
+                    name="Watch it now!",
+                    value=f"🎬 [Click here to watch the video]({winner.jump_url}), by {winner.author.mention}!",
+                    inline=False
+                )
+                embed.set_footer(text=nl(FEATURED_VIDEO_MSG))
+            # case of equality
+            else:
+                embed.title = "👏 Bravo! Several videos are tied!"
+                embed.description = f"The following videos come in first with {vote_count} votes each!"
+
+                for idx, m in enumerate(messages, 1):
+                    embed.add_field(name="", value=f"{idx}. [Video]({m.jump_url}) of {m.author.mention}", inline=False)
+
+                winner = random.choice(messages)
+                embed.add_field(name="The winner drawn at random is", value=f"This [video]({winner.jump_url}) of {winner.author.mention}!", inline=True)
+
+            match = re.search(YOUTUBE_REGEX, winner.content)
+            code = await send_video_to_endpoint(video_url=match.group(0))
+
+            log_channel = self.bot.get_channel(IDs.serverChannel.LOG)
+            if log_channel:
+                if code == SUCCESS_CODE:
+                    status = f"{DefaultEmojis.CHECK} Video sent to repuls.io!"
+                else:
+                    status = f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)"
+                await log_channel.send(f"**Website state** : {status}", silent=True)
+
+        await video_channel.send(embed=embed)
     
     # ---------------------------------- command
     @commands.hybrid_command(name="video_leaderboard", description="Show the most voted YouTube videos")
@@ -145,7 +174,7 @@ I couldn't find any videos to display on the game's homepage 🫤...
 
             msg = await video_channel.fetch_message(message.id)
             for reaction in msg.reactions:
-                if str(reaction.emoji) == DefaultEmojis.CHECK:
+                if str(reaction.emoji) == REACTION:
                     if ENV == ENV_DEV_MODE:
                         video_votes.append((reaction.count, msg))
                     elif reaction.count > 1: # prod mode

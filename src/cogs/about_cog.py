@@ -106,7 +106,6 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         else:
             embed.add_field(name="This user has no avatar", value="*nothing to display...*")
         
-        embed.set_footer(text=FOOTER_EMBED)
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(name="membercount", description="Get the server member count")

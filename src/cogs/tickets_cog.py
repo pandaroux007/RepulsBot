@@ -20,13 +20,11 @@ AUTHORIZED_MEMBERS = [
     IDs.serverRoles.CONTRIBUTOR
 ]
 
-TICKETS_CATEGORY_NAME = "Tickets"
 TICKET_TYPES = [
     #     label       |       description         |   abbreviation
     ("In-game report", "Hackers and chat reports", "ing-rep"),
     ("Discord report", "Discord issues/report a member", "dis-rep"),
     ("Role related", "Applications/promotion about roles", "rol"),
-    ("Admin report", "Report an admin's behavior", "admin"),
     ("Other", "Other inquiries or problems", "other")
 ]
 
@@ -34,7 +32,7 @@ OPEN_TICKET_TITLE = "🎟️ Need help ? Open a Ticket"
 OPEN_TICKET_MSG = """
 Simply click on the type of ticket you want to open **in the selector below**, and fill up the information needed (send your images and video after creating the ticket).\n
 It will create a private channel between you and **the moderation team**. This way, you can make a report, request a role, or anything else.\n
-**Only create a ticket if absolutely necessary!** If you need urgent assistance, please ping or send a DM to an administrator. Before creating a ticket, check if the answer to your question is not in the server FAQs (e.g., the requirements for roles are indicated there)! To report a game bug, you can use the channel https://discord.com/channels/603655329120518223/1076163933213311067!
+**Only create a ticket if absolutely necessary!** If you need urgent assistance, please ping or send a DM to an admin. Before creating a ticket, check if the answer to your question is not in the server FAQs (e.g., the requirements for roles are indicated there)! To report a game bug, you can use https://discord.com/channels/603655329120518223/1076163933213311067!
 """
 
 class GoToTicketButton(discord.ui.View):
@@ -73,24 +71,28 @@ class TicketModal(discord.ui.Modal):
             author = interaction.user
 
             # creation of the private channel
-            category = await self._get_tickets_category(guild)
+            category = discord.utils.get(guild.categories, id=IDs.serverChannel.TICKETS_CATEGORY)
             channel_name = self._build_ticket_channel_name()
             overwrites = self._build_ticket_overwrites(guild, author)
 
             ticket_channel = await guild.create_text_channel(
                 channel_name, category=category, overwrites=overwrites,
-                topic=f"Ticket by {author} ・ **{self._get_ticket_label()}** ・ {self.title_input.value}"
+                topic=f"🎟️ **{self._get_ticket_label()}** ・ {self.title_input.value}"
             )
 
             # first channel's message
             embed = discord.Embed(
-                title=f"🎟️ {self.title_input.value}",
+                title=f"{self.title_input.value}",
                 description=self.description_input.value,
-                color=discord.Color.dark_blue()
+                color=discord.Color.blue()
             )
-            embed.set_footer(text=f"Ticket type ・ {self._get_ticket_label()}")
+            embed.set_author(
+                name=author.display_name,
+                icon_url=author.display_avatar.url,
+            )
+            embed.set_footer(text=f"Ticket type \"{self._get_ticket_label()}\"")
 
-            await ticket_channel.send(content=f"Opened by {author.mention}", embed=embed)
+            await ticket_channel.send(embed=embed)
             await interaction.response.send_message(
                 f"{DefaultEmojis.CHECK} Your ticket has been created: {ticket_channel.mention}",
                 view=GoToTicketButton(ticket_channel),
@@ -108,20 +110,14 @@ class TicketModal(discord.ui.Modal):
             await interaction.response.send_message(f":x: {error_msg}{ASK_HELP}", ephemeral=True)
 
     def _build_ticket_overwrites(self, guild: discord.Guild, author: discord.Member) -> dict:
+        # permissions to the bot, ticket author and authorized members to view the private channel
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(view_channel=False),
             author: PERMS_ACCESS_GRANTED,
             guild.me: PERMS_ACCESS_GRANTED
         }
 
-        # visible only to the server owner and author
-        if self.ticket_type_abbr == "admin":
-            owner = guild.get_member(guild.owner_id)
-            if owner:
-                overwrites[owner] = PERMS_ACCESS_GRANTED
-        # permissions to the ticket author and authorized members to view the private channel
-        else:
-            for role_id in AUTHORIZED_MEMBERS:
+        for role_id in AUTHORIZED_MEMBERS:
                 role = guild.get_role(role_id)
                 if role:
                     overwrites[role] = PERMS_ACCESS_GRANTED
@@ -131,14 +127,6 @@ class TicketModal(discord.ui.Modal):
     def _build_ticket_channel_name(self) -> str:
         code = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
         return f"{self.ticket_type_abbr.lower()}-{code}"
-    
-    async def _get_tickets_category(self, guild: discord.Guild):
-        category = discord.utils.get(guild.categories, name=TICKETS_CATEGORY_NAME)
-        if category:
-            return category
-        else:
-            overwrites = {guild.default_role: discord.PermissionOverwrite(view_channel=False)}
-            return await guild.create_category(TICKETS_CATEGORY_NAME, overwrites=overwrites)
     
     def _get_ticket_label(self) -> str:
         return next((label for label, _, abbr in TICKET_TYPES if abbr == self.ticket_type_abbr), "Other")
@@ -196,7 +184,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
 
     @commands.hybrid_command(name="close_ticket", description="Close current ticket (only available in a ticket)")
     async def close_ticket(self, ctx: commands.Context):
-        if ctx.channel.category and ctx.channel.category.name == TICKETS_CATEGORY_NAME:
+        if ctx.channel.category and ctx.channel.category.id == IDs.serverChannel.TICKETS_CATEGORY:
             view = CancelCloseView()
             embed = discord.Embed(
                 title=f"🔒 Ticket will be closed in {SECONDS_BEFORE_TICKET_CLOSING}s...",

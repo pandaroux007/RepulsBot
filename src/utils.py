@@ -20,3 +20,7 @@ async def send_hidden_message(ctx: commands.Context, text: str):
 
 def hoursdelta(hours) -> datetime:
     return discord.utils.utcnow() - timedelta(hours=hours)
+
+def nl(string: str) -> str:
+    """ returns a string without line breaks """
+    return string.replace('\n', ' ').strip()

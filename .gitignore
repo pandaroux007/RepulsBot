@@ -10,7 +10,6 @@ wheels/
 .venv
 
 # development files
-# private*.* # deprecated
-# *.db # deprecated
 dev/
 .env
+repulsbot.code-workspace

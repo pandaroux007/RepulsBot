@@ -61,7 +61,7 @@ class DefaultEmojis:
 
 class BotInfo():
     NAME = "RepulsBot"
-    VERSION = "1.1.2"
+    VERSION = "1.2.0"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     DESCRIPTION = """
     Hey there! :waving_hand:

@@ -1,11 +1,18 @@
+"""
+Classic ticket system, opens private channels with moderation.
+
+:copyright: (c) 2025-present pandaroux007
+:license: MIT, see LICENSE.txt for details.
+"""
+
 import discord
 from discord.ext import commands
+from discord import app_commands
 from datetime import timedelta
 import random
 import string
 # bot files
-from utils import send_hidden_message
-from cogs.cogs_info import CogsNames
+from cogs_list import CogsNames
 from constants import (
     IDs,
     DefaultEmojis,
@@ -182,9 +189,9 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="close_ticket", description="Close current ticket (only available in a ticket)")
-    async def close_ticket(self, ctx: commands.Context):
-        if ctx.channel.category and ctx.channel.category.id == IDs.serverChannel.TICKETS_CATEGORY:
+    @app_commands.command(name="close_ticket", description="If launched in a ticket, closes it")
+    async def close_ticket(self, interaction: discord.Interaction):
+        if interaction.channel.category and interaction.channel.category.id == IDs.serverChannel.TICKETS_CATEGORY:
             view = CancelCloseView()
             embed = discord.Embed(
                 title=f"🔒 Ticket will be closed in {SECONDS_BEFORE_TICKET_CLOSING}s...",
@@ -192,8 +199,8 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
                 color=discord.Color.brand_red()
             )
 
-            close_msg = await ctx.send(embed=embed, view=view, ephemeral=True)
-            view.message = close_msg
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            view.message = await interaction.original_response()
             
             await view.wait() # wait view timeout (SECONDS_BEFORE_TICKET_CLOSING)
 
@@ -202,9 +209,13 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
                 await view.message.delete()
                 return
             else: # close ticket
-                await ctx.channel.delete()
+                await interaction.channel.delete()
         else:
-            await send_hidden_message(ctx=ctx, text=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} This command isn't available here. Try again in a ticket!")
+            error_emote = await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)
+            await interaction.response.send_message(
+                f"{error_emote} This command isn't available here. Try again in a ticket!",
+                ephemeral=True
+            )
     
     # ---------------------------------- admin command
     @commands.command(name="setup_ticket", description="Post the unique ticket creation message (admin only)") # context only

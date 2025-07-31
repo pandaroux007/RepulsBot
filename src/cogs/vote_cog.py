@@ -1,16 +1,24 @@
+"""
+This cog contains all the automatic tasks and functions to find, display
+and send the best YouTube video about the game to the site.
+
+:copyright: (c) 2025-present pandaroux007
+:license: MIT, see LICENSE.txt for details.
+"""
+
 import discord
 from discord.ext import tasks, commands
+from discord import app_commands
 import re
 import aiohttp
 import random
 # bot files
 from utils import (
-    send_hidden_message,
     hoursdelta,
     nl
 )
 
-from cogs.cogs_info import CogsNames
+from cogs_list import CogsNames
 from constants import (
     DefaultEmojis,
     PrivateData,
@@ -152,11 +160,14 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await video_channel.send(embed=embed)
     
     # ---------------------------------- command
-    @commands.hybrid_command(name="video_leaderboard", description="Show the most voted YouTube videos")
-    async def video_leaderboard(self, ctx: commands.Context, hours: int = VOTE_HOURS, message_limit: int = 50, top: int = 6):
+    @app_commands.command(name="video_leaderboard", description="Show the most voted YouTube videos")
+    async def video_leaderboard(self, interaction: discord.Interaction, hours: int = VOTE_HOURS, message_limit: int = 50, top: int = 6):
         video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
         if not video_channel:
-            self._video_channel_not_found(ctx=ctx)
+            await interaction.response.send_message(
+                content=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} Unable to find video channel!{ASK_HELP}",
+                ephemeral=True
+            )
             return
 
         video_votes = []
@@ -187,31 +198,28 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                 value="Try broadening my search scope?",
                 inline=False
             )
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             return
+        else:
+            video_votes.sort(key=lambda x: x[0], reverse=True)
+            top_videos = video_votes[:top]
 
-        video_votes.sort(key=lambda x: x[0], reverse=True)
-        top_videos = video_votes[:top]
+            for idx, (votes, msg) in enumerate(top_videos, start=1):
+                if idx == 1:
+                    header = "🥇"
+                elif idx == 2:
+                    header = "🥈"
+                elif idx == 3:
+                    header = "🥉"
+                else:
+                    header = f"#{str(idx)}"
+                embed.add_field(
+                    name=f"{header} - {votes} votes",
+                    value=f"[Watch video]({msg.jump_url}) here!" ,
+                    inline=False
+                )
 
-        for idx, (votes, msg) in enumerate(top_videos, start=1):
-            if idx == 1:
-                header = "🥇"
-            elif idx == 2:
-                header = "🥈"
-            elif idx == 3:
-                header = "🥉"
-            else:
-                header = f"#{str(idx)}"
-            embed.add_field(
-                name=f"{header} - {votes} votes",
-                value=f"[Watch video]({msg.jump_url}) here!" ,
-                inline=False
-            )
+            await interaction.response.send_message(embed=embed)
 
-        await ctx.send(embed=embed)
-
-    async def _video_channel_not_found(self, ctx: commands.Context):
-        await send_hidden_message(ctx=ctx, text=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} Unable to find video channel (whose ID is supposed to be {IDs.serverChannel.VIDEO})!{ASK_HELP}")
-        
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoteCog(bot))

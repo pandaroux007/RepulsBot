@@ -63,6 +63,8 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] Report an admin in tickets (visible only to the server owner)
 - [x] Leaderboard command of votes for videos
 - [x] Permanent online posting of the bot
+- [x] Manage video equality cases
+- [x] Added a simple error logging system
 ___
 ### 🔥 Objectives to be achieved:
 - Improve the help command

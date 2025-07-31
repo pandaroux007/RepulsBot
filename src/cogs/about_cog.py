@@ -1,12 +1,18 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import platform
 # bot file
-from cogs.cogs_info import CogsNames
+from cogs_list import CogsNames
 from constants import (
     BotInfo,
     Links,
     FOOTER_EMBED,
+)
+
+from faq_data import (
+    ServerFAQ,
+    GameFAQ
 )
 
 REPULS_WIKI_DESCRIPTION = """
@@ -20,19 +26,47 @@ The best free instantly accessible multiplayer first-person shooter for your bro
 Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
 """
 
+# ---------------------------------- faq selector
+# https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=select#discord.ui.Select
+# https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=view#discord.ui.View
+class FAQView(discord.ui.View):
+    def __init__(self, faq_entries, custom_id):
+        super().__init__(timeout=None)
+        self.faq_entries = faq_entries
+        options = [
+            discord.SelectOption(label=entry["question"], value=str(idx))
+            for idx, entry in enumerate(faq_entries)
+        ]
+        self.add_item(FAQSelect(options, faq_entries, custom_id))
+
+class FAQSelect(discord.ui.Select):
+    def __init__(self, options, faq_entries, custom_id):
+        super().__init__(placeholder="Choose a question...", options=options, custom_id=custom_id)
+        self.faq_entries = faq_entries
+
+    async def callback(self, interaction: discord.Interaction):
+        idx = int(self.values[0])
+        entry = self.faq_entries[idx]
+        embed = discord.Embed(
+            title=entry["question"],
+            description=entry["answer"],
+            color=discord.Color.dark_blue()
+        )
+        await interaction.response.edit_message(embed=embed, view=self.view)
+
 # ---------------------------------- about cog (see README.md)
 class AboutCog(commands.Cog, name=CogsNames.ABOUT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="aboutmember", description="Displays information about a server member")
-    async def aboutmember(self, ctx: commands.Context, member: discord.Member):
+    @app_commands.command(name="aboutmember", description="Displays information about a server member")
+    async def aboutmember(self, interaction: discord.Interaction, member: discord.Member):
         embed = discord.Embed(
             title=f"Information about **{member.display_name}**",
             color=discord.Color.dark_blue(),
         )
         if member.id == self.bot.user.id: # bot presentation
-            embed.title = f"Hi {ctx.author.display_name}! How can I help you ?"
+            embed.title = f"Hi {interaction.user.display_name}! How can I help you ?"
             embed.description = BotInfo.DESCRIPTION.format(name=self.bot.user.mention,
                                                        server=Links.DISCORD_INVITE,
                                                        game=Links.REPULS_GAME)
@@ -50,11 +84,11 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
             embed.add_field(name="Roles:", value=f"{roles}", inline=False)
         embed.set_footer(text=FOOTER_EMBED)
         
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-    @commands.hybrid_command(name="aboutserver", description="Displays information about the server")
-    async def aboutserver(self, ctx: commands.Context):
-        guild = ctx.guild
+    @app_commands.command(name="aboutserver", description="Displays information about the server")
+    async def aboutserver(self, interaction: discord.Interaction):
+        guild = interaction.guild
         embed = discord.Embed(
             title=f"About *{guild.name}* server",
             description="Information about this discord server",
@@ -71,10 +105,10 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
             embed.add_field(name="Description", value=guild.description, inline=False)
         embed.set_footer(text=FOOTER_EMBED)
         
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-    @commands.hybrid_command(name="aboutgame", description="Displays information about repuls.io game")
-    async def aboutgame(self, ctx: commands.Context):
+    @app_commands.command(name="aboutgame", description="Displays information about repuls.io game")
+    async def aboutgame(self, interaction: discord.Interaction):
         play_btn_view = discord.ui.View()
         play_btn = discord.ui.Button(
             style=discord.ButtonStyle.link,
@@ -93,32 +127,10 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         embed.add_field(name="Terms & privacy", value=f"[Privacy]({Links.GAME_PRIVACY})", inline=True)
         embed.set_footer(text=FOOTER_EMBED)
 
-        await ctx.send(embed=embed, view=play_btn_view)
+        await interaction.response.send_message(embed=embed, view=play_btn_view)
 
-    @commands.hybrid_command(name="avatar", description="Displays a member's avatar")
-    async def avatar(self, ctx: commands.Context, member: discord.Member):
-        embed = discord.Embed(
-            title=f"Avatar of {member.display_name}!",
-            color=discord.Color.dark_blue(),
-        )
-        if member.avatar is not None:
-            embed.set_image(url=member.avatar.url)
-        else:
-            embed.add_field(name="This user has no avatar", value="*nothing to display...*")
-        
-        await ctx.send(embed=embed)
-
-    @commands.hybrid_command(name="membercount", description="Get the server member count")
-    async def membercount(self, ctx: commands.Context):
-        embed = discord.Embed(
-            color=discord.Color.dark_blue(),
-            timestamp=discord.utils.utcnow()
-        )
-        embed.add_field(name="Members", value=ctx.guild.member_count)
-        await ctx.send(embed=embed)
-
-    @commands.hybrid_command(name="wiki", description="Everything you need to know about the game")
-    async def wiki(self, ctx: commands.Context):
+    @app_commands.command(name="wiki", description="Everything you need to know about the game")
+    async def wiki(self, interaction: discord.Interaction):
         wiki_btn_view = discord.ui.View()
         wiki_btn = discord.ui.Button(
             style=discord.ButtonStyle.link,
@@ -132,7 +144,31 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
             color=discord.Color.blue(),
         )
 
-        await ctx.send(embed=embed, view=wiki_btn_view)
+        await interaction.response.send_message(embed=embed, view=wiki_btn_view)
+
+    @app_commands.command(name="serverfaq", description="Launch the server's interactive FAQ")
+    async def serverfaq(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title=f"{interaction.guild.name}{"\'" if interaction.guild.name.endswith('s') else "'s"} server FAQ",
+            description="👉️ Select a question from the drop-down menu below!",
+            color=discord.Color.blue()
+        )
+        view = FAQView(ServerFAQ.get_data(), custom_id=ServerFAQ.get_id())
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @app_commands.command(name="gamefaq", description="Frequently Asked Questions about the repuls.io game")
+    async def gamefaq(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="Repuls.io game FAQ",
+            description="👉️ Select a question from the drop-down menu below!",
+            color=discord.Color.blue()
+        )
+        view = FAQView(GameFAQ.get_data(), custom_id=GameFAQ.get_id())
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 async def setup(bot: commands.Bot):
+    # https://github.com/Rapptz/discord.py/blob/master/examples/views/persistent.py
+    bot.add_view(FAQView(ServerFAQ.get_data(), custom_id=ServerFAQ.get_id()))
+    bot.add_view(FAQView(GameFAQ.get_data(), custom_id=GameFAQ.get_id()))
+
     await bot.add_cog(AboutCog(bot))

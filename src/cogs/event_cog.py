@@ -1,7 +1,14 @@
+"""
+Below is the command error handling, bot startup and other discord events
+
+:copyright: (c) 2025-present pandaroux007
+:license: MIT, see LICENSE.txt for details.
+"""
+
 import discord
 from discord.ext import commands
 # bot file
-from cogs.cogs_info import CogsNames
+from cogs_list import CogsNames
 from constants import (
     IDs,
     ASK_HELP
@@ -37,7 +44,11 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
                 await log_channel.send(f"User {ctx.author.mention} tried to use the {ctx.command} command, but it failed with the error:\n`{error}`", silent=True)
 
         error_emoji = await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE) or "❌"
-        embed = discord.Embed(title=f"{error_emoji} Check failure!", description=f"*{message}*{ASK_HELP}", color=discord.Color.brand_red())
+        embed = discord.Embed(
+            title=f"{error_emoji} Check failure!",
+            description=f"{message}{ASK_HELP}",
+            color=discord.Color.brand_red()
+        )
         await ctx.send(embed=embed)
 
     @commands.Cog.listener()

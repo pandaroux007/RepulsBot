@@ -23,7 +23,7 @@ AUTHORISED_ROLES = {
 
 class HelpToggleView(discord.ui.View):
     def __init__(self, help_cog: commands.Cog, is_admin: bool):
-        super().__init__(timeout=None)
+        super().__init__()
         self.help_cog = help_cog
         self.is_showing_admin = False
 

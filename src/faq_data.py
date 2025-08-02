@@ -34,14 +34,14 @@ class ServerFAQ(FAQBase):
             "question": "How to get a role ?",
             "answer": f"""
 - To become a <@&{IDs.serverRoles.YOUTUBER}> or a <@&{IDs.serverRoles.STREAMER}>, please read this message https://discord.com/channels/603655329120518223/800107070614405120/1389262601740877925 and follow the instructions.
-- To become a <@&{IDs.serverRoles.CLAN_LEADER}>, simply have a clan of at least 10 members (they can play as guests and without discord). See https://discord.com/channels/603655329120518223/1377679009181335572 for details.
+- To become a <@&{IDs.serverRoles.CLAN_LEADER}>, simply have a clan of at least 10 members (they can play as guests and without discord). See https://discord.com/channels/603655329120518223/1395002152933396603 for details.
 - To become a <@&{IDs.serverRoles.CONTRIBUTOR}>, you must donate to the game in some way. Please contact docski in DM for this, the admins will not grant this role.
 - *Staff doesn't offer the <@&{IDs.serverRoles.SWATTEAM}>, or <@&{IDs.serverRoles.CONDUCTOR}> roles.*. Don't beg for the <@&{IDs.serverRoles.TRUSTED}> or <@&{IDs.serverRoles.ADMIN}> roles either; they are only granted if administrators deem it appropriate.
 """
         },
         {
             "question": "I would like to report someone.",
-            "answer": "If you report someone, file it in https://discord.com/channels/603655329120518223/849701341136027669. Make sure your report **includes evidence, such as a screenshot or video!**"
+            "answer": "To report abuse in game chat, a hacker, or a Discord user, create an appropriate ticket, via the following message: https://discord.com/channels/603655329120518223/1398612579034595358. Make sure your report **includes evidence, such as a screenshot or video!**"
         },
         {
             "question": "When will the next update be ?",

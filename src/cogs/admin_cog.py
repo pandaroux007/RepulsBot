@@ -16,11 +16,11 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     
-    @commands.command(name="clean", description="Allows you to clean a certain number of messages")
+    @commands.command(name="purge", description="Allows you to clean a certain number of messages")
     @check_admin_or_roles()
-    async def clean(self, ctx: commands.Context, number: int):
-        deleted = await ctx.channel.purge(limit=number+1)
-        await ctx.send(f"{DefaultEmojis.CHECK} {len(deleted)} messages removed!")
+    async def purge(self, ctx: commands.Context, number: int):
+        deleted = await ctx.channel.purge(limit=number + 1)
+        await ctx.send(f"{DefaultEmojis.CHECK} {len(deleted) - 1} messages removed!")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(AdminCog(bot))

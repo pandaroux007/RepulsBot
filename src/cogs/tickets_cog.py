@@ -44,7 +44,7 @@ It will create a private channel between you and **the moderation team**. This w
 
 class GoToTicketButton(discord.ui.View):
     def __init__(self, channel: discord.TextChannel):
-        super().__init__(timeout=60)
+        super().__init__()
         self.add_item(discord.ui.Button(
             label="Go to your ticket",
             url=channel.jump_url,

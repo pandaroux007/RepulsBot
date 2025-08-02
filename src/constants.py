@@ -37,7 +37,7 @@ class ServerRoleID: # "<@&role_id>"
     SWATTEAM = 1388550925353877685           if ENV == ENV_DEV_MODE else 862318347542724679
     CONTRIBUTOR = 1388551885476204655        if ENV == ENV_DEV_MODE else 850775875821109298
     ESPORTS_ORGANIZER = 1388880454479904808  if ENV == ENV_DEV_MODE else 1371212276421496925
-    CLAN_LEADER = 850917985429880863         if ENV == ENV_DEV_MODE else 1394988076551635014
+    CLAN_LEADER = 1394988076551635014         if ENV == ENV_DEV_MODE else 850917985429880863
 
 class CustomEmojiID: # "<:emiji_name:emoji_id>"
     CONNECTE = 1392147094281916436           if ENV == ENV_DEV_MODE else 1376214233041080410
@@ -70,7 +70,7 @@ class DefaultEmojis:
     WARN = "⚠️" # :warning:
 
 class BotInfo():
-    VERSION = "1.2.1"
+    VERSION = "1.3.0"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     DESCRIPTION = """
     Hey there! :waving_hand:

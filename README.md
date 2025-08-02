@@ -65,10 +65,10 @@ To run the project, install the `uv` tool (a more secure and faster equivalent t
 - [x] Permanent online posting of the bot
 - [x] Manage video equality cases
 - [x] Added a simple error logging system
+- [x] Improve the help command
 ___
 ### 🔥 Objectives to be achieved:
-- Improve the help command
-- Basic moderation commands
+- moderation commands
 - Displaying eSports results
 - Discord 1v1s ([details here](https://discord.com/channels/603655329120518223/686216026412941429/1370057672304492554))
 - Replace all bots on the server, including mute functions with timer, etc.

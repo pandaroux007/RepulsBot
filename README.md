@@ -86,28 +86,3 @@ ___
 > - Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
 
 </details>
-
-## Discord.py cogs
-- About cog (in [`src/cogs/about_cog.py`](src/cogs/about_cog.py)) : This cog contains information commands about members and the server;
-  - aboutgame
-  - aboutmember
-  - aboutserver
-  - avatar
-  - membercount
-  - wiki
-- Server cog (in [`src/cogs/server_cog.py`](src/cogs/server_cog.py)) : Contains commands useful for server management;
-  - help
-  - clean
-  - ping
-  - serverfaq
-  - gamefaq
-- Event cog (in [`src/cogs/event_cog.py`](src/cogs/event_cog.py)) : Contains all events raised by the discord bot;
-  - on_message
-  - on_command_error
-  - on_ready
-- Vote cog (in [`src/cogs/vote_cog.py`](src/cogs/vote_cog.py)) : Contains all the elements relating to the management of votes for the best YouTube video regularly;
-  - discord ([task](https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html))
-  - video_leaderboard (command)
-- Tickets cog (in [`src/cogs/tickets_cog.py`](src/cogs/tickets_cog.py)) : Contains the commands and management of messages, modals and selectors of the server moderation ticket system
-  - close_ticket
-  - setup_ticket

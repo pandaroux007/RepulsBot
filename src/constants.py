@@ -16,6 +16,7 @@ class PrivateData:
     API_ENDPOINT_URL = os.getenv("API_ENDPOINT_URL")
     API_TOKEN = os.getenv("API_TOKEN")
 
+# https://support.discord.com/hc/en-us/community/posts/4407711130775-Mention-format-for-slash-commands
 # ------------------------------------- IDs -------------------------------------
 #         official bot and server IDs       |          dev bot and server IDs   |
 # -------------------------------------------------------------------------------
@@ -47,6 +48,15 @@ class RepulsTeamMemberID: # "<@member_id>"
     GRAPHIC_DESIGNER = 896507294983020574 # caracal
     MAIN_DEVELOPER = 213028561584521216 # docski
 
+class AuthorizedServersID:
+    MAIN_SERVER = 603655329120518223
+    TEST_SERVER = 1370706439491817563
+
+AUTHORISED_SERVERS = {
+    AuthorizedServersID.MAIN_SERVER,
+    AuthorizedServersID.TEST_SERVER    
+}
+
 # class grouping the different IDs
 class IDs:
     serverChannel = ServerChannelID
@@ -60,12 +70,11 @@ class DefaultEmojis:
     WARN = "⚠️" # :warning:
 
 class BotInfo():
-    NAME = "RepulsBot"
     VERSION = "1.2.1"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     DESCRIPTION = """
     Hey there! :waving_hand:
-    It's me, {name}, the official Discord bot for [this server]({server})! If you need help, type "!help" or help command to see what I can do!\n
+    It's me, {name}, the official Discord bot for [this server]({server})! If you need anything, use my help command to see what I can do!
     If you don't feel like chatting with our amazing community, you can always play a game of [repuls.io]({game}) :wink:
     """
 

@@ -1,6 +1,6 @@
 """
 This cog contains all the commands accessible to everyone
-(information commands are separated in another cog)
+(information and help commands are separated in other cogs)
 
 :copyright: (c) 2025-present pandaroux007
 :license: MIT, see LICENSE.txt for details.
@@ -11,13 +11,9 @@ from discord.ext import commands
 from discord import app_commands
 # bot files
 from cogs_list import CogsNames
-from constants import (
-    BotInfo,
-    DefaultEmojis,
-    CMD_PREFIX,
-    FOOTER_EMBED
-)
+from constants import DefaultEmojis
 
+# ---------------------------------- users cog (see README.md)
 class UsersCog(commands.Cog, name=CogsNames.USERS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -25,21 +21,6 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
     @app_commands.command(name="ping", description="Displays latency of the bot")
     async def ping(self, interaction: discord.Interaction):
         await interaction.response.send_message(f"{DefaultEmojis.CHECK} **pong!** (*It took me {round(self.bot.latency * 1000, 2)}ms to respond to your command!*)")
-
-    @app_commands.command(name="help", description="What am I capable of? Run this command to find out!")
-    async def help(self, interaction: discord.Interaction):
-        embed = discord.Embed(
-            title=f"{BotInfo.NAME}'s help command",
-            description="Here are the available commands :",
-            color=discord.Color.dark_blue()
-        )
-
-        for cmd in self.bot.tree.get_commands():
-            # mention = f"</{cmd.name}:{cmd.id}> or {CMD_PREFIX}{cmd.name}" if cmd.id else f"!{cmd.name}"
-            embed.add_field(name=f"`{CMD_PREFIX}{cmd.name}`", value=cmd.description or None, inline=False)
-
-        embed.set_footer(text=FOOTER_EMBED)
-        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="avatar", description="Displays a member's avatar")
     async def avatar(self, interaction: discord.Interaction, member: discord.Member):

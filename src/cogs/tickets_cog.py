@@ -218,7 +218,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
             )
     
     # ---------------------------------- admin command
-    @commands.command(name="setup_ticket", description="Post the unique ticket creation message (admin only)") # context only
+    @commands.command(name="setup_ticket", description="Post the unique ticket creation message")
     @commands.has_permissions(administrator=True)
     async def setup_ticket(self, ctx: commands.Context):
         embed = discord.Embed(

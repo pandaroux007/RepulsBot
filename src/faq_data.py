@@ -23,12 +23,8 @@ class ServerFAQ(FAQBase):
     faq_id = "server_faq_select"
     faq_data = [
         {
-            "question": "Need help ? Ask here.",
-            "answer": f"Please try asking in https://discord.com/channels/603655329120518223/603655329124712560 or in https://discord.com/channels/603655329120518223/1179111829788688434 first. If you don't get a clear answer, you can also ask <@&{IDs.serverRoles.ADMIN}> members"
-        },
-        {
             "question": "How to report a bug ?",
-            "answer": f"If this is a RepulsBot bug, then you can create an issue [on github]({bot.GITHUB}/issues) (just make sure it's actually a bug first). Otherwise, if the bug is coming from the game, then you can create a topic [in this channel](https://discord.com/channels/603655329120518223/1076163933213311067) or in [this one](https://discord.com/channels/603655329120518223/1349635397155684446) as part of the v2 of the netcode. Videos and screenshots are welcome."
+            "answer": f"If this is a RepulsBot bug, then you can create an issue [on github]({bot.GITHUB}/issues) (just make sure it's actually a bug first). Otherwise, if the bug is coming from the game, then you can create a topic [in this channel](https://discord.com/channels/603655329120518223/1076163933213311067) or in [this one](https://discord.com/channels/603655329120518223/1349635397155684446) for bugs related to v2 of the netcode. Videos and screenshots are welcome."
         },
         {
             "question": "How to post a youtube video ?",
@@ -40,7 +36,8 @@ class ServerFAQ(FAQBase):
 - To become a <@&{IDs.serverRoles.YOUTUBER}> or a <@&{IDs.serverRoles.STREAMER}>, please read this message https://discord.com/channels/603655329120518223/800107070614405120/1389262601740877925 and follow the instructions.
 - To become a <@&{IDs.serverRoles.CLAN_LEADER}>, simply have a clan of at least 10 members (they can play as guests and without discord). See https://discord.com/channels/603655329120518223/1377679009181335572 for details.
 - To become a <@&{IDs.serverRoles.CONTRIBUTOR}>, you must donate to the game in some way. Please contact docski in DM for this, the admins will not grant this role.
-- *Staff no longer offers the <@&{IDs.serverRoles.ADMIN}>, <@&{IDs.serverRoles.SWATTEAM}>, <@&{IDs.serverRoles.TRUSTED}> or <@&{IDs.serverRoles.CONDUCTOR}> roles.*"""
+- *Staff doesn't offer the <@&{IDs.serverRoles.SWATTEAM}>, or <@&{IDs.serverRoles.CONDUCTOR}> roles.*. Don't beg for the <@&{IDs.serverRoles.TRUSTED}> or <@&{IDs.serverRoles.ADMIN}> roles either; they are only granted if administrators deem it appropriate.
+"""
         },
         {
             "question": "I would like to report someone.",
@@ -49,10 +46,10 @@ class ServerFAQ(FAQBase):
         {
             "question": "When will the next update be ?",
             "answer": f"""
-                The [repuls.io]({links.REPULS_GAME}) game is currently being rewritten. The current game code needs to be rewritten for greater stability and to accommodate more players in future seasons.\n
-                This code rewrite, called `R2` or `netcode v2`, will also add the basis for numerous bug fixes, as well as new features (training bots, tanks, new mechs, etc.), and new servers (e.g., in Asia).\n
-                Although we don't have the exact date for the next update, you can already test it in the beta! Any bugs discovered save time for <@{IDs.repulsTeam.MAIN_DEVELOPER}>, so report them here: https://discord.com/channels/603655329120518223/1349635397155684446\n
-            """
+The [repuls.io]({links.REPULS_GAME}) game is currently being rewritten. The current game code needs to be rewritten for greater stability and to accommodate more players in future seasons.\n
+This code rewrite, called `R2` or `netcode v2`, will also add the basis for numerous bug fixes, as well as new features (training bots, tanks, new mechs, etc.), and new servers (e.g., in Asia).\n
+Although we don't have the exact date for the next update, you can already test it in the beta! Any bugs discovered save time for <@{IDs.repulsTeam.MAIN_DEVELOPER}>, so report them here: https://discord.com/channels/603655329120518223/1349635397155684446\n
+"""
         },
         {
             "question": "How can I suggest new ideas for the game ?",
@@ -90,22 +87,24 @@ Here are some helpful guides to help you improve your skills:
         {
             "question": "About the Super League ?",
             "answer": """
-    **What is the Super League ?**
-    The Super League is a large clan tournament where different clans compete against each other!
-    **Can I participate ?**
-    Of course! You can participate in the Super League if you are part of a clan or have created your own.\n
-    *If you don't have a clan but still want to play, you can become a free agent (free agents are players hired by participating clans).*"""
+**What is the Super League ?**
+The Super League is a large clan tournament where different clans compete against each other!
+**Can I participate ?**
+Of course! You can participate in the Super League if you are part of a clan or have created your own.\n
+*If you don't have a clan but still want to play, you can become a free agent (free agents are players hired by participating clans).*
+"""
         },
         {
             "question": "All about clans!",
             "answer": f"""
-    **Where can I join a clan ?**
-    You can join a clan in https://discord.com/channels/603655329120518223/1373288831058710740 (Not all clans may have posted their invitation!)\n
-    **What are the best clans ?**
-    View the top 3 clans according to the rankings https://discord.com/channels/603655329120518223/1129749085541384202 in RCC (Repuls Clan Clash)\n
-    **How do I become a clan leader ?**
-    The requirements to become a clan leader are to have at least 10 members in the in-game clan.\n
-    **How to host your own events/tournaments?**
-    To host your own tournaments, they must be approved by staff. Send a DM to an <@&{IDs.serverRoles.ESPORTS_ORGANIZER}> with your plan, rules, and projected size."""
+**Where can I join a clan ?**
+You can join a clan in https://discord.com/channels/603655329120518223/1373288831058710740 (Not all clans may have posted their invitation!)\n
+**What are the best clans ?**
+View the top 3 clans according to the rankings https://discord.com/channels/603655329120518223/1129749085541384202 in RCC (Repuls Clan Clash)\n
+**How do I become a clan leader ?**
+The requirements to become a clan leader are to have at least 10 members in the in-game clan.\n
+**How to host your own events/tournaments?**
+To host your own tournaments, they must be approved by staff. Send a DM to an <@&{IDs.serverRoles.ESPORTS_ORGANIZER}> with your plan, rules, and projected size.
+"""
         },
     ]

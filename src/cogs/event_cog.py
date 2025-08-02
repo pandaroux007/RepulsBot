@@ -11,13 +11,19 @@ from discord.ext import commands
 from cogs_list import CogsNames
 from constants import (
     IDs,
-    ASK_HELP
+    ASK_HELP,
+    AUTHORISED_SERVERS
 )
 
 # ---------------------------------- event cog (see README.md)
 class EventCog(commands.Cog, name=CogsNames.EVENT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_guild_join(guild: discord.Guild):
+        if guild.id not in AUTHORISED_SERVERS:
+            guild.leave()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

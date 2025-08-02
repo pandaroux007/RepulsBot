@@ -11,7 +11,7 @@ from utils import check_admin_or_roles
 from cogs_list import CogsNames
 from constants import DefaultEmojis
 
-# ---------------------------------- server cog (see README.md)
+# ---------------------------------- admin cog (see README.md)
 class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: commands.Bot):
         self.bot = bot

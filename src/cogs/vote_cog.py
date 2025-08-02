@@ -67,8 +67,8 @@ async def send_video_to_endpoint(video_url: str):
     except Exception:
         return "unknown"
 
-# ---------------------------------- vote cog (see README.md)
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
+# ---------------------------------- vote cog (see README.md)
 class VoteCog(commands.Cog, name=CogsNames.VOTE):
     def __init__(self, bot: commands.Bot):
         self.bot = bot

@@ -1,9 +1,17 @@
+"""
+FAQ and information commands, available to all members
+
+:copyright: (c) 2025-present pandaroux007
+:license: MIT, see LICENSE.txt for details.
+"""
+
 import discord
 from discord.ext import commands
 from discord import app_commands
 import platform
 # bot file
 from cogs_list import CogsNames
+from utils import nl
 from constants import (
     BotInfo,
     Links,
@@ -67,10 +75,10 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         )
         if member.id == self.bot.user.id: # bot presentation
             embed.title = f"Hi {interaction.user.display_name}! How can I help you ?"
-            embed.description = BotInfo.DESCRIPTION.format(name=self.bot.user.mention,
+            embed.description = nl(BotInfo.DESCRIPTION.format(name=self.bot.user.mention,
                                                        server=Links.DISCORD_INVITE,
-                                                       game=Links.REPULS_GAME)
-            embed.add_field(name=f"{BotInfo.NAME}", value=f"v{BotInfo.VERSION}")
+                                                       game=Links.REPULS_GAME))
+            embed.add_field(name=f"{self.bot.user.display_name}", value=f"v{BotInfo.VERSION}")
             embed.add_field(name="discord.py", value=f"v{discord.__version__}")
             embed.add_field(name="python", value=f"v{platform.python_version()}")
         else: # other member's informations

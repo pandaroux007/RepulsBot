@@ -1,8 +1,8 @@
-# Contribute to RepulsBot 🤖
+# Contribute to RepulsBot
 Thank you for your interest in contributing to the official [repuls.io](https://repuls.io) bot!
 This guide will help you participate effectively in development.
 
-## 🪲 Report a problem/suggest an idea
+## Report a problem/suggest an idea
 Open an issue specifying:
 1. Expected vs. Observed Bot Behavior
 2. Steps to reproduce the bug
@@ -10,20 +10,21 @@ Open an issue specifying:
 4. Bot version (commit executed)
 
 # Development
-## 🛠️ Prerequisites
+## Prerequisites
 - Python 3.10+
 - [UV](https://github.com/astral-sh/uv) (modern and fast replacement for `pip`),
 - Discord account with [developer portal](https://discord.com/developers/applications) enabled,
 - [Mockoon](https://mockoon.com) to simulate API endpoints
 
-## 🚀 Fork and code
+## Fork and code
 1. Fork the repository and clone it locally with:
 ```sh
 git clone https://github.com/your-user/RepulsBot.git
 cd RepulsBot
 ```
-2. Install dependencies with `uv`:
+2. Install dependencies with `uv` (see [this](https://docs.astral.sh/uv/getting-started/installation/) to install it):
 ```sh
+uv venv
 uv pip install -r pyproject.toml
 ```
 3. Configure your environment:
@@ -34,18 +35,18 @@ uv pip install -r pyproject.toml
     API_TOKEN=useless_for_dev
     ENV=dev # on prod by default (official server IDs), dev allows to use (your) development IDs
     ```
-    - Change the IDs in `src/constants.py` for your test server and bot emojis
+    - Change all the IDs in `src/constants.py`
 4. Develop new features, fix bugs!
 5. Test the bot by launching it with:
 ```sh
 cd src
-uv main.py
+uv run main.py
 ```
 
 ## Endpoint test
 Create a new local environment in Mockoon, then configure a new HTTP route, set the method to POST, and configure the route to the one you defined in the `.env`. Finally, launch the environment.
 
-## ✅ Best practices
+## Best practices
 - **Naming**: `snake_case` for variables/files
 - **Cogs**: Structure the code into modules (`/src/cogs/`)
 - **Test** locally with [Mockoon](https://mockoon.com) for endpoints
@@ -56,11 +57,11 @@ Create a new local environment in Mockoon, then configure a new HTTP route, set 
   - Added commands and features/bug fixes
   - Remain the [Pull Request template](.github/PULL_REQUEST_TEMPLATE.md)
 
-## 📜 License
+## License
 All contributions are subject to the [MIT License](LICENSE.txt).
 **By participating, you agree to license your work under this license.**
 
-## 🔗 Useful resources
+## Useful resources
 - [`discordpy` documentation](https://discordpy.readthedocs.io/)
 - [UV Guide](https://github.com/astral-sh/uv)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)

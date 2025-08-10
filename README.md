@@ -33,10 +33,7 @@ RepulsBot is a versatile bot, primarily for managing the vote for the best video
 ___
 # ⚙️ Development
 > [!NOTE]
-> **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!**
-
-> [!WARNING]
-> Even if you don't want to contribute, you can find all the details for configuring and launching the bot in [CONTRIBUTING.md](CONTRIBUTING.md)
+> **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!** Even if you don't want to contribute, you can find all the details for configuring and launching the bot in [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 🚀 Development goals
 ### Objectives to be achieved
@@ -54,9 +51,23 @@ ___
 **Lots of other amazing features!**
 ___
 <details>
-<summary>⛔️ Abandoned objectives (for now)</summary>
+<summary>Abandoned objectives</summary>
 
 > - clear command (clean command but with messages' links)
 > - Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
 
 </details>
+
+## Difference between bot logs and moderation logs
+### Moderation logs
+- Deleted channel
+- Created channel
+- Deleted message
+- Modified message
+- Purge results
+- Ban, ban, and kick log
+- Role modification (including muted role management)
+### Bot logs
+- Message deletion by automod
+- Ticket log
+- Error log

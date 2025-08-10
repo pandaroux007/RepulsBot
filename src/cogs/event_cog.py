@@ -9,8 +9,13 @@ import discord
 from discord.ext import commands
 # bot file
 from cogs_list import CogsNames
+from utils import (
+    log, BOTLOG, LogColor
+)
+
 from constants import (
     IDs,
+    DefaultEmojis,
     ASK_HELP,
     AUTHORISED_SERVERS
 )
@@ -21,9 +26,9 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_guild_join(guild: discord.Guild):
+    async def on_guild_join(self, guild: discord.Guild):
         if guild.id not in AUTHORISED_SERVERS:
-            guild.leave()
+            await guild.leave()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -32,6 +37,32 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         elif message.channel.id == IDs.serverChannel.RULES:
             await message.channel.send(message.content)
             await message.delete()
+
+    # https://discord.com/developers/docs/reference#message-formatting
+    # https://gist.github.com/LeviSnoot/d9147767abeef2f770e9ddcd91eb85aa
+    @commands.Cog.listener()
+    async def on_member_ban(self, guild: discord.Guild, user: discord.User):
+        async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
+            if entry.target.id == user.id:
+                await log(
+                    self.bot, color=LogColor.LEAVE,
+                    title=f"🔨 {user.display_name} has been banned by {entry.user.mention}",
+                    msg=f"{f"Reason: *{entry.reason}*, " if entry.reason else ""}On date: <t:{int(entry.created_at.timestamp())}:F>\nUser ID: {user.id}"
+                )
+                return
+
+        await log(self.bot, color=LogColor.LEAVE, title=f"🔨 {user.display_name} has been banned, author undetermined.", msg=f"User ID: {user.id}")
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        async for entry in member.guild.audit_logs(limit=5, action=discord.AuditLogAction.kick):
+            if entry.target.id == member.id and (discord.utils.utcnow() - entry.created_at).total_seconds() < 10:
+                await log(
+                    self.bot, color=LogColor.LEAVE,
+                    title=f"⛔️ {member.mention} has been kicked by {entry.user.mention}.",
+                    msg=f"{f"Reason: *{entry.reason}*, " if entry.reason else ""}User ID: {member.id}"
+                )
+                return
     
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
@@ -44,14 +75,14 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         elif isinstance(error, commands.CommandNotFound):
             return # do nothing
         else:
-            # log system
-            log_channel = self.bot.get_channel(IDs.serverChannel.LOG)
-            if log_channel is not None:
-                await log_channel.send(f"User {ctx.author.mention} tried to use the {ctx.command} command, but it failed with the error:\n`{error}`", silent=True)
+            await log(
+                bot=self.bot, type=BOTLOG,
+                title=f"{DefaultEmojis.ERROR} User {ctx.author.mention} tried to use the {ctx.command} command",
+                msg=f"It failed with the error:\n`{error}`"
+            )
 
-        error_emoji = await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE) or "❌"
         embed = discord.Embed(
-            title=f"{error_emoji} Check failure!",
+            title=f"{DefaultEmojis.ERROR} Check failure!",
             description=f"{message}{ASK_HELP}",
             color=discord.Color.brand_red()
         )
@@ -63,9 +94,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         synced = await self.bot.tree.sync()
         print(f"{len(synced)} command(s) have been synchronized")
         
-        status_channel = self.bot.get_channel(IDs.serverChannel.STATUS)
-        if status_channel is not None:
-            await status_channel.send(f"{self.bot.user.mention} is now **online**! {await self.bot.fetch_application_emoji(IDs.customEmojis.CONNECTE)}")
+        await log(bot=self.bot, title=f"{self.bot.user.mention} is now online! 🟢", type=BOTLOG)
         
         game = discord.Game("🎮️ repuls.io browser game! 🕹️")
         await self.bot.change_presence(activity=game)

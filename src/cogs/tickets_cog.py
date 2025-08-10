@@ -12,7 +12,13 @@ from datetime import timedelta
 import random
 import string
 # bot files
+from cmd_list import CmdList
 from cogs_list import CogsNames
+from utils import (
+    check_admin_or_roles,
+    log, BOTLOG, LogColor
+)
+
 from constants import (
     IDs,
     DefaultEmojis,
@@ -24,7 +30,6 @@ PERMS_ACCESS_GRANTED = discord.PermissionOverwrite(view_channel=True, send_messa
 AUTHORIZED_MEMBERS = [
     IDs.serverRoles.ADMIN,
     IDs.serverRoles.DEVELOPER,
-    IDs.serverRoles.CONTRIBUTOR
 ]
 
 TICKET_TYPES = [
@@ -53,8 +58,9 @@ class GoToTicketButton(discord.ui.View):
 
 # ---------------------------------- title and description (modal)
 class TicketModal(discord.ui.Modal):
-    def __init__(self, ticket_type_abbr: str):
+    def __init__(self, bot: commands.Bot, ticket_type_abbr: str):
         self.ticket_type_abbr = ticket_type_abbr
+        self.bot = bot
         super().__init__(title=f"New ticket {self._get_ticket_label()}")
         
         self.title_input = discord.ui.TextInput(
@@ -91,7 +97,7 @@ class TicketModal(discord.ui.Modal):
             embed = discord.Embed(
                 title=f"{self.title_input.value}",
                 description=self.description_input.value,
-                color=discord.Color.blue()
+                color=discord.Color.dark_blue()
             )
             embed.set_author(
                 name=author.display_name,
@@ -104,16 +110,16 @@ class TicketModal(discord.ui.Modal):
                 f"{DefaultEmojis.CHECK} Your ticket has been created: {ticket_channel.mention}",
                 view=GoToTicketButton(ticket_channel),
                 ephemeral=True,
-                delete_after=600 # 10 minutes
+                delete_after=300 # 5 minutes
+            )
+            await log(self.bot, type=BOTLOG, color=LogColor.CREATE,
+                title=f"New ticket created by {author.mention}, name: `{ticket_channel.name}`",
+                msg=f"Ticket type: `{self._get_ticket_label()}`, [go there]({ticket_channel.jump_url}).\nTitle: **{self.title_input.value}**\n>>> *{self.description_input.value}*"
             )
         
         except Exception as error:
             error_msg = "An error occurred while creating the ticket!"
-
-            log_channel = guild.get_channel(IDs.serverChannel.LOG)
-            if log_channel:
-                await log_channel.send(f"{error_msg}\n{error}", silent=True)
-
+            await log(self.bot, type=BOTLOG, title=error_msg, msg=f"`{error}`")
             await interaction.response.send_message(f":x: {error_msg}{ASK_HELP}", ephemeral=True)
 
     def _build_ticket_overwrites(self, guild: discord.Guild, author: discord.Member) -> dict:
@@ -140,7 +146,8 @@ class TicketModal(discord.ui.Modal):
 
 # ---------------------------------- ticket type selector
 class TicketTypeSelect(discord.ui.Select):
-    def __init__(self):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
         options = [
             discord.SelectOption(label=label, value=abbr, description=desc)
             for label, desc, abbr in TICKET_TYPES
@@ -155,12 +162,12 @@ class TicketTypeSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         ticket_type_abbr = self.values[0]
-        await interaction.response.send_modal(TicketModal(ticket_type_abbr))
+        await interaction.response.send_modal(TicketModal(self.bot, ticket_type_abbr))
 
 class TicketTypeView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
-        self.add_item(TicketTypeSelect())
+        self.add_item(TicketTypeSelect(bot))
 
 # ---------------------------------- cancel closing button
 class CancelCloseView(discord.ui.View):
@@ -189,8 +196,10 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="close_ticket", description="If launched in a ticket, closes it")
-    async def close_ticket(self, interaction: discord.Interaction):
+    # ---------------------------------- admin commands
+    @app_commands.command(name=CmdList.CLOSETICKET, description="If launched in a ticket, closes it")
+    @check_admin_or_roles()
+    async def close_ticket(self, interaction: discord.Interaction, * , reason: str = ""):
         if interaction.channel.category and interaction.channel.category.id == IDs.serverChannel.TICKETS_CATEGORY:
             view = CancelCloseView()
             embed = discord.Embed(
@@ -209,26 +218,26 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
                 await view.message.delete()
                 return
             else: # close ticket
+                await log(self.bot, type=BOTLOG, color=LogColor.DELETE,
+                    title=f"A ticket has been closed by {interaction.user.mention}, name: `{interaction.channel.name}`",
+                    msg=f"Reason: {reason}" if reason != "" else ""
+                )
                 await interaction.channel.delete()
         else:
-            error_emote = await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)
-            await interaction.response.send_message(
-                f"{error_emote} This command isn't available here. Try again in a ticket!",
-                ephemeral=True
-            )
+            await interaction.response.send_message(f"{DefaultEmojis.ERROR} This command isn't available here. Try again in a ticket!", ephemeral=True)
     
-    # ---------------------------------- admin command
-    @commands.command(name="setup_ticket", description="Post the unique ticket creation message")
-    @commands.has_permissions(administrator=True)
+    @commands.command(name=CmdList.SETUPTICKET, description="Post the unique ticket creation message")
+    @check_admin_or_roles()
     async def setup_ticket(self, ctx: commands.Context):
+        await ctx.message.delete()
         embed = discord.Embed(
             title=OPEN_TICKET_TITLE,
             description=OPEN_TICKET_MSG,
             color=discord.Color.dark_blue()
         )
-        view = TicketTypeView()
+        view = TicketTypeView(self.bot)
         await ctx.send(embed=embed, view=view)
 
 async def setup(bot: commands.Bot):
-    bot.add_view(TicketTypeView())
+    bot.add_view(TicketTypeView(bot))
     await bot.add_cog(TicketsCog(bot))

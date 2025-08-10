@@ -10,6 +10,7 @@ from discord.ext import commands
 from discord import app_commands
 import platform
 # bot file
+from cmd_list import CmdList
 from cogs_list import CogsNames
 from utils import nl
 from constants import (
@@ -29,7 +30,7 @@ Then you'll find everything you need on the official Wiki!
 """
 
 REPULS_DESCRIPTION = f"""
-[Repuls.io]({Links.REPULS_GAME}) is the future of browser games.
+[Repuls.io]({Links.GAME}) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
 Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
 """
@@ -67,17 +68,17 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="aboutmember", description="Displays information about a server member")
+    @app_commands.command(name=CmdList.ABOUTMEMBER, description="Displays information about a server member")
     async def aboutmember(self, interaction: discord.Interaction, member: discord.Member):
         embed = discord.Embed(
             title=f"Information about **{member.display_name}**",
-            color=discord.Color.dark_blue(),
+            color=discord.Color.dark_blue()
         )
         if member.id == self.bot.user.id: # bot presentation
             embed.title = f"Hi {interaction.user.display_name}! How can I help you ?"
             embed.description = nl(BotInfo.DESCRIPTION.format(name=self.bot.user.mention,
-                                                       server=Links.DISCORD_INVITE,
-                                                       game=Links.REPULS_GAME))
+                                                       server=Links.MAIN_SERVER,
+                                                       game=Links.GAME))
             embed.add_field(name=f"{self.bot.user.display_name}", value=f"v{BotInfo.VERSION}")
             embed.add_field(name="discord.py", value=f"v{discord.__version__}")
             embed.add_field(name="python", value=f"v{platform.python_version()}")
@@ -94,13 +95,13 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="aboutserver", description="Displays information about the server")
+    @app_commands.command(name=CmdList.ABOUTSERVER, description="Displays information about the server")
     async def aboutserver(self, interaction: discord.Interaction):
         guild = interaction.guild
         embed = discord.Embed(
             title=f"About *{guild.name}* server",
             description="Information about this discord server",
-            color=discord.Color.dark_blue(),
+            color=discord.Color.dark_blue()
         )
         embed.set_thumbnail(url = guild.icon.url if guild.icon else None)
         embed.add_field(name="Owner", value=guild.owner.mention, inline=True)
@@ -115,61 +116,61 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="aboutgame", description="Displays information about repuls.io game")
+    @app_commands.command(name=CmdList.ABOUTGAME, description="Displays information about repuls.io game")
     async def aboutgame(self, interaction: discord.Interaction):
         play_btn_view = discord.ui.View()
         play_btn = discord.ui.Button(
             style=discord.ButtonStyle.link,
             label="PLAY NOW!",
-            url=Links.REPULS_GAME
+            url=Links.GAME
         )
         play_btn_view.add_item(play_btn)
         embed = discord.Embed(
             title="What is repuls.io ?",
-            url=f"{Links.REPULS_GAME}home",
+            url=f"{Links.GAME}home",
             description=REPULS_DESCRIPTION,
-            color=discord.Color.blue(),
+            color=discord.Color.dark_blue()
         )
-        embed.add_field(name="Leaderboard", value=f"[Leaderboard]({Links.REPULS_GAME}leaderboard)", inline=True)
-        embed.add_field(name="Updates", value=f"[Updates]({Links.REPULS_GAME}updates)", inline=True)
-        embed.add_field(name="Terms & privacy", value=f"[Privacy]({Links.GAME_PRIVACY})", inline=True)
+        embed.add_field(name="Leaderboard", value=f"[Leaderboard]({Links.GAME}leaderboard)", inline=True)
+        embed.add_field(name="Updates", value=f"[Updates]({Links.GAME}updates)", inline=True)
+        embed.add_field(name="Terms & privacy", value=f"[Privacy]({Links.PRIVACY})", inline=True)
         embed.set_footer(text=FOOTER_EMBED)
 
         await interaction.response.send_message(embed=embed, view=play_btn_view)
 
-    @app_commands.command(name="wiki", description="Everything you need to know about the game")
+    @app_commands.command(name=CmdList.WIKI, description="Everything you need to know about the game")
     async def wiki(self, interaction: discord.Interaction):
         wiki_btn_view = discord.ui.View()
         wiki_btn = discord.ui.Button(
             style=discord.ButtonStyle.link,
             label="Go to the repuls.io Wiki!",
-            url=Links.REPULS_WIKI
+            url=Links.WIKI
         )
         wiki_btn_view.add_item(wiki_btn)
         embed = discord.Embed(
             title="Everything you need to know about repuls.io",
             description=REPULS_WIKI_DESCRIPTION,
-            color=discord.Color.blue(),
+            color=discord.Color.dark_blue()
         )
 
         await interaction.response.send_message(embed=embed, view=wiki_btn_view)
 
-    @app_commands.command(name="serverfaq", description="Launch the server's interactive FAQ")
+    @app_commands.command(name=CmdList.SERVERFAQ, description="Launch the server's interactive FAQ")
     async def serverfaq(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title=f"{interaction.guild.name}{"\'" if interaction.guild.name.endswith('s') else "'s"} server FAQ",
             description="👉️ Select a question from the drop-down menu below!",
-            color=discord.Color.blue()
+            color=discord.Color.dark_blue()
         )
         view = FAQView(ServerFAQ.get_data(), custom_id=ServerFAQ.get_id())
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    @app_commands.command(name="gamefaq", description="Frequently Asked Questions about the repuls.io game")
+    @app_commands.command(name=CmdList.GAMEFAQ, description="Frequently Asked Questions about the repuls.io game")
     async def gamefaq(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Repuls.io game FAQ",
             description="👉️ Select a question from the drop-down menu below!",
-            color=discord.Color.blue()
+            color=discord.Color.dark_blue()
         )
         view = FAQView(GameFAQ.get_data(), custom_id=GameFAQ.get_id())
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)

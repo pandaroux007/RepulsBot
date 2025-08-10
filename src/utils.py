@@ -2,21 +2,17 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 # bot file
-from constants import IDs
+from constants import (
+    IDs,
+    AUTHORISED_ROLES
+)
 
 def check_admin_or_roles():
     async def predicate(ctx: commands.Context):
-        has_admin = ctx.author.guild_permissions.administrator
-        allowed_role_ids = {IDs.serverRoles.ADMIN, IDs.serverRoles.DEVELOPER}
-        has_role = any(role.id in allowed_role_ids for role in ctx.author.roles)
-        return has_admin or has_role
+        is_admin = ctx.author.guild_permissions.administrator
+        has_role = any(role.id in AUTHORISED_ROLES for role in ctx.author.roles)
+        return is_admin or has_role
     return commands.check(predicate)
-
-async def send_hidden_message(ctx: commands.Context, text: str):
-    if ctx.interaction: # slash command
-        await ctx.interaction.followup.send(text, ephemeral=True)
-    else:
-        await ctx.send(text, delete_after=10.0)
 
 def hoursdelta(hours) -> datetime:
     return discord.utils.utcnow() - timedelta(hours=hours)
@@ -24,3 +20,23 @@ def hoursdelta(hours) -> datetime:
 def nl(string: str) -> str:
     """ returns a string without line breaks """
     return string.replace('\n', ' ').strip()
+
+# ---------------------------------- log system
+class LogColor:
+    DEFAULT = discord.Color.blue()
+    LEAVE = discord.Color.red()
+    CREATE = discord.Color.green()
+    DELETE = discord.Color.red()
+
+MODLOG = True
+BOTLOG = False
+
+async def log(bot: commands.Bot, title: str, msg: str = "", type: bool = MODLOG, color: LogColor = LogColor.DEFAULT):
+    log_channel = bot.get_channel(IDs.serverChannel.BOTLOG if type == BOTLOG else IDs.serverChannel.MODLOG)
+    if log_channel is not None:
+        log_embed = discord.Embed(
+            description=f"**{title}**\n{msg}",
+            color=color,
+            timestamp=discord.utils.utcnow()
+        )
+        await log_channel.send(embed=log_embed, silent=True, allowed_mentions=discord.AllowedMentions.none())

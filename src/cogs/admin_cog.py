@@ -5,22 +5,47 @@ This cog contains all the commands accessible only to server admins
 :license: MIT, see LICENSE.txt for details.
 """
 
+import discord
 from discord.ext import commands
+from discord import app_commands
+import asyncio
 # bot files
-from utils import check_admin_or_roles
+from cmd_list import CmdList
 from cogs_list import CogsNames
 from constants import DefaultEmojis
+from utils import (
+    check_admin_or_roles,
+    log, LogColor
+)
+
+MAX_PURGE = 1000
 
 # ---------------------------------- admin cog (see README.md)
 class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     
-    @commands.command(name="purge", description="Allows you to clean a certain number of messages")
+    @app_commands.command(name=CmdList.PURGE, description="Allows you to clean a certain number of messages")
+    @app_commands.describe(number=f"Number of messages to delete (max {MAX_PURGE})")
     @check_admin_or_roles()
-    async def purge(self, ctx: commands.Context, number: int):
-        deleted = await ctx.channel.purge(limit=number + 1)
-        await ctx.send(f"{DefaultEmojis.CHECK} {len(deleted) - 1} messages removed!")
+    async def purge(self, interaction: discord.Interaction, number: int):
+        number = max(1, min(number, MAX_PURGE))
+        await interaction.response.defer(ephemeral=True)
+
+        total_deleted = 0
+        while number > 0:
+            to_delete = min(100, number)
+            deleted = await interaction.channel.purge(limit=to_delete)
+            total_deleted += len(deleted)
+            number -= to_delete
+            if number > 0:
+                await asyncio.sleep(1)
+        
+        await log(
+            bot=self.bot, color=LogColor.DELETE,
+            title=f"🗑️ {total_deleted} messages removed in {interaction.channel.jump_url} by {interaction.user.mention}"
+        )
+        await interaction.edit_original_response(content=f"{DefaultEmojis.CHECK} {total_deleted} messages removed!")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(AdminCog(bot))

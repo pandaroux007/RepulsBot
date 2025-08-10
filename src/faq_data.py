@@ -46,7 +46,7 @@ class ServerFAQ(FAQBase):
         {
             "question": "When will the next update be ?",
             "answer": f"""
-The [repuls.io]({links.REPULS_GAME}) game is currently being rewritten. The current game code needs to be rewritten for greater stability and to accommodate more players in future seasons.\n
+The [repuls.io]({links.GAME}) game is currently being rewritten. The current game code needs to be rewritten for greater stability and to accommodate more players in future seasons.\n
 This code rewrite, called `R2` or `netcode v2`, will also add the basis for numerous bug fixes, as well as new features (training bots, tanks, new mechs, etc.), and new servers (e.g., in Asia).\n
 Although we don't have the exact date for the next update, you can already test it in the beta! Any bugs discovered save time for <@{IDs.repulsTeam.MAIN_DEVELOPER}>, so report them here: https://discord.com/channels/603655329120518223/1349635397155684446\n
 """
@@ -66,11 +66,11 @@ class GameFAQ(FAQBase):
     faq_data = [
         {
             "question": "Where can I get 3D assets of the game?",
-            "answer": f"To prevent 3D assets in repuls from being stolen, please send a direct message or mention to <@{IDs.repulsTeam.GRAPHIC_DESIGNER}>"
+            "answer": f"To prevent 3D assets in REPULS from being stolen, please join [the RWNC server]({links.RWNC_SERVER}) for access to certain models."
         },
         {
             "question": "Why is the game not working/loading ?",
-            "answer": f"Your browser may have cached the game code. Clear your cache and cookies [as instructed here]({links.CLEAR_DATA_TUTORIAL}), and try launching [repuls.io]({links.REPULS_GAME}) again."
+            "answer": f"Your browser may have cached the game code. Clear your cache and cookies [as instructed here]({links.CLEAR_DATA_TUTORIAL}), and try launching [repuls.io]({links.GAME}) again."
         },
         {
             "question": "How do I reset my password ?",

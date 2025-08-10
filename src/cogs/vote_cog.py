@@ -15,7 +15,8 @@ import random
 # bot files
 from utils import (
     hoursdelta,
-    nl
+    nl,
+    log, BOTLOG
 )
 
 from cogs_list import CogsNames
@@ -149,23 +150,29 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             match = re.search(YOUTUBE_REGEX, winner.content)
             code = await send_video_to_endpoint(video_url=match.group(0))
 
-            log_channel = self.bot.get_channel(IDs.serverChannel.LOG)
-            if log_channel:
-                if code == SUCCESS_CODE:
-                    status = f"{DefaultEmojis.CHECK} Video sent to repuls.io!"
-                else:
-                    status = f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)"
-                await log_channel.send(f"**Website state** : {status}", silent=True)
+            if code == SUCCESS_CODE:
+                status = f"{DefaultEmojis.CHECK} Video sent to repuls.io! (HTTP {code})"
+            else:
+                status = f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)"
+            await log(self.bot, type=BOTLOG, title="Status of sending the video link to the repuls website", msg=status)
 
+        async for msg in video_channel.history(limit=1):
+            if msg.author.id == self.bot.user.id:
+                await msg.delete()
         await video_channel.send(embed=embed)
     
     # ---------------------------------- command
     @app_commands.command(name="video_leaderboard", description="Show the most voted YouTube videos")
-    async def video_leaderboard(self, interaction: discord.Interaction, hours: int = VOTE_HOURS, message_limit: int = 50, top: int = 6):
+    @app_commands.describe(
+        hours=f"Maximum video age (default on {VOTE_HOURS}h)",
+        limit="Number of videos retrieved from history",
+        top="The number of videos in the list (max 10)"
+    )
+    async def video_leaderboard(self, interaction: discord.Interaction, hours: int = VOTE_HOURS, limit: int = 50, top: int = 6):
         video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
         if not video_channel:
             await interaction.response.send_message(
-                content=f"{await self.bot.fetch_application_emoji(IDs.customEmojis.DECONNECTE)} Unable to find video channel!{ASK_HELP}",
+                content=f"{DefaultEmojis.ERROR} Unable to find video channel!{ASK_HELP}",
                 ephemeral=True
             )
             return
@@ -173,13 +180,13 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         video_votes = []
         embed = discord.Embed(
             title="👏 YouTube Video Leaderboard",
-            description=f"(within the last {hours}h, with a limit of {message_limit} message{"s" if message_limit > 1 else ""})",
+            description=f"(within the last {hours}h, with a limit of {limit} message{"s" if limit > 1 else ""})",
             color=discord.Color.gold(),
             timestamp=discord.utils.utcnow()
         )
         embed.set_footer(text=f"Top {top} most voted YouTube videos")
 
-        async for message in video_channel.history(limit=message_limit, after=hoursdelta(hours)):
+        async for message in video_channel.history(limit=limit, after=hoursdelta(hours)):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue
 

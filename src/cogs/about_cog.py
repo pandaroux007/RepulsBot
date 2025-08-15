@@ -10,7 +10,6 @@ from discord.ext import commands
 from discord import app_commands
 import platform
 # bot file
-from cmd_list import CmdList
 from cogs_list import CogsNames
 from utils import nl
 from constants import (
@@ -68,8 +67,8 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name=CmdList.ABOUTMEMBER, description="Displays information about a server member")
-    async def aboutmember(self, interaction: discord.Interaction, member: discord.Member):
+    @app_commands.command(description="Displays information about a server member")
+    async def about_member(self, interaction: discord.Interaction, member: discord.Member):
         embed = discord.Embed(
             title=f"Information about **{member.display_name}**",
             color=discord.Color.dark_blue()
@@ -95,8 +94,8 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name=CmdList.ABOUTSERVER, description="Displays information about the server")
-    async def aboutserver(self, interaction: discord.Interaction):
+    @app_commands.command(description="Displays information about the server")
+    async def about_server(self, interaction: discord.Interaction):
         guild = interaction.guild
         embed = discord.Embed(
             title=f"About *{guild.name}* server",
@@ -116,8 +115,8 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name=CmdList.ABOUTGAME, description="Displays information about repuls.io game")
-    async def aboutgame(self, interaction: discord.Interaction):
+    @app_commands.command(description="Displays information about repuls.io game")
+    async def about_game(self, interaction: discord.Interaction):
         play_btn_view = discord.ui.View()
         play_btn = discord.ui.Button(
             style=discord.ButtonStyle.link,
@@ -138,7 +137,7 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
 
         await interaction.response.send_message(embed=embed, view=play_btn_view)
 
-    @app_commands.command(name=CmdList.WIKI, description="Everything you need to know about the game")
+    @app_commands.command(description="Everything you need to know about the game")
     async def wiki(self, interaction: discord.Interaction):
         wiki_btn_view = discord.ui.View()
         wiki_btn = discord.ui.Button(
@@ -155,8 +154,8 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
 
         await interaction.response.send_message(embed=embed, view=wiki_btn_view)
 
-    @app_commands.command(name=CmdList.SERVERFAQ, description="Launch the server's interactive FAQ")
-    async def serverfaq(self, interaction: discord.Interaction):
+    @app_commands.command(description="Launch the server's interactive FAQ")
+    async def server_faq(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title=f"{interaction.guild.name}{"\'" if interaction.guild.name.endswith('s') else "'s"} server FAQ",
             description="👉️ Select a question from the drop-down menu below!",
@@ -165,8 +164,8 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         view = FAQView(ServerFAQ.get_data(), custom_id=ServerFAQ.get_id())
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    @app_commands.command(name=CmdList.GAMEFAQ, description="Frequently Asked Questions about the repuls.io game")
-    async def gamefaq(self, interaction: discord.Interaction):
+    @app_commands.command(description="Frequently Asked Questions about the repuls.io game")
+    async def game_faq(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Repuls.io game FAQ",
             description="👉️ Select a question from the drop-down menu below!",

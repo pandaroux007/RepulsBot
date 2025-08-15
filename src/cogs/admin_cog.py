@@ -10,12 +10,12 @@ from discord.ext import commands
 from discord import app_commands
 import asyncio
 # bot files
-from cmd_list import CmdList
 from cogs_list import CogsNames
 from constants import DefaultEmojis
 from utils import (
     check_admin_or_roles,
-    log, LogColor
+    log, LogColor,
+    IS_ADMIN
 )
 
 MAX_PURGE = 1000
@@ -25,7 +25,7 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     
-    @app_commands.command(name=CmdList.PURGE, description="Allows you to clean a certain number of messages")
+    @app_commands.command(description="Allows you to clean a certain number of messages", extras={IS_ADMIN: True})
     @app_commands.describe(number=f"Number of messages to delete (max {MAX_PURGE})")
     @check_admin_or_roles()
     async def purge(self, interaction: discord.Interaction, number: int):
@@ -42,7 +42,7 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
                 await asyncio.sleep(1)
         
         await log(
-            bot=self.bot, color=LogColor.DELETE,
+            bot=self.bot, color=LogColor.RED,
             title=f"🗑️ {total_deleted} messages removed in {interaction.channel.jump_url} by {interaction.user.mention}"
         )
         await interaction.edit_original_response(content=f"{DefaultEmojis.CHECK} {total_deleted} messages removed!")

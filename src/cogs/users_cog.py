@@ -10,7 +10,6 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 # bot files
-from cmd_list import CmdList
 from cogs_list import CogsNames
 from constants import DefaultEmojis
 
@@ -19,11 +18,11 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name=CmdList.PING, description="Displays latency of the bot")
+    @app_commands.command(description="Displays latency of the bot")
     async def ping(self, interaction: discord.Interaction):
         await interaction.response.send_message(f"{DefaultEmojis.CHECK} **pong!** (*It took me {round(self.bot.latency * 1000, 2)}ms to respond to your command!*)")
 
-    @app_commands.command(name=CmdList.AVATAR, description="Displays a member's avatar")
+    @app_commands.command(description="Displays a member's avatar")
     async def avatar(self, interaction: discord.Interaction, member: discord.Member):
         embed = discord.Embed(
             title=f"Avatar of {member.display_name}!",
@@ -36,7 +35,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name=CmdList.MEMBERCOUNT, description="Get the server member count")
+    @app_commands.command(description="Get the server member count")
     async def membercount(self, interaction: discord.Interaction):
         embed = discord.Embed(
             color=discord.Color.dark_blue(),
@@ -45,7 +44,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         embed.add_field(name="Members", value=interaction.guild.member_count)
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name=CmdList.ESPORTSTATES, description="displays the eSports competitions of the year")
+    @app_commands.command(description="displays the eSports competitions of the year")
     async def esports_roadmap(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Repuls eSports roadmap!",

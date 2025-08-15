@@ -30,12 +30,13 @@ RepulsBot is a versatile bot, primarily for managing the vote for the best video
 ### Other contributors
 - *sergiolan55*
 - *aman_and_cats*
+- *martin_9202*
 ___
 # ⚙️ Development
 > [!NOTE]
 > **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!** Even if you don't want to contribute, you can find all the details for configuring and launching the bot in [CONTRIBUTING.md](CONTRIBUTING.md)
 
-## 🚀 Development goals
+## Development goals
 ### Objectives to be achieved
 #### Must be defined
 - moderation commands
@@ -71,3 +72,8 @@ ___
 - Message deletion by automod
 - Ticket log
 - Error log
+
+## Help command details
+The help command differentiates between commands that are usable by all members and those that are only usable by admins. It does this by relying on the `extras` parameter of the `discord.py` decorators.
+- Contextual commands ([discord.ext.commands.command](https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.command))
+- Slash commands ([discord.app_commands.command](https://discordpy.readthedocs.io/en/stable/interactions/api.html#discord.app_commands.command))

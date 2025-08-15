@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
+from typing import Optional
 # bot file
 from constants import (
     IDs,
@@ -14,6 +15,8 @@ def check_admin_or_roles():
         return is_admin or has_role
     return commands.check(predicate)
 
+IS_ADMIN = "admin_only"
+
 def hoursdelta(hours) -> datetime:
     return discord.utils.utcnow() - timedelta(hours=hours)
 
@@ -21,17 +24,20 @@ def nl(string: str) -> str:
     """ returns a string without line breaks """
     return string.replace('\n', ' ').strip()
 
+def gettimestamp(time: datetime, format: Optional[str] = "F"):
+    """ returns a discord markdown timestamp """
+    return f"<t:{int(time.timestamp())}{f":{format}" if format else ""}>"
+
 # ---------------------------------- log system
 class LogColor:
-    DEFAULT = discord.Color.blue()
-    LEAVE = discord.Color.red()
-    CREATE = discord.Color.green()
-    DELETE = discord.Color.red()
+    BLUE = discord.Color.blue()
+    RED = discord.Color.red()
+    GREEN = discord.Color.green()
 
 MODLOG = True
 BOTLOG = False
 
-async def log(bot: commands.Bot, title: str, msg: str = "", type: bool = MODLOG, color: LogColor = LogColor.DEFAULT):
+async def log(bot: commands.Bot, title: str, msg: str = "", type: bool = MODLOG, color: LogColor = LogColor.BLUE):
     log_channel = bot.get_channel(IDs.serverChannel.BOTLOG if type == BOTLOG else IDs.serverChannel.MODLOG)
     if log_channel is not None:
         log_embed = discord.Embed(

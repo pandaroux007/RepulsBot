@@ -12,11 +12,11 @@ from datetime import timedelta
 import random
 import string
 # bot files
-from cmd_list import CmdList
 from cogs_list import CogsNames
 from utils import (
     check_admin_or_roles,
-    log, BOTLOG, LogColor
+    log, BOTLOG, LogColor,
+    IS_ADMIN
 )
 
 from constants import (
@@ -90,31 +90,28 @@ class TicketModal(discord.ui.Modal):
 
             ticket_channel = await guild.create_text_channel(
                 channel_name, category=category, overwrites=overwrites,
-                topic=f"🎟️ **{self._get_ticket_label()}** ・ {self.title_input.value}"
+                topic=f"author_id: {author.id}\ntitle: {self.title_input.value}"
             )
 
             # first channel's message
+            ticket = f"New ticket of type {self._get_ticket_label()}, opened by {author.mention}"
             embed = discord.Embed(
                 title=f"{self.title_input.value}",
                 description=self.description_input.value,
                 color=discord.Color.dark_blue()
             )
-            embed.set_author(
-                name=author.display_name,
-                icon_url=author.display_avatar.url,
-            )
-            embed.set_footer(text=f"Ticket type \"{self._get_ticket_label()}\"")
 
-            await ticket_channel.send(embed=embed)
+            await ticket_channel.send(content=ticket, embed=embed)
             await interaction.response.send_message(
                 f"{DefaultEmojis.CHECK} Your ticket has been created: {ticket_channel.mention}",
                 view=GoToTicketButton(ticket_channel),
                 ephemeral=True,
                 delete_after=300 # 5 minutes
             )
-            await log(self.bot, type=BOTLOG, color=LogColor.CREATE,
-                title=f"New ticket created by {author.mention}, name: `{ticket_channel.name}`",
-                msg=f"Ticket type: `{self._get_ticket_label()}`, [go there]({ticket_channel.jump_url}).\nTitle: **{self.title_input.value}**\n>>> *{self.description_input.value}*"
+            await log(
+                self.bot, type=BOTLOG, color=LogColor.GREEN,
+                title=f"New ticket [`{ticket_channel.name}`]({ticket_channel.jump_url}) of type `{self._get_ticket_label()}` created by {author.mention}.",
+                msg=f"Title: **{self.title_input.value}**\n>>> *{self.description_input.value}*"
             )
         
         except Exception as error:
@@ -197,9 +194,9 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
         self.bot = bot
 
     # ---------------------------------- admin commands
-    @app_commands.command(name=CmdList.CLOSETICKET, description="If launched in a ticket, closes it")
+    @app_commands.command(description="If launched in a ticket, closes it", extras={IS_ADMIN: True})
     @check_admin_or_roles()
-    async def close_ticket(self, interaction: discord.Interaction, * , reason: str = ""):
+    async def close_ticket(self, interaction: discord.Interaction, * , reason: str = None):
         if interaction.channel.category and interaction.channel.category.id == IDs.serverChannel.TICKETS_CATEGORY:
             view = CancelCloseView()
             embed = discord.Embed(
@@ -218,15 +215,26 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
                 await view.message.delete()
                 return
             else: # close ticket
-                await log(self.bot, type=BOTLOG, color=LogColor.DELETE,
-                    title=f"A ticket has been closed by {interaction.user.mention}, name: `{interaction.channel.name}`",
-                    msg=f"Reason: {reason}" if reason != "" else ""
+                # https://www.w3schools.com/python/python_ref_string.asp
+                topic = interaction.channel.topic or ''
+                author_id, title = None, None
+                for line in topic.splitlines():
+                    if line.startswith("author_id:"):
+                        author_id = int(line.split(':', 1)[1].strip())
+                        author_mention = f"<@{author_id}>" if author_id else None
+                    elif line.startswith("title:"):
+                        title = line.split(':', 1)[1].strip()
+                
+                await log(
+                    self.bot, type=BOTLOG, color=LogColor.RED,
+                    title=f"The ticket `{interaction.channel.name}` has been closed by {interaction.user.mention}",
+                    msg=f"Title: **{title or "Unknown"}**, author: {author_mention if author_mention else "Unknown"}\n{f"Reason: *{reason}*\n" if reason else ''}"
                 )
                 await interaction.channel.delete()
         else:
             await interaction.response.send_message(f"{DefaultEmojis.ERROR} This command isn't available here. Try again in a ticket!", ephemeral=True)
     
-    @commands.command(name=CmdList.SETUPTICKET, description="Post the unique ticket creation message")
+    @commands.command(description="Post the unique ticket creation message", extras={IS_ADMIN: True})
     @check_admin_or_roles()
     async def setup_ticket(self, ctx: commands.Context):
         await ctx.message.delete()

@@ -13,16 +13,21 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 # bot files
-from cmd_list import CmdList, ADMIN_SLASH_COMMANDS, ADMIN_CTX_COMMANDS
+from utils import (
+    IS_ADMIN,
+    LogColor
+)
+
 from cogs_list import CogsNames
 from constants import (
     DefaultEmojis,
     AUTHORISED_ROLES,
-    CMD_PREFIX    
+    CMD_PREFIX
 )
 
-ADMIN_EMOTE = "🛡️"
-ADMIN_LABEL = "Admin panel"
+class AdminPanel:
+    EMOTE = "🛡️"
+    LABEL = "Admin panel"
 
 class HelpToggleView(discord.ui.View):
     def __init__(self, help_cog: HelpCog, is_admin: bool = False):
@@ -35,20 +40,19 @@ class HelpToggleView(discord.ui.View):
 
     class ToggleButton(discord.ui.Button):
         def __init__(self):
-            super().__init__(label=ADMIN_LABEL, emoji=ADMIN_EMOTE, style=discord.ButtonStyle.danger)
+            super().__init__(label=AdminPanel.LABEL, emoji=AdminPanel.EMOTE, style=discord.ButtonStyle.danger)
 
         async def callback(self, interaction: discord.Interaction):
             view: HelpToggleView = self.view
             view.is_showing_admin = not view.is_showing_admin
 
+            embed = await view.help_cog.get_help_embed(view.is_showing_admin)
             if view.is_showing_admin:
-                embed = await view.help_cog.get_admin_help_embed()
                 self.label = "Return to member help"
                 self.emoji = "⬅️"
             else:
-                embed = await view.help_cog.get_member_help_embed()
-                self.label = ADMIN_LABEL
-                self.emoji = ADMIN_EMOTE
+                self.label = AdminPanel.LABEL
+                self.emoji = AdminPanel.EMOTE
 
             await interaction.response.edit_message(embed=embed, view=view)
 
@@ -58,51 +62,44 @@ class HelpCog(commands.Cog, name=CogsNames.HELP):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def get_member_help_embed(self) -> discord.Embed:
-        embed = discord.Embed(
-            title="📌 Member commands (slash)",
-            description="All functions you can access through the discord menu",
-            color=discord.Color.dark_blue()
-        )
+    @staticmethod
+    def format_command_name(cmd: app_commands.Command | commands.Command) -> str:
+        return f"`{"/" if isinstance(cmd, app_commands.Command) else CMD_PREFIX}{cmd.name}`"
 
-        for command in await self.bot.tree.fetch_commands():
-            if command.name not in ADMIN_SLASH_COMMANDS:
-                embed.add_field(name=command.mention, value=command.description, inline=False)
-        return embed
-
-    async def get_admin_help_embed(self) -> discord.Embed:
-        embed = discord.Embed(
-            title="🔒 Admin commands (unreferenced)",
-            description="Commands that can only be used with perms or roles",
-            color=discord.Color.red()
-        )
-
-        # ctx commands admin
-        for cmd in self.bot.walk_commands():
-            if cmd.name in ADMIN_CTX_COMMANDS:
+    async def get_help_embed(self, admin: bool = False) -> discord.Embed:
+        title = "🔒 Admin commands" if admin else "📌 Member commands"
+        desc = "Commands only admins can use" if admin else "Commands you can use"
+        color = discord.Color.red() if admin else discord.Color.dark_blue()
+        embed = discord.Embed(title=title, description=desc, color=color)
+        # ---------------------------------- slash commands
+        for command in self.bot.tree.get_commands():
+            if command.extras.get(IS_ADMIN, False) == admin:
                 embed.add_field(
-                    name=f"`{CMD_PREFIX}{cmd.name}`",
-                    value=cmd.description,
+                    name=self.format_command_name(command),
+                    value=command.description or "No description",
                     inline=False
                 )
-        # slash commands admin
-        for command in await self.bot.tree.fetch_commands():
-            if command.name in ADMIN_SLASH_COMMANDS:
-                embed.add_field(name=command.mention, value=command.description, inline=False)
+        # ---------------------------------- ctx commands
+        for cmd in self.bot.walk_commands():
+            if cmd.extras.get(IS_ADMIN, False) == admin:
+                embed.add_field(
+                    name=self.format_command_name(cmd),
+                    value=cmd.help or cmd.description or "No description",
+                    inline=False
+                )
+        
         return embed
     
     async def get_command_help_embed(self, command_name: str) -> discord.Embed | None:
-        for slash_cmd in await self.bot.tree.fetch_commands():
-            if slash_cmd.name == command_name:
-                embed = discord.Embed(
-                    description=f"**📖 Help about the {slash_cmd.mention} command**\n{slash_cmd.description or "This command has no description!"}",
-                    color=discord.Color.dark_blue(),
-                )
-
-                if slash_cmd.options:
-                    opts_str = "\n".join([f"`{opt.name}`: {opt.description}" for opt in slash_cmd.options])
-                    embed.add_field(name="Options", value=opts_str, inline=False)
-                return embed
+        slash_cmd = self.bot.tree.get_command(command_name)
+        if slash_cmd:
+            embed = discord.Embed(
+                title=f"📖 Help about `/{slash_cmd.name}`",
+                description=f"*{slash_cmd.description or "This command has no description!"}*",
+                color=discord.Color.dark_blue(),
+            )
+            return embed
+        
         ctx_cmd = self.bot.get_command(command_name)
         if ctx_cmd:
             embed = discord.Embed(
@@ -113,25 +110,29 @@ class HelpCog(commands.Cog, name=CogsNames.HELP):
             return embed
         return None
 
-    @app_commands.command(name=CmdList.HELP, description="Show what I am capable of")
+    @app_commands.command(description="Show what I am capable of")
     @app_commands.describe(command="Name of a specific command to get help for")
     async def help(self, interaction: discord.Interaction, command: str = None):
-        # https://www.w3schools.com/python/ref_set_intersection.asp
         user_role_ids = {role.id for role in interaction.user.roles}
         is_admin = bool(user_role_ids & AUTHORISED_ROLES)
 
         if command:
-            embed = await self.get_command_help_embed(command)
-            if not embed:
-                await interaction.response.send_message(f"{DefaultEmojis.ERROR} No command named `{command}` found.", ephemeral=True)
+            cmd_embed = await self.get_command_help_embed(command)
+            if not cmd_embed:
+                error_embed = discord.Embed(
+                    title=f"{DefaultEmojis.ERROR} Command not found!",
+                    description=f"No command named `{command}` found.",
+                    color=LogColor.RED
+                )
+                await interaction.response.send_message(embed=error_embed, ephemeral=True)
                 return
-            else:
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-                return
-        
-        embed = await self.get_member_help_embed()
+            
+            await interaction.response.send_message(embed=cmd_embed, ephemeral=True)
+            return
+
+        help_embed = await self.get_help_embed()
         view = HelpToggleView(self, is_admin)
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        await interaction.response.send_message(embed=help_embed, view=view, ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(HelpCog(bot))

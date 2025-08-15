@@ -10,6 +10,7 @@ from discord.ext import commands
 # bot file
 from cogs_list import CogsNames
 from utils import (
+    gettimestamp,
     log, BOTLOG, LogColor
 )
 
@@ -45,22 +46,22 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
             if entry.target.id == user.id:
                 await log(
-                    self.bot, color=LogColor.LEAVE,
+                    self.bot, color=LogColor.RED,
                     title=f"🔨 {user.display_name} has been banned by {entry.user.mention}",
-                    msg=f"{f"Reason: *{entry.reason}*, " if entry.reason else ""}On date: <t:{int(entry.created_at.timestamp())}:F>\nUser ID: {user.id}"
+                    msg=f"{f"Reason: *{entry.reason}*\n" if entry.reason else ""}On date: {gettimestamp(entry.created_at)}\nUser ID: {user.id}"
                 )
                 return
 
-        await log(self.bot, color=LogColor.LEAVE, title=f"🔨 {user.display_name} has been banned, author undetermined.", msg=f"User ID: {user.id}")
+        await log(self.bot, color=LogColor.RED, title=f"🔨 {user.display_name} has been banned, author undetermined.", msg=f"User ID: {user.id}")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         async for entry in member.guild.audit_logs(limit=5, action=discord.AuditLogAction.kick):
             if entry.target.id == member.id and (discord.utils.utcnow() - entry.created_at).total_seconds() < 10:
                 await log(
-                    self.bot, color=LogColor.LEAVE,
-                    title=f"⛔️ {member.mention} has been kicked by {entry.user.mention}.",
-                    msg=f"{f"Reason: *{entry.reason}*, " if entry.reason else ""}User ID: {member.id}"
+                    self.bot, color=LogColor.RED,
+                    title=f"⛔️ {member.display_name} has been kicked by {entry.user.mention}.",
+                    msg=f"{f"Reason: *{entry.reason}*\n" if entry.reason else ""}On date: {gettimestamp(entry.created_at)}\nUser ID: {member.id}"
                 )
                 return
     
@@ -76,7 +77,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             return # do nothing
         else:
             await log(
-                bot=self.bot, type=BOTLOG,
+                bot=self.bot, type=BOTLOG, color=LogColor.RED,
                 title=f"{DefaultEmojis.ERROR} User {ctx.author.mention} tried to use the {ctx.command} command",
                 msg=f"It failed with the error:\n`{error}`"
             )

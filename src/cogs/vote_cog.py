@@ -16,7 +16,7 @@ import random
 from utils import (
     hoursdelta,
     nl,
-    log, BOTLOG
+    LogColor, log, BOTLOG
 )
 
 from cogs_list import CogsNames
@@ -138,7 +138,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                 embed.set_footer(text=nl(FEATURED_VIDEO_MSG))
             # case of equality
             else:
-                embed.title = "👏 Bravo! Several videos are tied!"
+                embed.title = "👏 Congrats! Several videos are tied!"
                 embed.description = f"The following videos come in first with {vote_count} votes each!"
 
                 for idx, m in enumerate(messages, 1):
@@ -150,11 +150,13 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             match = re.search(YOUTUBE_REGEX, winner.content)
             code = await send_video_to_endpoint(video_url=match.group(0))
 
+            log_title = "Status of sending the video link to the repuls website"
             if code == SUCCESS_CODE:
                 status = f"{DefaultEmojis.CHECK} Video sent to repuls.io! (HTTP {code})"
+                await log(self.bot, type=BOTLOG, title=log_title, msg=status)
             else:
                 status = f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)"
-            await log(self.bot, type=BOTLOG, title="Status of sending the video link to the repuls website", msg=status)
+                await log(self.bot, type=BOTLOG, color=LogColor.RED, title=log_title, msg=status)
 
         async for msg in video_channel.history(limit=1):
             if msg.author.id == self.bot.user.id:
@@ -162,7 +164,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await video_channel.send(embed=embed)
     
     # ---------------------------------- command
-    @app_commands.command(name="video_leaderboard", description="Show the most voted YouTube videos")
+    @app_commands.command(description="Show the most voted YouTube videos")
     @app_commands.describe(
         hours=f"Maximum video age (default on {VOTE_HOURS}h)",
         limit="Number of videos retrieved from history",

@@ -108,11 +108,12 @@ class TicketModal(discord.ui.Modal):
                 ephemeral=True,
                 delete_after=300 # 5 minutes
             )
-            await log(
+            log_msg = await log(
                 self.bot, type=BOTLOG, color=LogColor.GREEN,
                 title=f"New ticket [`{ticket_channel.name}`]({ticket_channel.jump_url}) of type `{self._get_ticket_label()}` created by {author.mention}.",
                 msg=f"Title: **{self.title_input.value}**\n>>> *{self.description_input.value}*"
             )
+            await ticket_channel.edit(topic=ticket_channel.topic + f"\nlog_id: {log_msg.jump_url}")
         
         except Exception as error:
             error_msg = "An error occurred while creating the ticket!"
@@ -217,17 +218,19 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
             else: # close ticket
                 # https://www.w3schools.com/python/python_ref_string.asp
                 topic = interaction.channel.topic or ''
-                author_id, title = None, None
+                log_msg, title = None, None
                 for line in topic.splitlines():
                     if line.startswith("author_id:"):
                         author_id = int(line.split(':', 1)[1].strip())
                         author_mention = f"<@{author_id}>" if author_id else None
                     elif line.startswith("title:"):
                         title = line.split(':', 1)[1].strip()
+                    elif line.startswith("log_id:"):
+                        log_msg = line.split(':', 1)[1].strip()
                 
                 await log(
                     self.bot, type=BOTLOG, color=LogColor.RED,
-                    title=f"The ticket `{interaction.channel.name}` has been closed by {interaction.user.mention}",
+                    title=f"The ticket {f"[`{interaction.channel.name}`]({log_msg})" if log_msg else f"`{interaction.channel.name}`"} has been closed by {interaction.user.mention}",
                     msg=f"Title: **{title or "Unknown"}**, author: {author_mention if author_mention else "Unknown"}\n{f"Reason: *{reason}*\n" if reason else ''}"
                 )
                 await interaction.channel.delete()

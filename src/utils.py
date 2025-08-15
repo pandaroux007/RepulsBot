@@ -37,7 +37,7 @@ class LogColor:
 MODLOG = True
 BOTLOG = False
 
-async def log(bot: commands.Bot, title: str, msg: str = "", type: bool = MODLOG, color: LogColor = LogColor.BLUE):
+async def log(bot: commands.Bot, title: str, msg: str = "", type: bool = MODLOG, color: LogColor = LogColor.BLUE) -> discord.Message | None:
     log_channel = bot.get_channel(IDs.serverChannel.BOTLOG if type == BOTLOG else IDs.serverChannel.MODLOG)
     if log_channel is not None:
         log_embed = discord.Embed(
@@ -45,4 +45,6 @@ async def log(bot: commands.Bot, title: str, msg: str = "", type: bool = MODLOG,
             color=color,
             timestamp=discord.utils.utcnow()
         )
-        await log_channel.send(embed=log_embed, silent=True, allowed_mentions=discord.AllowedMentions.none())
+        log_msg = await log_channel.send(embed=log_embed, silent=True, allowed_mentions=discord.AllowedMentions.none())
+        return log_msg
+    return None

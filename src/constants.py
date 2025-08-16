@@ -70,8 +70,8 @@ class DefaultEmojis:
     WARN = "⚠️" # :warning:
     ERROR = "❌" # :x:
 
-class BotInfo():
-    VERSION = "1.3.1"
+class BotInfo:
+    VERSION = "1.4.0"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     DESCRIPTION = """
     Hey there! :waving_hand:

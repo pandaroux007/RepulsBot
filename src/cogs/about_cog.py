@@ -9,7 +9,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import platform
-# bot file
+# bot files
 from cogs_list import CogsNames
 from utils import nl
 from constants import (

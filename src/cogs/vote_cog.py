@@ -15,8 +15,13 @@ import random
 # bot files
 from utils import (
     hoursdelta,
-    nl,
-    LogColor, log, BOTLOG
+    nl
+)
+
+from log_system import (
+    LogColor,
+    BOTLOG,
+    log
 )
 
 from cogs_list import CogsNames

@@ -13,9 +13,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 # bot files
+from log_system import LogColor
 from utils import (
     IS_ADMIN,
-    LogColor
 )
 
 from cogs_list import CogsNames

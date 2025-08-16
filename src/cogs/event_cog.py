@@ -7,11 +7,14 @@ Below is the command error handling, bot startup and other discord events
 
 import discord
 from discord.ext import commands
-# bot file
+# bot files
 from cogs_list import CogsNames
-from utils import (
-    gettimestamp,
-    log, BOTLOG, LogColor
+from utils import gettimestamp
+from log_system import (
+    LogBuilder,
+    LogColor,
+    BOTLOG,
+    log
 )
 
 from constants import (
@@ -39,6 +42,33 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             await message.channel.send(message.content)
             await message.delete()
 
+    @commands.Cog.listener()
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        if before.author.bot:
+            return
+        if before.content != after.content:
+            await (
+                LogBuilder(self.bot, color=LogColor.ORANGE)
+                .m_title(f"✏️ Message from {after.author.mention} edited in {after.channel.mention} ", False)
+                .description(f"[Jump to message]({after.jump_url})")
+                .add_field(name="Before", value=before.content)
+                .add_field(name="After", value=after.content)
+                .footer(f"User ID: {after.author.id}")
+                .send()
+            )
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message: discord.Message):
+        if message.author.bot:
+            return
+        await (
+            LogBuilder(self.bot, color=LogColor.RED)
+            .m_title(f"🗑️ Message sent by {message.author.mention} deleted in {message.channel.mention}")
+            .description(f"**Content**: {message.content}")
+            .footer(f"Author: {message.author.id} | Message ID: {message.id}")
+            .send()
+        )
+
     # https://discord.com/developers/docs/reference#message-formatting
     # https://gist.github.com/LeviSnoot/d9147767abeef2f770e9ddcd91eb85aa
     @commands.Cog.listener()
@@ -47,7 +77,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             if entry.target.id == user.id:
                 await log(
                     self.bot, color=LogColor.RED,
-                    title=f"🔨 {user.display_name} has been banned by {entry.user.mention}",
+                    title=f"🔨 {user.mention} has been banned by {entry.user.mention}",
                     msg=f"{f"Reason: *{entry.reason}*\n" if entry.reason else ""}On date: {gettimestamp(entry.created_at)}\nUser ID: {user.id}"
                 )
                 return
@@ -60,7 +90,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             if entry.target.id == member.id and (discord.utils.utcnow() - entry.created_at).total_seconds() < 10:
                 await log(
                     self.bot, color=LogColor.RED,
-                    title=f"⛔️ {member.display_name} has been kicked by {entry.user.mention}.",
+                    title=f"⛔️ {member.mention} has been kicked by {entry.user.mention}.",
                     msg=f"{f"Reason: *{entry.reason}*\n" if entry.reason else ""}On date: {gettimestamp(entry.created_at)}\nUser ID: {member.id}"
                 )
                 return

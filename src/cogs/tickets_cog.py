@@ -15,7 +15,6 @@ import string
 from cogs_list import CogsNames
 from utils import (
     check_admin_or_roles,
-    log, BOTLOG, LogColor,
     IS_ADMIN
 )
 
@@ -23,6 +22,12 @@ from constants import (
     IDs,
     DefaultEmojis,
     ASK_HELP
+)
+
+from log_system import (
+    LogColor,
+    BOTLOG,
+    log
 )
 
 SECONDS_BEFORE_TICKET_CLOSING = 4

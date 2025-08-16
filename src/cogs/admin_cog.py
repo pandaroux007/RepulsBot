@@ -14,8 +14,12 @@ from cogs_list import CogsNames
 from constants import DefaultEmojis
 from utils import (
     check_admin_or_roles,
-    log, LogColor,
     IS_ADMIN
+)
+
+from log_system import (
+    LogColor,
+    log
 )
 
 MAX_PURGE = 1000

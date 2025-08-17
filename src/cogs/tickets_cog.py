@@ -25,6 +25,7 @@ from constants import (
 )
 
 from log_system import (
+    LogBuilder,
     LogColor,
     BOTLOG,
     log
@@ -122,8 +123,13 @@ class TicketModal(discord.ui.Modal):
         
         except Exception as error:
             error_msg = "An error occurred while creating the ticket!"
-            await log(self.bot, type=BOTLOG, title=error_msg, msg=f"`{error}`")
-            await interaction.response.send_message(f":x: {error_msg}{ASK_HELP}", ephemeral=True)
+            await (
+                LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
+                .title(f"{DefaultEmojis.ERROR}{error_msg}")
+                .description(f"`{error}`")
+                .send()
+            )
+            await interaction.response.send_message(f"> {DefaultEmojis.ERROR} {error_msg}{ASK_HELP}", ephemeral=True)
 
     def _build_ticket_overwrites(self, guild: discord.Guild, author: discord.Member) -> dict:
         # permissions to the bot, ticket author and authorized members to view the private channel

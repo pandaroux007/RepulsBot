@@ -20,6 +20,7 @@ class LogBuilder:
         self.embed = discord.Embed(color=color, timestamp=discord.utils.utcnow())
         self._markdown_title = None
         self._description = None
+        self._files = None
 
     def title(self, text: str = "", url: str = None) -> Self:
         """ adds a title to the embed with url option (doesn't support markdown) """
@@ -45,9 +46,14 @@ class LogBuilder:
         self.embed.set_author(name=name, url=author_url, icon_url=icon_url)
         return self
 
-    def add_field(self, name: str, value: str, inline: bool = False) -> Self:
+    def add_field(self, name: str, value: str | None, inline: bool = False) -> Self:
         """ create a new field (max 25 on an embed) (title doesn't support markdown) """
-        self.embed.add_field(name=name, value=value, inline=inline)
+        self.embed.add_field(name=name, value=value or "", inline=inline)
+        return self
+    
+    def add_files(self, files: list[discord.File] | discord.File):
+        """ attach one or more files to the log message """
+        self._files = files
         return self
 
     async def send(self) -> discord.Message | None:
@@ -59,11 +65,7 @@ class LogBuilder:
             if self._description:
                 desc += self._description
             self.embed.description = desc
-            return await log_channel.send(
-                embed=self.embed,
-                silent=True,
-                allowed_mentions=discord.AllowedMentions.none()
-            )
+            return await log_channel.send(embed=self.embed, files=self._files, silent=True, allowed_mentions=discord.AllowedMentions.none())
         else:
             return None
         

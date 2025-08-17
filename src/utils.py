@@ -21,6 +21,8 @@ def nl(string: str) -> str:
     """ returns a string without line breaks """
     return string.replace('\n', ' ').strip()
 
+# https://discord.com/developers/docs/reference#message-formatting
+# https://gist.github.com/LeviSnoot/d9147767abeef2f770e9ddcd91eb85aa
 def gettimestamp(time: datetime, format: Optional[str] = "F"):
     """ returns a discord markdown timestamp """
     return f"<t:{int(time.timestamp())}{f":{format}" if format else ""}>"

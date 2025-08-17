@@ -179,7 +179,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
         if not video_channel:
             await interaction.response.send_message(
-                content=f"{DefaultEmojis.ERROR} Unable to find video channel!{ASK_HELP}",
+                content=f"> {DefaultEmojis.ERROR} Unable to find video channel!{ASK_HELP}",
                 ephemeral=True
             )
             return

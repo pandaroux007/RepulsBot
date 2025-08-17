@@ -29,6 +29,22 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    async def get_removed_attachments(self, before: discord.Message, after: discord.Message = None) -> list[discord.File] | None:
+        """ returns the list of files deleted between before and after (or all if after is None) """
+        if after is not None:
+            after_urls = {a.url for a in after.attachments}
+            removed = [a for a in before.attachments if a.url not in after_urls]
+        else:
+            removed = before.attachments
+        files = []
+        for attachment in removed:
+            try:
+                files.append(await attachment.to_file())
+            except Exception:
+                print("DEBUG > File recovery failed")
+                pass
+        return files or None
+
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         if guild.id not in AUTHORISED_SERVERS:
@@ -46,43 +62,72 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         if before.author.bot:
             return
-        if before.content != after.content:
-            await (
-                LogBuilder(self.bot, color=LogColor.ORANGE)
-                .m_title(f"✏️ Message from {after.author.mention} edited in {after.channel.mention} ", False)
-                .description(f"[Jump to message]({after.jump_url})")
-                .add_field(name="Before", value=before.content)
-                .add_field(name="After", value=after.content)
-                .footer(f"User ID: {after.author.id}")
-                .send()
-            )
+        text_changed = before.content != after.content
+        attachments_changed = await self.get_removed_attachments(before, after)
+        if not text_changed and not attachments_changed:
+            return
+        
+        builder = (
+            LogBuilder(self.bot, color=LogColor.ORANGE)
+            .m_title(f"✏️ Message from {after.author.mention} edited in {after.channel.mention} ")
+            .description(f"[Jump to message]({after.jump_url})")
+            .footer(f"User ID: {after.author.id}")
+        )
+        if text_changed:
+            builder.add_field(name="Before", value=before.content or "*Empty*")
+            builder.add_field(name="After", value=after.content or "*Empty*")
+        if attachments_changed:
+            builder.add_files(attachments_changed)
+            builder.add_field(name="Attachments removed", value="\n".join(f.filename for f in attachments_changed))
+        await builder.send()
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
         if message.author.bot:
             return
-        await (
+        files = await self.get_removed_attachments(message)
+        builder = (
             LogBuilder(self.bot, color=LogColor.RED)
             .m_title(f"🗑️ Message sent by {message.author.mention} deleted in {message.channel.mention}")
-            .description(f"**Content**: {message.content}")
+            .description(f"**Content**: {message.content or "This message was empty"}")
             .footer(f"Author: {message.author.id} | Message ID: {message.id}")
-            .send()
         )
+        if files:
+            builder.add_files(files)
+            builder.add_field(name="Attachments removed", value="\n".join(f.filename for f in files))
+        await builder.send()
 
-    # https://discord.com/developers/docs/reference#message-formatting
-    # https://gist.github.com/LeviSnoot/d9147767abeef2f770e9ddcd91eb85aa
     @commands.Cog.listener()
     async def on_member_ban(self, guild: discord.Guild, user: discord.User):
         async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
             if entry.target.id == user.id:
-                await log(
-                    self.bot, color=LogColor.RED,
-                    title=f"🔨 {user.mention} has been banned by {entry.user.mention}",
-                    msg=f"{f"Reason: *{entry.reason}*\n" if entry.reason else ""}On date: {gettimestamp(entry.created_at)}\nUser ID: {user.id}"
+                await (
+                    LogBuilder(self.bot, color=LogColor.RED)
+                    .m_title(f"🔨 {user.mention} has been banned by {entry.user.mention}")
+                    .description(f"**On date** {gettimestamp(entry.created_at)}")
+                    .add_field(name="Reason", value=entry.reason if entry.reason else "*no reason specified*")
+                    .footer(f"User ID: {user.id}")
+                    .send()
                 )
                 return
 
-        await log(self.bot, color=LogColor.RED, title=f"🔨 {user.display_name} has been banned, author undetermined.", msg=f"User ID: {user.id}")
+        await log(self.bot, color=LogColor.RED, title=f"🔨 {user.mention} has been banned", msg=f"User ID: {user.id}")
+
+    @commands.Cog.listener()
+    async def on_member_unban(self, guild: discord.Guild, user: discord.User):
+        async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.unban):
+            if entry.target.id == user.id:
+                await (
+                    LogBuilder(self.bot, color=LogColor.GREEN)
+                    .m_title(f"🔓 {user.mention} has been unbanned by {entry.user.mention}")
+                    .description(f"**On date** {gettimestamp(entry.created_at)}")
+                    .add_field(name="Reason", value=entry.reason if entry.reason else "*no reason specified*")
+                    .footer(f"User ID: {user.id}")
+                    .send()
+                )
+                return
+
+        await log(self.bot, color=LogColor.GREEN, title=f"🔓 {user.mention} has been unbanned", msg=f"User ID: {user.id}")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
@@ -114,7 +159,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
 
         embed = discord.Embed(
             title=f"{DefaultEmojis.ERROR} Check failure!",
-            description=f"{message}{ASK_HELP}",
+            description=f"> {message}{ASK_HELP}",
             color=discord.Color.brand_red()
         )
         await ctx.send(embed=embed)

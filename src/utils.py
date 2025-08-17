@@ -21,6 +21,9 @@ def nl(string: str) -> str:
     """ returns a string without line breaks """
     return string.replace('\n', ' ').strip()
 
+def plurial(size: int):
+    return "s" if len(size) > 1 else ''
+
 # https://discord.com/developers/docs/reference#message-formatting
 # https://gist.github.com/LeviSnoot/d9147767abeef2f770e9ddcd91eb85aa
 def gettimestamp(time: datetime, format: Optional[str] = "F"):

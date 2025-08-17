@@ -9,7 +9,11 @@ import discord
 from discord.ext import commands
 # bot files
 from cogs_list import CogsNames
-from utils import gettimestamp
+from utils import (
+    gettimestamp,
+    plurial
+)
+
 from log_system import (
     LogBuilder,
     LogColor,
@@ -96,6 +100,26 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             builder.add_files(files)
             builder.add_field(name="Attachments removed", value="\n".join(f.filename for f in files))
         await builder.send()
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+        # ---------------------------------- roles log
+        before_roles = set(before.roles)
+        after_roles = set(after.roles)
+        added_roles = after_roles - before_roles
+        removed_roles = before_roles - after_roles
+
+        if added_roles or removed_roles:
+            builder = (
+                LogBuilder(self.bot, color=LogColor.ORANGE)
+                .m_title(f"🎭️ {after.mention} roles have been updated")
+                .footer(f"User ID: {after.id}")
+            )
+            if added_roles:
+                builder.add_field(name=f"Added role{plurial(added_roles)}", value=", ".join(role.mention for role in added_roles))
+            if removed_roles:
+                builder.add_field(name=f"Lost role{plurial(removed_roles)}", value=", ".join(role.mention for role in removed_roles))
+            await builder.send()
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild: discord.Guild, user: discord.User):

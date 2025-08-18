@@ -147,7 +147,7 @@ class TicketModal(discord.ui.Modal):
     
     # https://stackoverflow.com/questions/7591117/what-is-the-probability-of-collision-with-a-6-digit-random-alphanumeric-code
     def _build_ticket_channel_name(self) -> str:
-        code = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
+        code = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
         return f"{self.ticket_type_abbr.lower()}-{code}"
     
     def _get_ticket_label(self) -> str:

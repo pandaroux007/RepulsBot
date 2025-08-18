@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
-from typing import Optional
 # bot file
 from constants import AUTHORISED_ROLES
 
@@ -26,9 +25,3 @@ def plurial(size: int):
 
 def possessive(word: str) -> str:
     return f"{word}{'\'' if word.endswith('s') else "'s"}"
-
-# https://discord.com/developers/docs/reference#message-formatting
-# https://gist.github.com/LeviSnoot/d9147767abeef2f770e9ddcd91eb85aa
-def gettimestamp(time: datetime, format: Optional[str] = "F") -> str:
-    """ returns a discord markdown timestamp """
-    return f"<t:{int(time.timestamp())}{f":{format}" if format else ""}>"

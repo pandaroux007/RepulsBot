@@ -28,12 +28,13 @@ class LogBuilder:
         self.embed.url = url
         return self
 
-    def m_title(self, text: str, with_line_break: bool = True) -> Self:
+    def m_title(self, text: str | None, with_line_break: bool = True) -> Self:
         """ adds a title to the top of the description (supports markdown) """
-        self._markdown_title = f"**{text}**{'\n' if with_line_break else ''}"
+        if text is not None:
+            self._markdown_title = f"**{text}**{'\n' if with_line_break else ''}"
         return self
 
-    def description(self, desc: str) -> Self:
+    def description(self, desc: str | None) -> Self:
         """ set the log embed description (supports markdown) """
         self._description = desc
         return self

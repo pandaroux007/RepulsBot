@@ -147,7 +147,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                 embed.description = f"The following videos come in first with {vote_count} votes each!"
 
                 for idx, m in enumerate(messages, 1):
-                    embed.add_field(name="", value=f"{idx}. [Video]({m.jump_url}) of {m.author.mention}", inline=False)
+                    embed.add_field(name='', value=f"{idx}. [Video]({m.jump_url}) of {m.author.mention}", inline=False)
 
                 winner = random.choice(messages)
                 embed.add_field(name="The winner drawn at random is", value=f"This [video]({winner.jump_url}) of {winner.author.mention}!", inline=True)

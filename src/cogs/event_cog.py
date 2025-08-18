@@ -10,7 +10,6 @@ from discord.ext import commands
 # bot files
 from cogs_list import CogsNames
 from utils import (
-    gettimestamp,
     plurial,
     possessive
 )
@@ -138,6 +137,32 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
                 builder.add_field(name=f"Lost role{plurial(removed_roles)}", value=", ".join(role.mention for role in removed_roles))
             
             await builder.send()
+        # ---------------------------------- mute and unmute (discord timeout) system
+        if before.timed_out_until != after.timed_out_until:
+            entry = None
+            async for e in after.guild.audit_logs(limit=10, action=discord.AuditLogAction.member_update):
+                if e.target.id == after.id:
+                    before_val = getattr(e.changes.before, "timed_out_until", None)
+                    after_val = getattr(e.changes.after, "timed_out_until", None)
+                    if before_val != after_val:
+                        entry = e
+                        break
+
+            admin = entry.user if entry else None
+            reason = entry.reason if entry else None
+            is_muted = after.timed_out_until and (before.timed_out_until is None or before.timed_out_until < discord.utils.utcnow())
+            
+            mute_log = (
+                LogBuilder(self.bot, color=LogColor.RED if is_muted else LogColor.GREEN)
+                .m_title((f"🔇 {after.mention} was muted" if is_muted else f"🔊 {after.mention} was unmuted") + " (*discord timeout*)")
+                .description(f"**Duration:** until {discord.utils.format_dt(after.timed_out_until, "F")}" if is_muted else None)
+                .footer(f"ID: {after.id}")
+            )
+            if admin:
+                mute_log.add_field(name="Admin", value=admin.mention)
+            if reason and len(reason) <= 1024:
+                mute_log.add_field(name="Reason", value=reason)
+            await mute_log.send()
     
     # ---------------------------------- members
     @commands.Cog.listener()
@@ -147,7 +172,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
                 await (
                     LogBuilder(self.bot, color=LogColor.RED)
                     .m_title(f"🔨 {user.mention} has been banned by {entry.user.mention}")
-                    .description(f"**On date** {gettimestamp(entry.created_at)}")
+                    .description(f"**On date** {discord.utils.format_dt(entry.created_at, "F")}")
                     .add_field(name="Reason", value=entry.reason if entry.reason else "*no reason specified*")
                     .footer(f"User ID: {user.id}")
                     .send()
@@ -163,7 +188,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
                 await (
                     LogBuilder(self.bot, color=LogColor.GREEN)
                     .m_title(f"🔓 {user.mention} has been unbanned by {entry.user.mention}")
-                    .description(f"**On date** {gettimestamp(entry.created_at)}")
+                    .description(f"**On date** {discord.utils.format_dt(entry.created_at, "F")}")
                     .add_field(name="Reason", value=entry.reason if entry.reason else "*no reason specified*")
                     .footer(f"User ID: {user.id}")
                     .send()
@@ -179,7 +204,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
                 await log(
                     self.bot, color=LogColor.RED,
                     title=f"⛔️ {member.mention} has been kicked by {entry.user.mention}.",
-                    msg=f"{f"Reason: *{entry.reason}*\n" if entry.reason else ""}On date: {gettimestamp(entry.created_at)}\nUser ID: {member.id}"
+                    msg=f"{f"Reason: *{entry.reason}*\n" if entry.reason else ''}On date: {discord.utils.format_dt(entry.created_at, "F")}\nUser ID: {member.id}"
                 )
                 return
     

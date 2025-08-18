@@ -16,6 +16,7 @@ from discord import app_commands
 from log_system import LogColor
 from utils import (
     IS_ADMIN,
+    nl
 )
 
 from cogs_list import CogsNames
@@ -28,6 +29,10 @@ from constants import (
 class AdminPanel:
     EMOTE = "🛡️"
     LABEL = "Admin panel"
+    DESC = """
+    Admins are encouraged to use Discord's native features, such as polls or moderation tools (via native commands or from the interface)
+    for bans, kicks, and timeouts. The bot logs all actions taken, and the automod manages content filters and raids.
+    """
 
 class HelpToggleView(discord.ui.View):
     def __init__(self, help_cog: HelpCog, is_admin: bool = False):
@@ -68,7 +73,7 @@ class HelpCog(commands.Cog, name=CogsNames.HELP):
 
     async def get_help_embed(self, admin: bool = False) -> discord.Embed:
         title = "🔒 Admin commands" if admin else "📌 Member commands"
-        desc = "Commands only admins can use" if admin else "Commands you can use"
+        desc = f"**You can access this because you are an admin.** {nl(AdminPanel.DESC)}" if admin else "Commands you can use"
         color = discord.Color.red() if admin else discord.Color.dark_blue()
         embed = discord.Embed(title=title, description=desc, color=color)
         # ---------------------------------- slash commands

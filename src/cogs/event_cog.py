@@ -11,7 +11,8 @@ from discord.ext import commands
 from cogs_list import CogsNames
 from utils import (
     gettimestamp,
-    plurial
+    plurial,
+    possessive
 )
 
 from log_system import (
@@ -50,17 +51,30 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         return files or None
 
     @commands.Cog.listener()
-    async def on_guild_join(self, guild: discord.Guild):
-        if guild.id not in AUTHORISED_SERVERS:
-            await guild.leave()
+    async def on_guild_role_delete(self, role: discord.Role):
+        await (
+            LogBuilder(self.bot, color=LogColor.RED)
+            .m_title(f"🗑️ Role deleted: `{role.name}`")
+            .footer(f"Role ID: {role.id}")
+            .send()
+        )
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
-        elif message.channel.id == IDs.serverChannel.RULES:
-            await message.channel.send(message.content)
-            await message.delete()
+    async def on_guild_role_update(self, before: discord.Role, after: discord.Role):
+        changes = []
+        if before.name != after.name:
+            changes.append(f"Name: `{before.name}` changed to `{after.name}`")
+        if before.color != after.color:
+            changes.append(f"Color: `{before.color}` changed to `{after.color}`")
+        
+        if changes:
+            await (
+                LogBuilder(self.bot, color=LogColor.ORANGE)
+                .m_title(f"🎭️ The role {after.mention} has been changed on the server")
+                .description("\n".join(changes))
+                .footer(f"Role ID: {after.id}")
+                .send()
+            )
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -108,19 +122,24 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         after_roles = set(after.roles)
         added_roles = after_roles - before_roles
         removed_roles = before_roles - after_roles
-
-        if added_roles or removed_roles:
+        
+        if added_roles or removed_roles or before.display_name != after.display_name:
             builder = (
                 LogBuilder(self.bot, color=LogColor.ORANGE)
-                .m_title(f"🎭️ {after.mention} roles have been updated")
+                # mention being an <@id>, the function returns 's by default
+                .m_title(f"🎭️ {possessive(after.mention)} profile has been updated")
                 .footer(f"User ID: {after.id}")
             )
+            if before.display_name != after.display_name:
+                builder.add_field(name="Nickname changed", value=f"**Before: **{before.display_name}\n**After: **{after.display_name}")
             if added_roles:
                 builder.add_field(name=f"Added role{plurial(added_roles)}", value=", ".join(role.mention for role in added_roles))
             if removed_roles:
                 builder.add_field(name=f"Lost role{plurial(removed_roles)}", value=", ".join(role.mention for role in removed_roles))
+            
             await builder.send()
-
+    
+    # ---------------------------------- members
     @commands.Cog.listener()
     async def on_member_ban(self, guild: discord.Guild, user: discord.User):
         async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
@@ -163,6 +182,20 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
                     msg=f"{f"Reason: *{entry.reason}*\n" if entry.reason else ""}On date: {gettimestamp(entry.created_at)}\nUser ID: {member.id}"
                 )
                 return
+    
+    # ---------------------------------- bot
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild: discord.Guild):
+        if guild.id not in AUTHORISED_SERVERS:
+            await guild.leave()
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        elif message.channel.id == IDs.serverChannel.RULES:
+            await message.channel.send(message.content)
+            await message.delete()
     
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):

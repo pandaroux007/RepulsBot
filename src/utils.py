@@ -24,8 +24,11 @@ def nl(string: str) -> str:
 def plurial(size: int):
     return "s" if len(size) > 1 else ''
 
+def possessive(word: str) -> str:
+    return f"{word}{'\'' if word.endswith('s') else "'s"}"
+
 # https://discord.com/developers/docs/reference#message-formatting
 # https://gist.github.com/LeviSnoot/d9147767abeef2f770e9ddcd91eb85aa
-def gettimestamp(time: datetime, format: Optional[str] = "F"):
+def gettimestamp(time: datetime, format: Optional[str] = "F") -> str:
     """ returns a discord markdown timestamp """
     return f"<t:{int(time.timestamp())}{f":{format}" if format else ""}>"

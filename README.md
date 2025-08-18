@@ -61,16 +61,14 @@ ___
 
 ## Difference between bot logs and moderation logs
 ### Moderation logs
-- Deleted channel
-- Created channel
 - Deleted message
 - Modified message
 - Purge results
 - Ban, ban, and kick log
-- Role modification (including muted role management)
+- Role modification
 ### Bot logs
 - Message deletion by automod
-- Ticket log
+- Ticket opening and closing log
 - Error log
 
 ## Help command details

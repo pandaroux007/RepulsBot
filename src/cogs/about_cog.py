@@ -11,7 +11,11 @@ from discord import app_commands
 import platform
 # bot files
 from cogs_list import CogsNames
-from utils import nl
+from utils import (
+    nl,
+    possessive
+)
+
 from constants import (
     BotInfo,
     Links,
@@ -157,7 +161,7 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
     @app_commands.command(description="Launch the server's interactive FAQ")
     async def server_faq(self, interaction: discord.Interaction):
         embed = discord.Embed(
-            title=f"{interaction.guild.name}{"\'" if interaction.guild.name.endswith('s') else "'s"} server FAQ",
+            title=f"{possessive(interaction.guild.name)} server FAQ",
             description="👉️ Select a question from the drop-down menu below!",
             color=discord.Color.dark_blue()
         )

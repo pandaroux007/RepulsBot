@@ -16,10 +16,12 @@ The best free instantly accessible multiplayer first-person shooter for your bro
 
 Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
 ## And what about RepulsBot
-- Authors : [pandaroux007](https://github.com/pandaroux007), [itsdocski](https://github.com/tahirG)
-- License : the bot and everything that composes it (icon, code, etc.) are under the MIT license (see [LICENSE.txt](LICENSE.txt) file) - for more information go [there](https://opensource.org/license/mit).
+- Authors : [pandaroux007](https://github.com/pandaroux007)
+- Commenditaire : [itsdocski](https://github.com/tahirG)
+- License : the bot and everything that composes it (icon, code, etc.) are under [the MIT license](https://opensource.org/license/mit) (see [LICENSE.txt](LICENSE.txt) file).
 
-RepulsBot is a versatile bot, primarily for managing the vote for the best video and its submission for display on repuls.io. Second, it has a tickets system for improved signal confidentiality. It also allows you to answer frequently asked questions via FAQ commands. Of course, RepulsBot allows other secondary commands, as well as a help command.
+<details>
+<summary><strong>RepulsBot contributors</strong></summary>
 
 ## RepulsBot credits
 ### Question/answer creators for the FAQ
@@ -30,48 +32,45 @@ RepulsBot is a versatile bot, primarily for managing the vote for the best video
 ### Other contributors
 - *sergiolan55*
 - *aman_and_cats*
-- *martin_9202*
+- *martin_9202* (**NaN**)
+- *the_yerminator* (**NaN**)
+- *lexedia* (**NaN**)
+- *Mellow* (**d.py**)
+
+</details>
+
+**To learn more about RepulsBot, visit [the wiki](https://github.com/pandaroux007/RepulsBot/wiki) !**
 ___
 # ⚙️ Development
 > [!NOTE]
 > **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!** Even if you don't want to contribute, you can find all the details for configuring and launching the bot in [CONTRIBUTING.md](CONTRIBUTING.md)
 
+You can find details about the front-end operation of the bot in [the wiki](https://github.com/pandaroux007/RepulsBot/wiki), this section is intended for developers only.
+
 ## Development goals
 ### Objectives to be achieved
+- Show game leaderboard with pagination via discord
+- Replace all bots on the server, without being admin
 #### Must be defined
-- moderation commands
 - Manage competitions and display eSports results
-- Replace all bots on the server, including mute functions with timer, etc.
-- For authorized players, 3D asset manager of the game from discord
+- For authorized players, asset store of the game from discord
 #### Requires an API
 - Discord 1v1s ([details here](https://discord.com/channels/603655329120518223/686216026412941429/1370057672304492554))
-- Show game leaderboard with pagination via discord
 - View repuls.io player information from discord (level, stats, RC count)
 - Manage your clan and friends via bot commands
-
-**Lots of other amazing features!**
 ___
-<details>
-<summary>Abandoned objectives</summary>
+## Log System
+### Moderation Logs
+Moderation logs are dedicated to events that may be useful to admins, such as message deletions and modifications, automod actions, purges, kicked or banned users, or when a timeout is applied. Changes to roles are also logged.
 
-> - clear command (clean command but with messages' links)
-> - Improved clean command ([discordpy.readthedocs.io](https://discordpy.readthedocs.io/en/stable/api.html#discord.TextChannel.delete_messages), [discord.com/developers](https://discord.com/developers/docs/resources/message#bulk-delete-messages) ?)
-
-</details>
-
-## Difference between bot logs and moderation logs
-### Moderation logs
-- Deleted message
-- Modified message
-- Purge results
-- Ban, ban, and kick log
-- Role modification
-### Bot logs
-- Message deletion by automod
-- Ticket opening and closing log
-- Error log
+> [!IMPORTANT]  
+> **Since the bot is not an admin**, it will only log events from channels to which it has access; staff-only channels are not logged unless the bot is explicitly added.
+### Bot Logs
+This channel is less critical than the moderation logs; it contains messages from the bot: when it goes live, when an error occurs on an order, or when a ticket is opened or closed.
 
 ## Help command details
 The help command differentiates between commands that are usable by all members and those that are only usable by admins. It does this by relying on the `extras` parameter of the `discord.py` decorators.
 - Contextual commands ([discord.ext.commands.command](https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.command))
 - Slash commands ([discord.app_commands.command](https://discordpy.readthedocs.io/en/stable/interactions/api.html#discord.app_commands.command))
+
+The problem with this method is that it does not allow you to mention slash commands since you do not get their ID.

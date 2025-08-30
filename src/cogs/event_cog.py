@@ -235,7 +235,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         else:
             await log(
                 bot=self.bot, type=BOTLOG, color=LogColor.RED,
-                title=f"{DefaultEmojis.ERROR} User {ctx.author.mention} tried to use the {ctx.command} command",
+                title=f"{DefaultEmojis.ERROR} User {ctx.author.mention} tried to use the `{ctx.command}` command",
                 msg=f"It failed with the error:\n`{error}`"
             )
 

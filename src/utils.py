@@ -21,7 +21,20 @@ def nl(string: str) -> str:
     return string.replace('\n', ' ').strip()
 
 def plurial(size: int):
-    return "s" if len(size) > 1 else ''
+    if type(size) is not int:
+        size = len(size)
+    return "s" if size > 1 else ''
 
 def possessive(word: str) -> str:
     return f"{word}{'\'' if word.endswith('s') else "'s"}"
+
+def get_leaderboard_emote(index: int, additional_condition: int = 0) -> str:
+    if additional_condition <= 1:
+        if index == 1:
+            return "🥇"
+        elif index == 2:
+            return "🥈"
+        elif index == 3:
+            return "🥉"
+        return "🔹"
+    return "🔹"

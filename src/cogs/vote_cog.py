@@ -14,7 +14,9 @@ import aiohttp
 import random
 # bot files
 from utils import (
+    get_leaderboard_emote,
     hoursdelta,
+    plurial,
     nl
 )
 
@@ -187,7 +189,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         video_votes = []
         embed = discord.Embed(
             title="👏 YouTube Video Leaderboard",
-            description=f"(within the last {hours}h, with a limit of {limit} message{"s" if limit > 1 else ""})",
+            description=f"(within the last {hours}h, with a limit of {limit} message{plurial(limit)})",
             color=discord.Color.gold(),
             timestamp=discord.utils.utcnow()
         )
@@ -219,18 +221,10 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             top_videos = video_votes[:top]
 
             for idx, (votes, msg) in enumerate(top_videos, start=1):
-                if idx == 1:
-                    header = "🥇"
-                elif idx == 2:
-                    header = "🥈"
-                elif idx == 3:
-                    header = "🥉"
-                else:
-                    header = f"#{str(idx)}"
+                header = get_leaderboard_emote(idx)
                 embed.add_field(
-                    name=f"{header} - {votes} votes",
-                    value=f"[Watch video]({msg.jump_url}) here!" ,
-                    inline=False
+                    name="", inline=False,
+                    value=f"{header} `{votes}` - [Watch video]({msg.jump_url})"
                 )
 
             await interaction.response.send_message(embed=embed)

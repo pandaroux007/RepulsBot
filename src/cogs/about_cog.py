@@ -159,7 +159,7 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         await interaction.response.send_message(embed=embed, view=wiki_btn_view)
 
     @app_commands.command(description="Launch the server's interactive FAQ")
-    async def server_faq(self, interaction: discord.Interaction):
+    async def serverfaq(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title=f"{possessive(interaction.guild.name)} server FAQ",
             description="👉️ Select a question from the drop-down menu below!",
@@ -169,7 +169,7 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @app_commands.command(description="Frequently Asked Questions about the repuls.io game")
-    async def game_faq(self, interaction: discord.Interaction):
+    async def gamefaq(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Repuls.io game FAQ",
             description="👉️ Select a question from the drop-down menu below!",

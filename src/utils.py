@@ -28,7 +28,7 @@ def plurial(size: int):
 def possessive(word: str) -> str:
     return f"{word}{'\'' if word.endswith('s') else "'s"}"
 
-def get_leaderboard_emote(index: int, additional_condition: int = 0) -> str:
+def get_leaderboard_header(index: int, additional_condition: int = 0, length: int = 2) -> str:
     if additional_condition <= 1:
         if index == 1:
             return "🥇"
@@ -36,5 +36,4 @@ def get_leaderboard_emote(index: int, additional_condition: int = 0) -> str:
             return "🥈"
         elif index == 3:
             return "🥉"
-        return "🔹"
-    return "🔹"
+    return f"{str(index).zfill(length)}"

@@ -14,7 +14,7 @@ import aiohttp
 import random
 # bot files
 from utils import (
-    get_leaderboard_emote,
+    get_leaderboard_header,
     hoursdelta,
     plurial,
     nl
@@ -124,13 +124,11 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         embed = discord.Embed(
             title="New featured video! 🎉",
             color=discord.Color.brand_red(),
-            timestamp=discord.utils.utcnow()
         )
         # no videos to send, notify youtubers
         if len(messages) < 1:
             embed.title = "I couldn't find any videos to display on the game's homepage 🫤..."
             embed.description = f"Become a <@&{IDs.serverRoles.YOUTUBER}> by meeting [these conditions](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos! 🚀"
-            embed.timestamp = None
         # one or more videos found to send
         else:
             winner: discord.Message = None
@@ -217,11 +215,12 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             await interaction.response.send_message(embed=embed)
             return
         else:
+            # https://docs.python.org/3/howto/sorting.html#key-functions
             video_votes.sort(key=lambda x: x[0], reverse=True)
             top_videos = video_votes[:top]
 
             for idx, (votes, msg) in enumerate(top_videos, start=1):
-                header = get_leaderboard_emote(idx)
+                header = get_leaderboard_header(idx)
                 embed.add_field(
                     name="", inline=False,
                     value=f"{header} `{votes}` - [Watch video]({msg.jump_url})"

@@ -14,7 +14,7 @@ import aiohttp
 import re
 # bot files
 from cogs_list import CogsNames
-from utils import get_leaderboard_emote
+from utils import get_leaderboard_header
 from constants import (
     DefaultEmojis,
     Links,
@@ -42,39 +42,41 @@ class PageNavigator(discord.ui.ActionRow):
         self.leaderboard_view = leaderboard_view
         self.add_item(discord.ui.Button(style=discord.ButtonStyle.link, url=f"{Links.GAME}leaderboard", emoji="🌐"))
 
-    def update_buttons_state(self):
-        self.first_button.disabled = self.leaderboard_view.page <= 1
-        self.prev_button.disabled = self.leaderboard_view.page <= 1
-        self.next_button.disabled = self.leaderboard_view.page >= self.leaderboard_view.total_pages
-        self.last_button.disabled = self.leaderboard_view.page >= self.leaderboard_view.total_pages
+    async def update(self, interaction: discord.Interaction):
+        await self.leaderboard_view.update_leaderboard()
+        await interaction.response.edit_message(view=self.leaderboard_view)
 
     @discord.ui.button(style=discord.ButtonStyle.secondary, emoji="⏮️", label="First", custom_id="first")
     async def first_button(self, interaction: discord.Interaction, bt: discord.ui.Button):
-        self.leaderboard_view.page = 1
-        await self.leaderboard_view.update_leaderboard()
-        self.update_buttons_state()
-        await interaction.response.edit_message(view=self.leaderboard_view)
+        if self.leaderboard_view.page > 1:
+            self.leaderboard_view.page = 1
+            await self.update(interaction)
+        else:
+            await interaction.response.defer()
 
     @discord.ui.button(style=discord.ButtonStyle.secondary, emoji="◀️", label="Prev", custom_id="prev")
     async def prev_button(self, interaction: discord.Interaction, bt: discord.ui.Button):
-        self.leaderboard_view.page -= 1
-        await self.leaderboard_view.update_leaderboard()
-        self.update_buttons_state()
-        await interaction.response.edit_message(view=self.leaderboard_view)
+        if self.leaderboard_view.page > 1:
+            self.leaderboard_view.page -= 1
+            await self.update(interaction)
+        else:
+            await interaction.response.defer()
 
     @discord.ui.button(style=discord.ButtonStyle.secondary, emoji="▶️", label="Next", custom_id="next")
     async def next_button(self, interaction: discord.Interaction, bt: discord.ui.Button):
-        self.leaderboard_view.page += 1
-        await self.leaderboard_view.update_leaderboard()
-        self.update_buttons_state()
-        await interaction.response.edit_message(view=self.leaderboard_view)
+        if self.leaderboard_view.page < self.leaderboard_view.total_pages:
+            self.leaderboard_view.page += 1
+            await self.update(interaction)
+        else:
+            await interaction.response.defer()
 
     @discord.ui.button(style=discord.ButtonStyle.secondary, emoji="⏭️", label="Last", custom_id="last")
     async def last_button(self, interaction: discord.Interaction, bt: discord.ui.Button):
-        self.leaderboard_view.page = self.leaderboard_view.total_pages
-        await self.leaderboard_view.update_leaderboard()
-        self.update_buttons_state()
-        await interaction.response.edit_message(view=self.leaderboard_view)
+        if self.leaderboard_view.page < self.leaderboard_view.total_pages:
+            self.leaderboard_view.page = self.leaderboard_view.total_pages
+            await self.update(interaction)
+        else:
+            await interaction.response.defer()
 
 class SelectMode(discord.ui.ActionRow):
     def __init__(self, leaderboard_view: LeaderboardView):
@@ -109,11 +111,14 @@ class SelectPeriod(discord.ui.ActionRow):
         await interaction.response.edit_message(view=self.leaderboard_view)
 
 class LeaderboardView(discord.ui.LayoutView):
-    """ The container object must be a class attribute, not an instance attribute, for discord.py """
+    """
+    The container object must be a class attribute, not an instance attribute, for discord.py
+    See the example : https://github.com/Rapptz/discord.py/blob/master/examples/views/embed_like.py
+    """
     container = discord.ui.Container()
 
     def __init__(self):
-        """ However, one can construct the interface after initialization """
+        """ However, we can construct the interface after initialization """
         super().__init__()
         self.mode = list(MODE_CHOICES.values())[0]
         self.period = PERIOD_CHOICES[0]
@@ -150,7 +155,7 @@ class LeaderboardView(discord.ui.LayoutView):
         if not data:
             content = f"{DefaultEmojis.ERROR} An error occurred while getting the leaderboard\n> API Error: Could not fetch leaderboard!{ASK_HELP}",
             self.container.accent_color = discord.Color.red()
-        
+
         entries = data.get("data", [])
         self.total_pages = data.get("totalPages", 1)
         self.total_players = data.get("totalCount", '?')
@@ -159,10 +164,10 @@ class LeaderboardView(discord.ui.LayoutView):
         for idx, entry in enumerate(entries, start=1): # start=1 + (self.page - 1) * len(entries)
             pseudo = clean_name(entry.get("key", "?"))
             score = entry.get("value", "?")
-            header = get_leaderboard_emote(idx, self.page)
+            header = get_leaderboard_header(idx, self.page)
             leaderboard_text.append(f"{header} `{score}` - **{pseudo}**")
         content = '\n'.join(leaderboard_text) or "*No results for this page.*"
-        
+
         self.build_interface(content)
 
 # ---------------------------------- users cog (see README.md)

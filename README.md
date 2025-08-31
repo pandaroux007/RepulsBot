@@ -17,20 +17,21 @@ The best free instantly accessible multiplayer first-person shooter for your bro
 Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
 ## And what about RepulsBot
 - Authors : [pandaroux007](https://github.com/pandaroux007)
-- Commenditaire : [itsdocski](https://github.com/tahirG)
 - License : the bot and everything that composes it (icon, code, etc.) are under [the MIT license](https://opensource.org/license/mit) (see [LICENSE.txt](LICENSE.txt) file).
 
 <details>
 <summary><strong>RepulsBot contributors</strong></summary>
 
 ## RepulsBot credits
+### Main contributors
+- [*itsdocski*](https://github.com/tahirG)
+- *sergiolan55*
 ### Question/answer creators for the FAQ
 - *snipertoad*
 - *BratzelBrezel*
 - *Abyss*
 - *eagoose*
 ### Other contributors
-- *sergiolan55*
 - *aman_and_cats*
 - *martin_9202* (**NaN**)
 - *the_yerminator* (**NaN**)

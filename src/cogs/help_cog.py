@@ -1,6 +1,13 @@
 """
 Cog containing only the help command and its generation.
 
+## Help command details
+The help command differentiates between commands that are usable by all members and those that are only usable by admins. It does this by relying on the `extras` parameter of the `discord.py` decorators.
+- Contextual commands ([discord.ext.commands.command](https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.command))
+- Slash commands ([discord.app_commands.command](https://discordpy.readthedocs.io/en/stable/interactions/api.html#discord.app_commands.command))
+
+The problem with this method is that it does not allow you to mention slash commands since you do not get their ID.
+
 :copyright: (c) 2025-present pandaroux007
 :license: MIT, see LICENSE.txt for details.
 """

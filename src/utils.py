@@ -36,4 +36,4 @@ def get_leaderboard_header(index: int, additional_condition: int = 0, length: in
             return "🥈"
         elif index == 3:
             return "🥉"
-    return f"{str(index).zfill(length)}"
+    return "🔹" # f"{str(index).zfill(length)}"

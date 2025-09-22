@@ -37,6 +37,7 @@ Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one
 - *the_yerminator* (**NaN**)
 - *lexedia* (**NaN**)
 - *Mellow* (**d.py**)
+- *soheab_* (**d.py**)
 
 </details>
 

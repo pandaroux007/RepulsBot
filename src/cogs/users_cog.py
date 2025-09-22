@@ -148,7 +148,7 @@ class LeaderboardView(discord.ui.LayoutView):
         self.container.add_item(SelectPeriod(self))
 
         self.container.add_item(discord.ui.Separator())
-        self.container.add_item(discord.ui.TextDisplay(content=f"-# Page {self.page} of {self.total_pages} ({self.total_players} players in total)"))
+        self.container.add_item(discord.ui.TextDisplay(content=f"-# Page `{self.page} of {self.total_pages}` ({self.total_players} players in total)"))
 
     async def update_leaderboard(self) -> None:
         data = await self.fetch_leaderboard_data()

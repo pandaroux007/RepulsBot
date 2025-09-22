@@ -17,6 +17,7 @@ class LogBuilder:
     def __init__(self, bot: commands.Bot, type: bool = MODLOG, color: discord.Color = LogColor.BLUE):
         """
         All text (titles, footer, fields, etc.) in the logs supports markdown.
+        Each builder function returns the class instance to allow for fluent-style chaining.
         """
         self.bot = bot
         self.logtype = type
@@ -47,7 +48,7 @@ class LogBuilder:
     
     def add_media(self, title: str, files: list[discord.File] | discord.File = None) -> Self:
         """
-        support for images and external links (jpg, png, gif, webm, etc.)
+        support for images (jpg, png, gif, webm, etc.)
         """
         # https://stackoverflow.com/questions/252703/what-is-the-difference-between-pythons-list-methods-append-and-extend
         if files:
@@ -76,7 +77,7 @@ class LogBuilder:
         if self._fields:
             field = ""
             for name, value in self._fields:
-                field += f"**{name}**\n{value}\n"
+                field += f"**{name}**\n{f"{value}\n" if value else ''}\n"
             container.add_item(discord.ui.TextDisplay(content=field.strip()))
             container.add_item(discord.ui.Separator())
 

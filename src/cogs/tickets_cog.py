@@ -15,7 +15,8 @@ import string
 from cogs_list import CogsNames
 from utils import (
     check_admin_or_roles,
-    IS_ADMIN
+    nl,
+    ADMIN_CMD
 )
 
 from constants import (
@@ -47,10 +48,16 @@ TICKET_TYPES = [
 
 OPEN_TICKET_TITLE = "🎟️ Need help ? Open a Ticket"
 OPEN_TICKET_MSG = """
-To open a ticket, simply click the button below and fill in the necessary information (**send your images and videos after creating the ticket**).\n
-A private channel will be created between you and the **moderation team**. You can report an issue, a member, request a role, or take any other action.\n
-**Only create a ticket if absolutely necessary!** Tickets are reserved for non-urgent issues. In case of emergency, please contact an administrator via ping or DM. Before creating a ticket, check if the answer to your question is in the server FAQ (for example, the role requirements are listed there)!\n
-> **To report a game bug, you can use https://discord.com/channels/603655329120518223/1076163933213311067!**
+Before creating a new ticket, make sure your question isn't answered **in the FAQs** (for example, if role requirements are listed there).
+**To report a bug, use the https://discord.com/channels/603655329120518223/1076163933213311067 channel**.
+
+Tickets should only be used **for non-urgent questions or requests**. In cases of true urgency, send a DM or ping the admins instead.
+However, you should only create a ticket if absolutely necessary!
+
+>>> **To open a new ticket**, simply click the button below and fill in the information.
+A private channel will be created between you and the moderation team.
+You can report an issue, a member, request a role, or take any other action.
+You will likely be asked for proof, so **send your images and videos after creating the ticket**.
 """
 
 # ---------------------------------- writing and creating the ticket
@@ -125,7 +132,7 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         )
 
         # first channel's message
-        header = f"> New ticket of type {self._get_ticket_label(ticket_type)}, opened by {author.mention}"
+        header = f"> <@&{IDs.serverRoles.TICKET_HELPER}> New ticket of type **{self._get_ticket_label(ticket_type)}**, opened by {author.mention}"
         ticket = discord.Embed(
             title=ticket_title,
             description=ticket_content,
@@ -200,24 +207,22 @@ class CancelCloseView(discord.ui.LayoutView):
         self.message: discord.Message = None
         self.button = CancelClosingButton(self.callback)
         # https://gist.github.com/pythonmcpi/83b95f6e86a8155c07d4ff924967b325#file-example-py-L26
-        container = discord.ui.Container(accent_color=discord.Color.brand_red())
-        container.add_item(discord.ui.TextDisplay(content=f"### 🔒 Ticket will be closed in {SECONDS_BEFORE_TICKET_CLOSING}s..."))
+        self.container = discord.ui.Container(accent_color=discord.Color.brand_red())
+        self.container.add_item(discord.ui.TextDisplay(content=f"### 🔒 Ticket will be closed in {SECONDS_BEFORE_TICKET_CLOSING}s..."))
         section = discord.ui.Section(
             "You can cancel the closing with the following button",
             accessory=self.button
         )
-        container.add_item(section)
-        self.add_item(container)
+        self.container.add_item(section)
+        self.add_item(self.container)
 
     async def callback(self, interaction: discord.Interaction):
         self.cancelled = True
         if self.message:
-            new_embed = discord.Embed(
-                title="🔓 Ticket closure cancelled",
-                description="You have cancelled the ticket closing.",
-                color=discord.Color.dark_blue()
-            )
-            await self.message.edit(embed=new_embed, view=None)
+            self.container.clear_items()
+            self.container.accent_color = discord.Color.dark_blue()
+            self.container.add_item(discord.ui.TextDisplay(content="### 🔓 Ticket closure cancelled\n*You have cancelled the ticket closing.*"))
+            await self.message.edit(view=self)
         else:
             await interaction.response.send_message("Ticket closure cancelled.", ephemeral=True)
 
@@ -244,7 +249,7 @@ class OpenTicketView(discord.ui.LayoutView):
         super().__init__(timeout=None)
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         container.add_item(discord.ui.TextDisplay(content=f"### {OPEN_TICKET_TITLE}"))
-        container.add_item(discord.ui.TextDisplay(content=OPEN_TICKET_MSG))
+        container.add_item(discord.ui.TextDisplay(content=nl(OPEN_TICKET_MSG)))
         container.add_item(discord.ui.Separator())
         container.add_item(OpenTicketButton(bot))
         self.add_item(container)
@@ -255,7 +260,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
         self.bot = bot
 
     # ---------------------------------- admin commands
-    @app_commands.command(description="If launched in a ticket, closes it", extras={IS_ADMIN: True})
+    @app_commands.command(description="If launched in a ticket, closes it", extras={ADMIN_CMD: True})
     @check_admin_or_roles()
     async def close_ticket(self, interaction: discord.Interaction, * , reason: str = None):
         if interaction.channel.category and interaction.channel.category.id == IDs.serverChannel.TICKETS_CATEGORY:
@@ -294,7 +299,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
         else:
             await interaction.response.send_message(f"{DefaultEmojis.ERROR} This command isn't available here. Try again in a ticket!", ephemeral=True)
     
-    @commands.command(description="Post the unique ticket creation message", extras={IS_ADMIN: True})
+    @commands.command(description="Post the unique ticket creation message", extras={ADMIN_CMD: True})
     @check_admin_or_roles()
     async def setup_ticket(self, ctx: commands.Context):
         await ctx.message.delete()

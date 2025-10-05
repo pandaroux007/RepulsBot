@@ -14,7 +14,7 @@ from cogs_list import CogsNames
 from constants import DefaultEmojis
 from utils import (
     check_admin_or_roles,
-    IS_ADMIN
+    ADMIN_CMD
 )
 
 from log_system import (
@@ -29,7 +29,7 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     
-    @app_commands.command(description="Allows you to clean a certain number of messages", extras={IS_ADMIN: True})
+    @app_commands.command(description="Allows you to clean a certain number of messages", extras={ADMIN_CMD: True})
     @app_commands.describe(number=f"Number of messages to delete (max {MAX_PURGE})")
     @check_admin_or_roles()
     async def purge(self, interaction: discord.Interaction, number: int):

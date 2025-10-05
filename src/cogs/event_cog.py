@@ -7,6 +7,7 @@ Below is the command error handling, bot startup and other discord events
 
 import discord
 from discord.ext import commands
+from discord import app_commands
 # bot files
 from cogs_list import CogsNames
 from log_system import (
@@ -27,6 +28,50 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    def cog_load(self):
+        tree = self.bot.tree
+        self._old_tree_error = tree.on_error # optional
+        tree.on_error = self.on_app_command_error
+
+    def cog_unload(self):
+        tree = self.bot.tree
+        tree.on_error = self._old_tree_error
+
+    async def handle_command_error(self, source: commands.Context | discord.Interaction, error: discord.DiscordException):
+        message = f"*Unknown error:* {error}" # default
+
+        if isinstance(error, commands.CommandNotFound):
+            return # do nothing
+        elif isinstance(error, (commands.CheckFailure, app_commands.errors.CheckFailure)):
+            message = "You do not have permission to use this command!"
+        elif isinstance(error, commands.MissingRequiredArgument):
+            message = "Missing argument!"
+        else:
+            author = source.author.mention if isinstance(source, commands.Context) else source.user.mention
+            await log(
+                bot=self.bot, type=BOTLOG, color=LogColor.RED,
+                title=f"{DefaultEmojis.ERROR} User {author} tried to use the `{source.command.name}` command",
+                msg=f"It failed with the error:\n```\n{error}\n```"
+            )
+
+        embed = discord.Embed(
+            title=f"{DefaultEmojis.ERROR} Oh! We're sorry, but something went wrong...",
+            description=f"> {message}{ASK_HELP}",
+            color=discord.Color.brand_red()
+        )
+        if isinstance(source, commands.Context):
+            embed.set_footer("This message will disappear in 20 seconds")
+            await source.send(embed=embed, delete_after=20)
+        elif isinstance(source, discord.Interaction):
+            await source.response.send_message(embed=embed, ephemeral=True)
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
+        await self.handle_command_error(ctx, error)
+
+    async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        await self.handle_command_error(interaction, error)
+
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         if guild.id not in AUTHORISED_SERVERS:
@@ -39,30 +84,6 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         elif message.channel.id == IDs.serverChannel.RULES:
             await message.channel.send(message.content)
             await message.delete()
-    
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        message = f"*Unknown error:* {error}" # default
-
-        if isinstance(error, commands.CheckFailure):
-            message = "You do not have permission to use this command!"
-        elif isinstance(error, commands.MissingRequiredArgument):
-            message = "Missing argument!"
-        elif isinstance(error, commands.CommandNotFound):
-            return # do nothing
-        else:
-            await log(
-                bot=self.bot, type=BOTLOG, color=LogColor.RED,
-                title=f"{DefaultEmojis.ERROR} User {ctx.author.mention} tried to use the `{ctx.command}` command",
-                msg=f"It failed with the error:\n```\n{error}\n```"
-            )
-
-        embed = discord.Embed(
-            title=f"{DefaultEmojis.ERROR} Check failure!",
-            description=f"> {message}{ASK_HELP}",
-            color=discord.Color.brand_red()
-        )
-        await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):

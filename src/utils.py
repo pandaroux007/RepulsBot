@@ -4,21 +4,26 @@ from datetime import datetime, timedelta
 # bot file
 from constants import AUTHORISED_ROLES
 
+def is_admin(member: discord.Member) -> bool:
+    user_role_ids = {role.id for role in member.roles}
+    # https://www.w3schools.com/python/ref_set_intersection.asp
+    return bool(user_role_ids & AUTHORISED_ROLES) or member.guild_permissions.administrator
+
 def check_admin_or_roles():
     async def predicate(ctx: commands.Context):
-        is_admin = ctx.author.guild_permissions.administrator
-        has_role = any(role.id in AUTHORISED_ROLES for role in ctx.author.roles)
-        return is_admin or has_role
+        return is_admin(ctx.author)
     return commands.check(predicate)
 
-IS_ADMIN = "admin_only"
+ADMIN_CMD = "admin_only"
 
 def hoursdelta(hours) -> datetime:
     return discord.utils.utcnow() - timedelta(hours=hours)
 
 def nl(string: str) -> str:
     """ returns a string without line breaks """
-    return string.replace('\n', ' ').strip()
+    string = string.replace("\n\n", "<<DOUBLE_NEWLINE>>")
+    string = string.replace('\n', ' ')
+    return string.replace("<<DOUBLE_NEWLINE>>", "\n\n").strip()
 
 def plurial(size: int):
     if type(size) is not int:
@@ -36,4 +41,4 @@ def get_leaderboard_header(index: int, additional_condition: int = 0, length: in
             return "🥈"
         elif index == 3:
             return "🥉"
-    return "🔹" # f"{str(index).zfill(length)}"
+    return f"{str(index).zfill(length)}."

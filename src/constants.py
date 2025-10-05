@@ -38,6 +38,8 @@ class ServerRoleID: # "<@&role_id>"
     CONTRIBUTOR = 1388551885476204655        if ENV == ENV_DEV_MODE else 850775875821109298
     ESPORTS_ORGANIZER = 1388880454479904808  if ENV == ENV_DEV_MODE else 1371212276421496925
     CLAN_LEADER = 1394988076551635014        if ENV == ENV_DEV_MODE else 850917985429880863
+    MUTED = 1420425892429168821              if ENV == ENV_DEV_MODE else 805854637126713394
+    TICKET_HELPER = 1420425652221251585      if ENV == ENV_DEV_MODE else 1399022819861336194
 
 AUTHORISED_ROLES = {
     ServerRoleID.ADMIN,
@@ -48,6 +50,7 @@ AUTHORISED_ROLES = {
 class RepulsTeamMemberID: # "<@member_id>"
     # GRAPHIC_DESIGNER = 896507294983020574 # caracal
     MAIN_DEVELOPER = 213028561584521216 # docski
+    BOT_DEVELOPER = 1329483867937050652 # pandaroux007
 
 class AuthorizedServersID:
     MAIN_SERVER = 603655329120518223
@@ -70,8 +73,18 @@ class DefaultEmojis:
     WARN = "⚠️" # :warning:
     ERROR = "❌" # :x:
 
+class AdminPanel:
+    EMOTE = "🛡️"
+    LABEL = "Admin panel"
+    DESC = f"""
+    Admins are encouraged to use Discord's native features, such as polls or moderation tools from within the interface for bans, kicks, and timeouts.
+
+    For mutes longer than a week, use the <@&{IDs.serverRoles.MUTED}> role).
+    *The bot logs all actions taken, and the automod manages content filters and raids.*
+    """
+
 class BotInfo:
-    VERSION = "1.4.0"
+    VERSION = "1.4.2"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     DESCRIPTION = """
     Hey there! :waving_hand:
@@ -85,7 +98,7 @@ class Links:
     GAME = "https://repuls.io/"
     MAIN_SERVER = "https://discord.com/invite/2YKgx2HSfR"
     RWNC_SERVER = "https://discord.com/invite/YzfQndsdn3"
-    CLEAR_DATA_TUTORIAL = "https://its.uiowa.edu/services/how-clear-cache-and-cookies-your-web-browser"
+    CLEAR_DATA_TUTORIAL = "https://github.com/pandaroux007/RepulsBot/wiki/Troubleshoot-game-loading-issues"
 
 ASK_HELP = "\n**Ask an administrator for help!**"
 FOOTER_EMBED = "repuls.io is developed with ♥️ by docski"

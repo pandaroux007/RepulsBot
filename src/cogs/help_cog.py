@@ -19,34 +19,33 @@ from __future__ import annotations
 import discord
 from discord.ext import commands
 from discord import app_commands
+import platform
 # bot files
 from log_system import LogColor
 from utils import (
-    IS_ADMIN,
-    nl
+    is_admin,
+    nl,
+    ADMIN_CMD
 )
 
 from cogs_list import CogsNames
 from constants import (
+    Links,
+    BotInfo,
     DefaultEmojis,
-    AUTHORISED_ROLES,
+    AdminPanel,
+    RepulsTeamMemberID,
     CMD_PREFIX
 )
 
-class AdminPanel:
-    EMOTE = "🛡️"
-    LABEL = "Admin panel"
-    DESC = """
-    Admins are encouraged to use Discord's native features, such as polls or moderation tools (via native commands or from the interface)
-    for bans, kicks, and timeouts. The bot logs all actions taken, and the automod manages content filters and raids.
-    """
-
-class HelpToggleView(discord.ui.View):
-    def __init__(self, help_cog: HelpCog, is_admin: bool = False):
+class HelpMenuView(discord.ui.View):
+    def __init__(self, bot: commands.Bot, help_cog: HelpCog, is_admin: bool = False):
         super().__init__()
         self.help_cog = help_cog
         self.is_showing_admin = False
+        self.bot = bot
 
+        self.add_item(self.BotInfoButton(self.bot))
         if is_admin:
             self.add_item(self.ToggleButton())
 
@@ -55,7 +54,7 @@ class HelpToggleView(discord.ui.View):
             super().__init__(label=AdminPanel.LABEL, emoji=AdminPanel.EMOTE, style=discord.ButtonStyle.danger)
 
         async def callback(self, interaction: discord.Interaction):
-            view: HelpToggleView = self.view
+            view: HelpMenuView = self.view
             view.is_showing_admin = not view.is_showing_admin
 
             embed = await view.help_cog.get_help_embed(view.is_showing_admin)
@@ -67,6 +66,26 @@ class HelpToggleView(discord.ui.View):
                 self.emoji = AdminPanel.EMOTE
 
             await interaction.response.edit_message(embed=embed, view=view)
+
+    class BotInfoButton(discord.ui.Button):
+        def __init__(self, bot: commands.Bot):
+            super().__init__(label="About the bot", emoji='🔧', style=discord.ButtonStyle.secondary)
+            self.bot = bot
+
+        async def callback(self, interaction: discord.Interaction):
+            self.embed = discord.Embed(color=discord.Color.dark_blue())
+            self.embed.description = nl(BotInfo.DESCRIPTION.format(
+                name=self.bot.user.mention,
+                server=Links.MAIN_SERVER,
+                game=Links.GAME
+            ))
+            self.embed.add_field(name=f"{self.bot.user.display_name}", value=f"v{BotInfo.VERSION}")
+            self.embed.add_field(name="discord.py", value=f"v{discord.__version__}")
+            self.embed.add_field(name="python", value=f"v{platform.python_version()}")
+            self.embed.add_field(name="Source code", value=f"See on [GitHub]({BotInfo.GITHUB})")
+            self.embed.add_field(name="Report an issue", value=f"Contact the developer <@{RepulsTeamMemberID.BOT_DEVELOPER}> or create a [GitHub issue]({BotInfo.GITHUB}/issues)")
+
+            await interaction.response.send_message(embed=self.embed, ephemeral=True)
 
 # https://discordpy.readthedocs.io/en/latest/interactions/api.html#discord.app_commands.CommandTree.walk_commands
 # ---------------------------------- help cog (see README.md)
@@ -85,7 +104,7 @@ class HelpCog(commands.Cog, name=CogsNames.HELP):
         embed = discord.Embed(title=title, description=desc, color=color)
         # ---------------------------------- slash commands
         for command in self.bot.tree.get_commands():
-            if command.extras.get(IS_ADMIN, False) == admin:
+            if command.extras.get(ADMIN_CMD, False) == admin:
                 embed.add_field(
                     name=self.format_command_name(command),
                     value=command.description or "No description",
@@ -93,7 +112,7 @@ class HelpCog(commands.Cog, name=CogsNames.HELP):
                 )
         # ---------------------------------- ctx commands
         for cmd in self.bot.walk_commands():
-            if cmd.extras.get(IS_ADMIN, False) == admin:
+            if cmd.extras.get(ADMIN_CMD, False) == admin:
                 embed.add_field(
                     name=self.format_command_name(cmd),
                     value=cmd.help or cmd.description or "No description",
@@ -103,31 +122,25 @@ class HelpCog(commands.Cog, name=CogsNames.HELP):
         return embed
     
     async def get_command_help_embed(self, command_name: str) -> discord.Embed | None:
-        slash_cmd = self.bot.tree.get_command(command_name)
-        if slash_cmd:
+        command = self.bot.tree.get_command(command_name) or self.bot.get_command(command_name)
+        if command:
             embed = discord.Embed(
-                title=f"📖 Help about `/{slash_cmd.name}`",
-                description=f"*{slash_cmd.description or "This command has no description!"}*",
+                title=f"📖 Help about the {self.format_command_name(command)} command",
+                description=f"*{command.description or "This command has no description!"}*",
                 color=discord.Color.dark_blue(),
             )
-            return embed
-        
-        ctx_cmd = self.bot.get_command(command_name)
-        if ctx_cmd:
-            embed = discord.Embed(
-                title=f"📖 Help about the `{CMD_PREFIX}{ctx_cmd.qualified_name}` command",
-                description=ctx_cmd.description,
-                color=discord.Color.dark_blue(),
-            )
+            if command.extras.get(ADMIN_CMD, False):
+                embed.color = discord.Color.brand_red()
+                embed.add_field(
+                    name="🛡️ Please note, this command can only be used by administrators!",
+                    inline=False
+                )
             return embed
         return None
 
     @app_commands.command(description="Show what I am capable of")
     @app_commands.describe(command="Name of a specific command to get help for")
     async def help(self, interaction: discord.Interaction, command: str = None):
-        user_role_ids = {role.id for role in interaction.user.roles}
-        is_admin = bool(user_role_ids & AUTHORISED_ROLES)
-
         if command:
             cmd_embed = await self.get_command_help_embed(command)
             if not cmd_embed:
@@ -143,7 +156,7 @@ class HelpCog(commands.Cog, name=CogsNames.HELP):
             return
 
         help_embed = await self.get_help_embed()
-        view = HelpToggleView(self, is_admin)
+        view = HelpMenuView(self.bot, self, is_admin(interaction.user))
         await interaction.response.send_message(embed=help_embed, view=view, ephemeral=True)
 
 async def setup(bot: commands.Bot):

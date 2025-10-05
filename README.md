@@ -60,3 +60,9 @@ You can find details about the front-end operation of the bot in [the wiki](http
 - Discord 1v1s ([details here](https://discord.com/channels/603655329120518223/686216026412941429/1370057672304492554))
 - View repuls.io player information from discord (level, stats, RC count)
 - Manage your clan and friends via bot commands
+
+### How to update `discord.py`
+```
+uv lock --upgrade-package discord.py
+uv sync
+```

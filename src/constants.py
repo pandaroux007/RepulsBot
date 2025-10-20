@@ -17,11 +17,11 @@ class PrivateData:
     API_TOKEN = os.getenv("API_TOKEN")
 
 # https://support.discord.com/hc/en-us/community/posts/4407711130775-Mention-format-for-slash-commands
-# ------------------------------------- IDs -------------------------------------
-#         official bot and server IDs       |          dev bot and server IDs   |
-# -------------------------------------------------------------------------------
+# ----------------------------------------- IDs ----------------------------------------
+#           DEV bot and server IDs           |           OFFICIAL bot and server IDs   |
+# --------------------------------------------------------------------------------------
 class ServerChannelID:
-    BOTLOG = 1399029942221799475             if ENV == ENV_DEV_MODE else 1399017426880041141 # dyno log : 766398051165929502
+    BOTLOG = 1399029942221799475             if ENV == ENV_DEV_MODE else 1399017426880041141
     MODLOG = 1403797711764852756             if ENV == ENV_DEV_MODE else 1044053262975893514
     RULES = 1389989335318794420              if ENV == ENV_DEV_MODE else 758364818348048444
     VIDEO = 1370706473155563581              if ENV == ENV_DEV_MODE else 800108276004028446
@@ -72,6 +72,8 @@ class DefaultEmojis:
     CHECK = "✅" # :white_check_mark:
     WARN = "⚠️" # :warning:
     ERROR = "❌" # :x:
+    SUCCESS = "🟢" # :green_circle:
+    FAILURE = "🔴" # :red_circle:
 
 class AdminPanel:
     EMOTE = "🛡️"

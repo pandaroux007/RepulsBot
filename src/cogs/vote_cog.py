@@ -152,6 +152,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                 winner = random.choice(messages)
                 embed.add_field(name="The winner drawn at random is", value=f"This [video]({winner.jump_url}) of {winner.author.mention}!", inline=True)
 
+            # embed.description += f"\n-# ({discord.utils.format_dt(discord.utils.utcnow(), 'F')} update)"
             match = re.search(YOUTUBE_REGEX, winner.content)
             code = await send_video_to_endpoint(video_url=match.group(0))
 

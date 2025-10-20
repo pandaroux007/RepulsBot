@@ -51,8 +51,7 @@ You can find details about the front-end operation of the bot in [the wiki](http
 
 ## Development goals
 ### Objectives to be achieved
-- Show game leaderboard with pagination via discord
-- Replace all bots on the server, without being admin
+- Refactoring the video system
 #### Must be defined
 - Manage competitions and display eSports results
 - For authorized players, asset store of the game from discord
@@ -60,6 +59,8 @@ You can find details about the front-end operation of the bot in [the wiki](http
 - Discord 1v1s ([details here](https://discord.com/channels/603655329120518223/686216026412941429/1370057672304492554))
 - View repuls.io player information from discord (level, stats, RC count)
 - Manage your clan and friends via bot commands
+##### Stand-by for now
+- Show game leaderboard with pagination via discord
 
 ### How to update `discord.py`
 ```

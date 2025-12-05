@@ -33,10 +33,19 @@ from constants import (
     Links,
     BotInfo,
     DefaultEmojis,
-    AdminPanel,
-    RepulsTeamMemberID,
+    IDs,
     CMD_PREFIX
 )
+
+class AdminPanel:
+    EMOTE = "🛡️"
+    LABEL = "Admin panel"
+    DESC = f"""
+    Admins are encouraged to use Discord's native features, such as polls or moderation tools from within the interface for bans, kicks, and timeouts.
+
+    For mutes longer than a week, use the <@&{IDs.serverRoles.MUTED}> role).
+    *The bot logs all actions taken, and the automod manages content filters and raids.*
+    """
 
 class HelpMenuView(discord.ui.View):
     def __init__(self, bot: commands.Bot, help_cog: HelpCog, is_admin: bool = False):
@@ -83,7 +92,7 @@ class HelpMenuView(discord.ui.View):
             self.embed.add_field(name="discord.py", value=f"v{discord.__version__}")
             self.embed.add_field(name="python", value=f"v{platform.python_version()}")
             self.embed.add_field(name="Source code", value=f"See on [GitHub]({BotInfo.GITHUB})")
-            self.embed.add_field(name="Report an issue", value=f"Contact the developer <@{RepulsTeamMemberID.BOT_DEVELOPER}> or create a [GitHub issue]({BotInfo.GITHUB}/issues)")
+            self.embed.add_field(name="Report an issue", value=f"Contact the developer <@{self.bot.owner_id}> or create a [GitHub issue]({BotInfo.GITHUB}/issues)")
 
             await interaction.response.send_message(embed=self.embed, ephemeral=True)
 

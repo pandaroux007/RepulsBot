@@ -4,6 +4,7 @@ from discord.ext import commands
 from cogs_list import COGS_LIST
 from constants import (
     PrivateData,
+    IDs,
     CMD_PREFIX
 )
 
@@ -15,6 +16,7 @@ class RepulsBot(commands.Bot):
 
 INTENTS = discord.Intents.all()
 bot = RepulsBot(command_prefix=CMD_PREFIX, intents=INTENTS, help_command=None)
+bot.owner_id = IDs.repulsTeam.BOT_DEVELOPER
 
 # ---------------------------------- bot run
 if __name__ == "__main__":

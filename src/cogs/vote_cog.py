@@ -2,6 +2,8 @@
 This cog contains all the automatic tasks and functions to find, display
 and send the best YouTube video about the game to the site.
 
+➜ Use https://regexr.com/ to understand, create and correct regex if you are a beginner and want to contribute.
+
 :copyright: (c) 2025-present pandaroux007
 :license: MIT, see LICENSE.txt for details.
 """
@@ -13,51 +15,43 @@ import re
 import aiohttp
 import random
 # bot files
+from cogs_list import CogsNames
 from utils import (
-    get_leaderboard_header,
     hoursdelta,
     plurial,
-    nl
+    ADMIN_CMD
 )
 
 from log_system import (
+    LogBuilder,
     LogColor,
     BOTLOG,
     log
 )
 
-from cogs_list import CogsNames
 from constants import (
     DefaultEmojis,
     PrivateData,
-    IDs,
-    ASK_HELP,
-    ENV,
-    ENV_DEV_MODE
+    IDs
 )
 
-# regex for youtube links
 # https://stackoverflow.com/questions/19377262/regex-for-youtube-url
 YOUTUBE_REGEX = re.compile(
     r'((?:https?:)?\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtu\.be)\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?[\w\-]+(?:\S+)?)',
     re.IGNORECASE
 )
 
-VOTE_HOURS = 48
-SUCCESS_CODE = 200
-REACTION = DefaultEmojis.CHECK
+# shared video (public channel)
+SHARED_CHECK_HOURS = 48
+SHARED_MESSAGE_LIMIT = 100
+VOTE_REACTION = DefaultEmojis.UP_ARROW
 
-FEATURED_VIDEO_MSG = f"""
-And you, do you want your video to appear on the game's main page?
-Then hurry up and post the link here, and cross your fingers...
-I come and check the best video every {VOTE_HOURS} hours, you have every chance!
-"""
-
-class YouTubeLink(commands.Converter):
-    async def convert(self, ctx: commands.Context, argument):
-        if not re.match(YOUTUBE_REGEX, argument):
-            raise commands.BadArgument("Your YouTube link is invalid. Please try again.")
-        return argument
+# featured video (private channel)
+FEATURE_CHECK_HOURS = 48
+FEATURED_MESSAGES_LIMIT = 30
+# reactions placed under the videos to define its status
+VALIDATED_REACTION = DefaultEmojis.CHECK
+ALREADY_USED_REACTION = DefaultEmojis.NO_ENTRY
 
 # https://apidog.com/blog/aiohttp-request/
 # https://docs.aiohttp.org/en/stable/client_quickstart.html
@@ -75,159 +69,281 @@ async def send_video_to_endpoint(video_url: str):
     except Exception:
         return "unknown"
 
+def get_yt_url(message: str) -> str | None:
+    video_url = re.search(YOUTUBE_REGEX, message)
+    return video_url.group(0) if video_url else None
+
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
 # ---------------------------------- vote cog (see README.md)
 class VoteCog(commands.Cog, name=CogsNames.VOTE):
+    """
+    Not all messages fetch are an optimization omission, they are used to update the cache,
+    especially for the number of reactions (https://github.com/Rapptz/discord.py/issues/861)
+    """
+    # ---------------------------------- task configuration
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.vote_task.start()
+        self.shared_video_task.start()
+        self.featured_video_task.start()
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        elif message.channel.id == IDs.serverChannel.SHARED_VIDEO:
+            if re.search(YOUTUBE_REGEX, message.content):
+                await message.add_reaction(VOTE_REACTION)
 
     def cog_unload(self):
-        self.vote_task.cancel()
+        self.shared_video_task.cancel()
+        self.featured_video_task.cancel()
 
-    @tasks.loop(hours=VOTE_HOURS)
-    async def vote_task(self):
-        await self.check_better_video()
-
-    @vote_task.before_loop
-    async def before_vote_task(self):
-        await self.bot.wait_until_ready()
-
-    async def check_better_video(self):
-        video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
-        if not video_channel:
-            return
-
-        better_video_msgs = []
-        last_better_votes = 0
-        after_time = hoursdelta(5 * 24) # 5 days
-
-        async for message in video_channel.history(limit=50, after=after_time):
+    # ---------------------------------- get shared videos from public community channel
+    @tasks.loop(hours=SHARED_CHECK_HOURS)
+    async def shared_video_task(self):
+        shared_videos_channel = self.bot.get_channel(IDs.serverChannel.SHARED_VIDEO)
+        last_better_votes = 1 # remove bot vote
+        result_videos: list[discord.Message] = []
+        async for message in shared_videos_channel.history(limit=SHARED_MESSAGE_LIMIT, after=hoursdelta(SHARED_CHECK_HOURS)):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue # pass all messages without youtube links
             
-            # update message cache (https://github.com/Rapptz/discord.py/issues/861)
-            msg = await video_channel.fetch_message(message.id)
+            msg = await shared_videos_channel.fetch_message(message.id)
             for reaction in msg.reactions:
-                if str(reaction.emoji) == REACTION:
+                if str(reaction.emoji) == VOTE_REACTION:
                     vote = reaction.count
                     if vote > last_better_votes:
                         last_better_votes = vote
-                        better_video_msgs = [msg]
+                        result_videos = [msg]
                     elif vote == last_better_votes:
-                        better_video_msgs.append(msg)
+                        result_videos.append(msg)
                     break
 
-        await self.process_winner(video_channel, better_video_msgs, last_better_votes)
-
-    async def process_winner(self, video_channel: discord.abc.Messageable, messages: list[discord.Message], vote_count: int):
-        embed = discord.Embed(
-            title="New featured video! 🎉",
-            color=discord.Color.brand_red(),
-        )
-        # no videos to send, notify youtubers
-        if len(messages) < 1:
-            embed.title = "I couldn't find any videos to display on the game's homepage 🫤..."
-            embed.description = f"Become a <@&{IDs.serverRoles.YOUTUBER}> by meeting [these conditions](https://discord.com/channels/603655329120518223/733177088961544202/1389263121591570496), and post your first videos! 🚀"
-        # one or more videos found to send
+        embed = discord.Embed()
+        # no videos to send
+        if len(result_videos) < 1:
+            last_check = discord.utils.format_dt(hoursdelta(SHARED_CHECK_HOURS))
+            embed.color = discord.Color.dark_blue()
+            embed.description = f"No new most voted video since {last_check}..."
+            await shared_videos_channel.send(embed=embed)
+        # one or more videos found
         else:
             winner: discord.Message = None
             # only one winning video
-            if len(messages) == 1:
-                winner = messages[0]
-                embed.add_field(
-                    name="Watch it now!",
-                    value=f"🎬 [Click here to watch the video]({winner.jump_url}), by {winner.author.mention}!",
-                    inline=False
-                )
-                embed.set_footer(text=nl(FEATURED_VIDEO_MSG))
+            if len(result_videos) == 1:
+                winner = result_videos[0]
+                embed.set_footer(text=f"This video was selected with {last_better_votes} votes")
             # case of equality
             else:
-                embed.title = "👏 Congrats! Several videos are tied!"
-                embed.description = f"The following videos come in first with {vote_count} votes each!"
+                winner = random.choice(result_videos)
+                embed.set_footer(text=f"A tie of {last_better_votes} votes for {len(result_videos)} videos, random selection")
 
-                for idx, m in enumerate(messages, 1):
-                    embed.add_field(name='', value=f"{idx}. [Video]({m.jump_url}) of {m.author.mention}", inline=False)
+            embed.title = "Congrats! New most-voted video"
+            embed.color = discord.Color.brand_red()
+            embed.description = f"🎬️ **[Click here now to watch it]({winner.jump_url})!**"
 
-                winner = random.choice(messages)
-                embed.add_field(name="The winner drawn at random is", value=f"This [video]({winner.jump_url}) of {winner.author.mention}!", inline=True)
+            async for msg in shared_videos_channel.history(limit=1):
+                if msg.author.id == self.bot.user.id:
+                    await msg.delete()
+            await shared_videos_channel.send(embed=embed)
 
-            # embed.description += f"\n-# ({discord.utils.format_dt(discord.utils.utcnow(), 'F')} update)"
-            match = re.search(YOUTUBE_REGEX, winner.content)
-            code = await send_video_to_endpoint(video_url=match.group(0))
+            featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
+            await featured_videos_channel.send(f"The community has chosen a new video ([voting link]({winner.jump_url}))!\n➜ {get_yt_url(winner.content) or "error"}")
 
-            log_title = "Status of sending the video link to the repuls website"
-            if code == SUCCESS_CODE:
-                status = f"{DefaultEmojis.CHECK} Video sent to repuls.io! (HTTP {code})"
-                await log(self.bot, type=BOTLOG, title=log_title, msg=status)
-            else:
-                status = f"{DefaultEmojis.WARN} Video failed to send to repuls.io ({code} error)"
-                await log(self.bot, type=BOTLOG, color=LogColor.RED, title=log_title, msg=status)
+    # ---------------------------------- admins select the featured video
+    def _get_forced_id_from_topic(self, channel: discord.TextChannel) -> int | None:
+        topic = (channel.topic or "")
+        match = re.search(r"forced_video:(\d+)", topic)
+        return int(match.group(1)) if match else None
 
-        async for msg in video_channel.history(limit=1):
-            if msg.author.id == self.bot.user.id:
-                await msg.delete()
-        await video_channel.send(embed=embed)
-    
-    # ---------------------------------- command
-    @app_commands.command(description="Show the most voted YouTube videos")
-    @app_commands.describe(
-        hours=f"Maximum video age (default on {VOTE_HOURS}h)",
-        limit="Number of videos retrieved from history",
-        top="The number of videos in the list (max 10)"
-    )
-    async def video_leaderboard(self, interaction: discord.Interaction, hours: int = VOTE_HOURS, limit: int = 50, top: int = 6):
-        video_channel = self.bot.get_channel(IDs.serverChannel.VIDEO)
-        if not video_channel:
-            await interaction.response.send_message(
-                content=f"> {DefaultEmojis.ERROR} Unable to find video channel!{ASK_HELP}",
-                ephemeral=True
-            )
-            return
+    async def _set_forced_id_in_topic(self, channel: discord.TextChannel, msg_id: int | None) -> bool:
+        """
+        store forced id in topic (overwrite previous)
+        returns True if successful, False if exception.
+        """
+        topic = (channel.topic or "")
+        topic = re.sub(r"\s*forced_video:\d+\s*", '\n', topic).strip()
+        if msg_id is not None:
+            topic = (topic + ' ' + f"forced_video:{msg_id}").strip()
+        try:
+            await channel.edit(topic=topic)
+            return True
+        except Exception:
+            return False
 
-        video_votes = []
+    @tasks.loop(hours=FEATURE_CHECK_HOURS)
+    async def featured_video_task(self):
+        featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
         embed = discord.Embed(
-            title="👏 YouTube Video Leaderboard",
-            description=f"(within the last {hours}h, with a limit of {limit} message{plurial(limit)})",
-            color=discord.Color.gold(),
-            timestamp=discord.utils.utcnow()
+            title="Send the video to repuls.io website...",
+            color=discord.Color.brand_red()
         )
-        embed.set_footer(text=f"Top {top} most voted YouTube videos")
+        # priority 1: forced message saved in channel topic
+        forced_id = self._get_forced_id_from_topic(featured_videos_channel)
+        if forced_id:
+            try:
+                forced_msg = await featured_videos_channel.fetch_message(forced_id)
+            except Exception:
+                await (
+                    LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
+                    .title(f"{DefaultEmojis.WARN} Unable to find the message for the featured forced video")
+                    .add_field(name="System fallback", value="Attempting to remove the incorrect ID and reverting to the normal system")
+                    .send()
+                )
+                forced_msg = None
+                await self._set_forced_id_in_topic(featured_videos_channel, None)
 
-        async for message in video_channel.history(limit=limit, after=hoursdelta(hours)):
+            if forced_msg:
+                video_url = get_yt_url(forced_msg.content)
+                if video_url:
+                    await forced_msg.add_reaction(ALREADY_USED_REACTION)
+                    status = await send_video_to_endpoint(video_url)
+                    if status == 200:
+                        embed.description = f"{DefaultEmojis.CHECK} **Forced video** sent to repuls.io website {forced_msg.jump_url}"
+                        embed.color = discord.Color.brand_green()
+                        await featured_videos_channel.send(embed=embed)
+                    else:
+                        embed.description = f"{DefaultEmojis.ERROR} Forced video failed to send to repuls.io ({status} error)"
+                        await featured_videos_channel.send(embed=embed)
+                        await log(
+                            bot=self.bot, type=BOTLOG, color=LogColor.RED,
+                            title=embed.description
+                        )
+                    return
+                else:
+                    await (
+                        LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
+                        .title(f"{DefaultEmojis.WARN} Unable to find the link to the featured forced video")
+                        .add_field(name="Detailed error", value="The \"forced\" message was indeed found in the featured videos channel, but it no longer contains a YouTube link")
+                        .add_field(name="System fallback", value="Attempting to remove the invalid ID and reverting to the normal system")
+                        .send()
+                    )
+                    await self._set_forced_id_in_topic(featured_videos_channel, None)
+
+        # priority 2: list of approved and unused videos
+        validated: list[discord.Message] = []
+        search_window = hoursdelta(FEATURE_CHECK_HOURS)
+        async for message in featured_videos_channel.history(limit=FEATURED_MESSAGES_LIMIT, after=search_window):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue
+            msg = await featured_videos_channel.fetch_message(message.id)
+            if not msg.reactions:
+                continue
+            emojis = {str(r.emoji) for r in msg.reactions}
+            if VALIDATED_REACTION in emojis:
+                validated.append(msg)
 
-            msg = await video_channel.fetch_message(message.id)
-            for reaction in msg.reactions:
-                if str(reaction.emoji) == REACTION:
-                    if ENV == ENV_DEV_MODE:
-                        video_votes.append((reaction.count, msg))
-                    elif reaction.count > 1: # prod mode
-                        video_votes.append((reaction.count, msg))
-                    break
-
-        if not video_votes:
-            embed.add_field(
-                name="Sorry, no voted videos found in the given timeframe...",
-                value="Try broadening my search scope?",
-                inline=False
-            )
-            await interaction.response.send_message(embed=embed)
+        if not validated:
+            embed.description = f"No validated video available since {discord.utils.format_dt(search_window, 'd')}. Admins must validate or force at least one of them, then restart the verification."
+            embed.color = discord.Color.dark_orange()
+            await featured_videos_channel.send(embed=embed)
             return
+
+        unused = [m for m in validated if ALREADY_USED_REACTION not in {str(r.emoji) for r in m.reactions}]
+        if unused:
+            chosen_msg = random.choice(unused)
         else:
-            # https://docs.python.org/3/howto/sorting.html#key-functions
-            video_votes.sort(key=lambda x: x[0], reverse=True)
-            top_videos = video_votes[:top]
+            chosen_msg = random.choice(validated)
 
-            for idx, (votes, msg) in enumerate(top_videos, start=1):
-                header = get_leaderboard_header(idx)
-                embed.add_field(
-                    name="", inline=False,
-                    value=f"{header} `{votes}` - [Watch video]({msg.jump_url})"
-                )
+        status = await send_video_to_endpoint(get_yt_url(chosen_msg.content))
+        if status == 200:
+            await chosen_msg.add_reaction(ALREADY_USED_REACTION)
+            embed.description = f"{DefaultEmojis.CHECK} Video sent to repuls.io website {chosen_msg.jump_url}"
+            embed.color = discord.Color.brand_green()
+            await featured_videos_channel.send(embed=embed)
+        else:
+            embed.description = f"{DefaultEmojis.ERROR} Video failed to send to repuls.io ({status} error)"
+            await featured_videos_channel.send(embed=embed)
+            await log(
+                bot=self.bot, type=BOTLOG, color=LogColor.RED,
+                title=embed.description
+            )
 
-            await interaction.response.send_message(embed=embed)
+    @shared_video_task.before_loop
+    async def before_vote_task(self):
+        await self.bot.wait_until_ready()
+
+    @featured_video_task.before_loop
+    async def before_featured_task(self):
+        await self.bot.wait_until_ready()
+
+    # ---------------------------------- control commands
+    @app_commands.command(description="Force a \"video message\" to be featured", extras={ADMIN_CMD: True})
+    @app_commands.describe(message_link="Link to the message containing the video to force to be featured")
+    async def set_forced_video(self, interaction: discord.Interaction, message_link: str):
+        await interaction.response.defer(ephemeral=True)
+        result = discord.Embed(
+            title="Set the forced featured video",
+            color=discord.Color.dark_blue()
+        )
+        if interaction.channel_id != IDs.serverChannel.FEATURED_VIDEO:
+            result.description = f"{DefaultEmojis.ERROR} This command should be used only on featured videos channel"
+            await interaction.response.send_message(embed=result, ephemeral=True)
+            return
+
+        match = re.search(r"(\d{17,20})$", message_link)
+        if not match:
+            result.description = f"{DefaultEmojis.ERROR} Couldn't parse a message id from input message link"
+            await interaction.response.send_message(embed=result, ephemeral=True)
+            return
+        message_id = int(match.group(1))
+        try:
+            message = await interaction.channel.fetch_message(message_id)
+            emojis = {str(r.emoji) for r in message.reactions}
+            if VALIDATED_REACTION in emojis:
+                is_validated = True
+            else:
+                is_validated = False
+        except (discord.errors.NotFound, discord.errors.HTTPException):
+            result.description = f"{DefaultEmojis.ERROR} Couldn't found the specified message from link"
+            await interaction.response.send_message(embed=result, ephemeral=True)
+            return
+
+        edited = await self._set_forced_id_in_topic(interaction.channel, message_id)
+        if edited:
+            result.description = f"{DefaultEmojis.CHECK} Video {message.jump_url} set as forced featured"
+            if is_validated is False:
+                result.add_field(name=f"{DefaultEmojis.WARN} Pay attention!", value="*The message you forced to be featured isn't validated (no check reaction). The forcing works but be sure to **validate the video**.*")
+        else:
+            result.description = f"{DefaultEmojis.ERROR} ID of {message.jump_url} registration failed"
+        await interaction.followup.send(embed=result, ephemeral=True)
+
+    @app_commands.command(description="Clear the forced featured video", extras={ADMIN_CMD: True})
+    async def clear_forced_video(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        result = discord.Embed(
+            title="Clear the forced featured video",
+            color=discord.Color.dark_blue()
+        )
+        if interaction.channel_id != IDs.serverChannel.FEATURED_VIDEO:
+            result.description = "This command should be used only on featured videos channel"
+            await interaction.response.send_message(embed=result, ephemeral=True)
+            return
+
+        edited = await self._set_forced_id_in_topic(interaction.channel, None)
+        if edited:
+            result.description = f"{DefaultEmojis.CHECK} Forced video cleared, the system is working normally again."
+            result.set_footer(text="To refresh the site video, please restart the system")
+        else:
+            result.description = f"{DefaultEmojis.ERROR} An error occurred while clearing"
+        await interaction.followup.send(embed=result, ephemeral=True)
+
+    @app_commands.command(description="Force the bot to find and send the featured video now", extras={ADMIN_CMD: True})
+    async def restart_video_loop(self, interaction: discord.Interaction, check_shared_video: bool = False):
+        """
+        NOTE:
+        potential bug here, the bot can return a video already sent previously, no duplicate check for now
+        """
+        if check_shared_video:
+            self.shared_video_task.restart()
+        self.featured_video_task.restart()
+
+        result = discord.Embed(
+            title=f"Restard the video {plurial("system", 2 if check_shared_video else 1)}",
+            description=f"{DefaultEmojis.CHECK} Restarting the video {plurial("system", 2 if check_shared_video else 1)} completed",
+            color=discord.Color.dark_blue()
+        )
+        await interaction.response.send_message(embed=result, ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoteCog(bot))

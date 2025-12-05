@@ -44,6 +44,8 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             return # do nothing
         elif isinstance(error, (commands.CheckFailure, app_commands.errors.CheckFailure)):
             message = "You do not have permission to use this command!"
+        elif isinstance(error, commands.NotOwner):
+            message = "Only the bot maintainer can use this command!"
         elif isinstance(error, commands.MissingRequiredArgument):
             message = "Missing argument!"
         else:
@@ -63,7 +65,10 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             embed.set_footer("This message will disappear in 20 seconds")
             await source.send(embed=embed, delete_after=20)
         elif isinstance(source, discord.Interaction):
-            await source.response.send_message(embed=embed, ephemeral=True)
+            if source.response.is_done():
+                await source.followup.send(embed=embed, ephemeral=True)
+            else:
+                await source.response.send_message(embed=embed, ephemeral=True)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
@@ -91,7 +96,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         synced = await self.bot.tree.sync()
         print(f"{len(synced)} command(s) have been synchronized")
         
-        await log(bot=self.bot, title=f"{self.bot.user.mention} is now online! 🟢", type=BOTLOG)
+        await log(bot=self.bot, type=BOTLOG, title=f"{self.bot.user.mention} is now online! {DefaultEmojis.ONLINE}")
         
         game = discord.Game("🎮️ repuls.io browser game! 🕹️")
         await self.bot.change_presence(activity=game)

@@ -8,7 +8,6 @@ This cog contains all the commands accessible only to server admins
 import discord
 from discord.ext import commands
 from discord import app_commands
-import asyncio
 # bot files
 from cogs_list import CogsNames
 from constants import DefaultEmojis
@@ -16,11 +15,6 @@ from utils import (
     check_admin_or_roles,
     plurial,
     ADMIN_CMD
-)
-
-from log_system import (
-    LogColor,
-    log
 )
 
 MAX_PURGE = 1000
@@ -84,8 +78,8 @@ class AdminTalkModal(discord.ui.Modal, title="Admin talk function"):
             if not success_sent:
                 embed.description = f"{DefaultEmojis.ERROR} The message could not be sent in any of the specified channels. Contact the developer for assistance."
             else:
-                embed.description = f"{DefaultEmojis.WARN} **The message was sent in {len(success_sent)} of the {len(channels)} channel{plurial(len(channels))} requested**\n"
-                embed.description += f"### {DefaultEmojis.SUCCESS} Message(s) sent successfully\n{success_list}\n### {DefaultEmojis.FAILURE} Channel(s) with failure\n{failed_list}"
+                embed.description = f"{DefaultEmojis.WARN} **The message was sent in {len(success_sent)} of the {len(channels)} {plurial("channel", len(channels))} requested**\n"
+                embed.description += f"### {DefaultEmojis.ONLINE} Message(s) sent successfully\n{success_list}\n### {DefaultEmojis.OFFLINE} Channel(s) with failure\n{failed_list}"
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -93,28 +87,6 @@ class AdminTalkModal(discord.ui.Modal, title="Admin talk function"):
 class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-    
-    @app_commands.command(description="Allows you to clean a certain number of messages", extras={ADMIN_CMD: True})
-    @app_commands.describe(number=f"Number of messages to delete (max {MAX_PURGE})")
-    @check_admin_or_roles()
-    async def purge(self, interaction: discord.Interaction, number: int):
-        number = max(1, min(number, MAX_PURGE))
-        await interaction.response.defer(ephemeral=True)
-
-        total_deleted = 0
-        while number > 0:
-            to_delete = min(100, number)
-            deleted = await interaction.channel.purge(limit=to_delete)
-            total_deleted += len(deleted)
-            number -= to_delete
-            if number > 0:
-                await asyncio.sleep(1)
-        
-        await log(
-            bot=self.bot, color=LogColor.RED,
-            title=f"🗑️ {total_deleted} messages removed in {interaction.channel.jump_url} by {interaction.user.mention}"
-        )
-        await interaction.edit_original_response(content=f"{DefaultEmojis.CHECK} {total_deleted} messages removed!")
 
     @app_commands.command(name="talk", description="Send a message under RepulsBot's name in the chosen channels", extras={ADMIN_CMD: True})
     @check_admin_or_roles()

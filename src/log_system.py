@@ -4,8 +4,8 @@ from typing import Self
 # bot file
 from constants import IDs
 
-MODLOG = True
-BOTLOG = False
+MODLOG = True # Log restricted to admins for server moderation
+BOTLOG = False # Logs of the bot for debugging without access restrictions
 
 class LogColor:
     BLUE = discord.Color.blue()

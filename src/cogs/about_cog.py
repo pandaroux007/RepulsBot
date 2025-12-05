@@ -90,7 +90,7 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
             embed.add_field(name="Nickname", value=f"{member.nick}", inline=False)
             embed.add_field(name="Joined at", value=discord.utils.format_dt(member.joined_at), inline=False)
             if member.premium_since is not None:
-                embed.add_field(name="Nitro subscriber", value=f"since {discord.utils.format_dt(member.premium_since, 'F')}", inline=False)
+                embed.add_field(name="Nitro subscriber", value=f"since {discord.utils.format_dt(member.premium_since)}", inline=False)
             embed.add_field(name="Roles", value=f"{self.get_roles(member.roles)}")
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -106,7 +106,7 @@ class AboutCog(commands.Cog, name=CogsNames.ABOUT):
         embed.set_image(url=guild.banner.url if guild.banner else None)
         embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
         embed.add_field(name="Owner", value=guild.owner.mention, inline=True)
-        embed.add_field(name="Created on", value=discord.utils.format_dt(guild.created_at, 'F'), inline=True)
+        embed.add_field(name="Created on", value=discord.utils.format_dt(guild.created_at), inline=True)
         embed.add_field(name="Members", value=guild.member_count, inline=True)
         embed.add_field(name="Boosts", value=guild.premium_subscription_count, inline=True)
         embed.add_field(name="Channels", value=f"{len(guild.text_channels)} Text | {len(guild.voice_channels)} Voice", inline=True)

@@ -25,10 +25,11 @@ def nl(string: str) -> str:
     string = string.replace('\n', ' ')
     return string.replace("<<DOUBLE_NEWLINE>>", "\n\n").strip()
 
-def plurial(size: int):
+def plurial(word: str, size: int):
     if type(size) is not int:
         size = len(size)
-    return "s" if size > 1 else ''
+    word += "s" if size > 1 else ''
+    return word
 
 def possessive(word: str) -> str:
     return f"{word}{'\'' if word.endswith('s') else "'s"}"

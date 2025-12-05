@@ -289,7 +289,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
                 
                 await (
                     LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
-                    .title(f"The ticket {f"[`{interaction.channel.name}`]({log_msg})" if log_msg else f"`{interaction.channel.name}`"} has been closed by {interaction.user.mention}")
+                    .title(f"🎟️ The ticket {f"[`{interaction.channel.name}`]({log_msg})" if log_msg else f"`{interaction.channel.name}`"} has been closed by {interaction.user.mention}")
                     .add_field(name="Ticket Title", value=f"> {title or "*Unknown*"}")
                     .add_field(name="Ticket Author", value=author_mention if author_mention else "*Unknown*")
                     .add_field(name="Reason for closure", value=f"*{reason}*" if reason else '')

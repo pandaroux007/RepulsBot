@@ -24,7 +24,8 @@ class ServerChannelID:
     BOTLOG = 1399029942221799475             if ENV == ENV_DEV_MODE else 1399017426880041141
     MODLOG = 1403797711764852756             if ENV == ENV_DEV_MODE else 1044053262975893514
     RULES = 1389989335318794420              if ENV == ENV_DEV_MODE else 758364818348048444
-    VIDEO = 1370706473155563581              if ENV == ENV_DEV_MODE else 800108276004028446
+    FEATURED_VIDEO = 1427982134857043990     if ENV == ENV_DEV_MODE else ...
+    SHARED_VIDEO = 1370706473155563581       if ENV == ENV_DEV_MODE else 800108276004028446
     TICKETS_CATEGORY = 1390286889830842470   if ENV == ENV_DEV_MODE else 1398622102713667605
 
 class ServerRoleID: # "<@&role_id>"
@@ -68,22 +69,22 @@ class IDs:
     repulsTeam = RepulsTeamMemberID
 
 # ------------------------------------- texts and links
+"""
+CONTRIBUTORS: To avoid display issues, use this variable (added after the emoji's unicode value, for example
+via f-string) to ensure the emoji is displayed as an image if it defaults to text in Discord. Note that conditional
+tests used to compare emojis are sensitive to this addition.
+"""
+# https://stackoverflow.com/questions/38100329/what-does-u-ufe0f-in-an-emoji-mean-is-it-the-same-if-i-delete-it
+VARIATION_SELECTOR_IMG = '\uFE0F' # '\uFE0E' for text
+
 class DefaultEmojis:
-    CHECK = "✅" # :white_check_mark:
-    WARN = "⚠️" # :warning:
-    ERROR = "❌" # :x:
-    SUCCESS = "🟢" # :green_circle:
-    FAILURE = "🔴" # :red_circle:
-
-class AdminPanel:
-    EMOTE = "🛡️"
-    LABEL = "Admin panel"
-    DESC = f"""
-    Admins are encouraged to use Discord's native features, such as polls or moderation tools from within the interface for bans, kicks, and timeouts.
-
-    For mutes longer than a week, use the <@&{IDs.serverRoles.MUTED}> role).
-    *The bot logs all actions taken, and the automod manages content filters and raids.*
-    """
+    CHECK = '\u2705' # :white_check_mark:
+    WARN = f'\u26A0{VARIATION_SELECTOR_IMG}' # :warning:
+    ERROR = '\u274C' # :x:
+    NO_ENTRY = '\u26D4' # :no_entry:
+    UP_ARROW = '\u2B06' # :up_arrow:
+    OFFLINE = '\U0001F534' # :red_circle:
+    ONLINE = '\U0001F7E2' # :green_circle:
 
 class BotInfo:
     VERSION = "1.4.2"

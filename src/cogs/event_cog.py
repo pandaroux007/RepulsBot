@@ -28,6 +28,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    # ---------------------------------- error handling
     def cog_load(self):
         tree = self.bot.tree
         self._old_tree_error = tree.on_error # optional
@@ -77,6 +78,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         await self.handle_command_error(interaction, error)
 
+    # ---------------------------------- bot operation
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         if guild.id not in AUTHORISED_SERVERS:
@@ -100,6 +102,13 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
         
         game = discord.Game("🎮️ repuls.io browser game! 🕹️")
         await self.bot.change_presence(activity=game)
+
+    # ---------------------------------- welcome message
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        welcome_channel = self.bot.get_channel(IDs.serverChannel.WELCOME)
+        rules_channel = self.bot.get_channel(IDs.serverChannel.RULES)
+        await welcome_channel.send(f"Welcome {member.mention}! Please read {rules_channel.jump_url}, then have fun!")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(EventCog(bot))

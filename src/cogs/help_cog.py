@@ -23,7 +23,7 @@ import platform
 # bot files
 from log_system import LogColor
 from utils import (
-    is_admin,
+    is_member_admin,
     nl,
     ADMIN_CMD
 )
@@ -165,7 +165,7 @@ class HelpCog(commands.Cog, name=CogsNames.HELP):
             return
 
         help_embed = await self.get_help_embed()
-        view = HelpMenuView(self.bot, self, is_admin(interaction.user))
+        view = HelpMenuView(self.bot, self, is_member_admin(interaction.user))
         await interaction.response.send_message(embed=help_embed, view=view, ephemeral=True)
 
 async def setup(bot: commands.Bot):

@@ -278,13 +278,13 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         )
         if interaction.channel_id != IDs.serverChannel.FEATURED_VIDEO:
             result.description = f"{DefaultEmojis.ERROR} This command should be used only on featured videos channel"
-            await interaction.response.send_message(embed=result, ephemeral=True)
+            await interaction.followup.send(embed=result, ephemeral=True)
             return
 
         match = re.search(r"(\d{17,20})$", message_link)
         if not match:
             result.description = f"{DefaultEmojis.ERROR} Couldn't parse a message id from input message link"
-            await interaction.response.send_message(embed=result, ephemeral=True)
+            await interaction.followup.send(embed=result, ephemeral=True)
             return
         message_id = int(match.group(1))
         try:
@@ -296,7 +296,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                 is_validated = False
         except (discord.errors.NotFound, discord.errors.HTTPException):
             result.description = f"{DefaultEmojis.ERROR} Couldn't found the specified message from link"
-            await interaction.response.send_message(embed=result, ephemeral=True)
+            await interaction.followup.send(embed=result, ephemeral=True)
             return
 
         edited = await self._set_forced_id_in_topic(interaction.channel, message_id)
@@ -316,8 +316,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             color=discord.Color.dark_blue()
         )
         if interaction.channel_id != IDs.serverChannel.FEATURED_VIDEO:
-            result.description = "This command should be used only on featured videos channel"
-            await interaction.response.send_message(embed=result, ephemeral=True)
+            result.description = f"{DefaultEmojis.ERROR} This command should be used only on featured videos channel"
+            await interaction.followup.send(embed=result, ephemeral=True)
             return
 
         edited = await self._set_forced_id_in_topic(interaction.channel, None)

@@ -4,14 +4,14 @@ from datetime import datetime, timedelta
 # bot file
 from constants import AUTHORISED_ROLES
 
-def is_admin(member: discord.Member) -> bool:
+def is_member_admin(member: discord.Member) -> bool:
     user_role_ids = {role.id for role in member.roles}
     # https://www.w3schools.com/python/ref_set_intersection.asp
     return bool(user_role_ids & AUTHORISED_ROLES) or member.guild_permissions.administrator
 
 def check_admin_or_roles():
     async def predicate(ctx: commands.Context):
-        return is_admin(ctx.author)
+        return is_member_admin(ctx.author)
     return commands.check(predicate)
 
 ADMIN_CMD = "admin_only"

@@ -1,7 +1,6 @@
 # https://discordpy.readthedocs.io/en/latest/ext/commands/cogs.html
 
 class CogsNames:
-    ABOUT = "about_cog"
     ADMIN = "admin_cog"
     EVENT = "event_cog"
     HELP = "help_cog"
@@ -9,9 +8,9 @@ class CogsNames:
     USERS = "users_cog"
     VOTE = "vote_cog"
     LOG = "log_cog"
+    DEBUG = "debug_cog"
 
 COGS_LIST = [
-    CogsNames.ABOUT,
     CogsNames.ADMIN,
     CogsNames.EVENT,
     CogsNames.HELP,
@@ -19,4 +18,5 @@ COGS_LIST = [
     CogsNames.USERS,
     CogsNames.VOTE,
     CogsNames.LOG,
+    CogsNames.DEBUG,
 ]

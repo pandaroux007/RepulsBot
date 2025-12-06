@@ -17,8 +17,6 @@ from utils import (
     ADMIN_CMD
 )
 
-MAX_PURGE = 1000
-
 class AdminTalkModal(discord.ui.Modal, title="Admin talk function"):
     message = discord.ui.Label(
         text="The message you want to send",

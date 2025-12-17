@@ -12,7 +12,6 @@ from discord import app_commands
 from cogs_list import CogsNames
 from constants import DefaultEmojis
 from utils import (
-    check_admin_or_roles,
     plurial,
     ADMIN_CMD
 )
@@ -86,8 +85,8 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="talk", description="Send a message under RepulsBot's name in the chosen channels", extras={ADMIN_CMD: True})
-    @check_admin_or_roles()
+    @app_commands.command(name="talk", description="Send a message under RepulsBot's name in the chosen channels")
+    @app_commands.default_permissions(ADMIN_CMD)
     async def talk(self, interaction: discord.Interaction):
         await interaction.response.send_modal(AdminTalkModal(interaction.guild))
 

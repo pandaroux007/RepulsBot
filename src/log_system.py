@@ -64,8 +64,7 @@ class LogBuilder:
         if not log_channel:
             return None
         view = discord.ui.LayoutView()
-        container = discord.ui.Container()
-        container.accent_color = self.color
+        container = discord.ui.Container(accent_color = self.color)
 
         if self._title:
             container.add_item(discord.ui.TextDisplay(content=f"### {self._title}"))

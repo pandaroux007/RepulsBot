@@ -17,7 +17,9 @@ from utils import possessive
 from constants import (
     DefaultEmojis,
     Links,
-    FOOTER_EMBED,
+    GameUrl,
+    BotInfo,
+    FOOTER_EMBED
 )
 
 from faq_data import (
@@ -53,15 +55,13 @@ class FAQSelect(discord.ui.Select):
         )
         await interaction.response.edit_message(embed=embed, view=self.view)
 
-ESPORTS_ROADMAP_URL = "https://repuls.io/esports/REPULS_eSPORTS_ROADMAP.png"
-
 REPULS_WIKI_DESCRIPTION = """
-Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are?\n
+Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are? 
 Then you'll find everything you need on the official Wiki!
 """
 
 REPULS_DESCRIPTION = f"""
-[Repuls.io]({Links.GAME}) is the future of browser games.
+[Repuls.io]({GameUrl.GAME}) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
 Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
 """
@@ -101,17 +101,17 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
     async def esports_roadmap(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Repuls eSports roadmap!",
-            description="[See on the official website](https://repuls.io/esports)",
+            description=f"[See on the official website]({GameUrl.ESPORTS})",
             color=discord.Color.dark_blue()
         )
-        embed.set_image(url=ESPORTS_ROADMAP_URL)
+        embed.set_image(url=GameUrl.ESPORTS_ROADMAP_URL)
         await interaction.response.send_message(embed=embed)
 
     # ---------------------------------- "about" commands
     def get_roles(self, roles: Sequence[discord.Role]) -> str:
         # https://stackoverflow.com/questions/68079391/discord-py-info-command-how-to-mention-roles-of-a-member
         return ' '.join([role.mention for role in roles if role.name != "@everyone"])
-    
+
     def get_emojis(self, emojis: tuple[discord.Emoji]) -> str:
         return ' '.join(str(e) for e in emojis)
 
@@ -122,19 +122,31 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
             color=discord.Color.dark_blue()
         )
         if member.id == self.bot.user.id:
-            embed.title = f"Hi, I'm {self.bot.user.display_name}! How can I help you ?"
-            embed.description = "*Use `/help` for more details about me and my commands!*"
-            embed.set_footer(text=FOOTER_EMBED)
+            embed.title = "Hi! How can I help you ?"
+            embed.description = (
+                f"It's me, {self.bot.user.mention}, the official Discord bot for this server! "
+                "If you need help, look at the menu `/` in the bottom right corner and click on me to see what I can do.\n"
+                f"And if you prefer to have fun, **go meet the players on [repuls.io]({GameUrl.GAME})**!"
+            )
+            embed.add_field(
+                name='', value=(
+                    f"To offer your help, report a bug or give feedback, you can create a ticket, contact "
+                    f"the developer <@{self.bot.owner_id}> directly, or create a [GitHub issue]({BotInfo.REPORT})"
+                )
+            )
         else:
-            embed.set_thumbnail(url=member.avatar.url)
-            embed.add_field(name="Member name", value=f"{member.mention}", inline=False)
-            embed.add_field(name="Member id", value=f"{member.id}", inline=False)
-            embed.add_field(name="Nickname", value=f"{member.nick}", inline=False)
-            embed.add_field(name="Joined at", value=discord.utils.format_dt(member.joined_at), inline=False)
-            if member.premium_since is not None:
-                embed.add_field(name="Nitro subscriber", value=f"since {discord.utils.format_dt(member.premium_since)}", inline=False)
-            embed.add_field(name="Roles", value=f"{self.get_roles(member.roles)}")
-
+            embed.description = f"Profile: {member.mention}"
+            embed.set_thumbnail(url=member.display_avatar.url or None)
+            embed.add_field(name="Member name", value=f"{member.name}")
+            embed.add_field(name="Nickname", value=member.nick or "*no nickname*")
+            embed.add_field(name="Member ID", value=member.id)
+            embed.add_field(name="Account created", value=discord.utils.format_dt(member.created_at, 'D'))
+            embed.add_field(name="Joined guild", value=discord.utils.format_dt(member.joined_at, 'D'))
+            nitro = f"since {discord.utils.format_dt(member.premium_since)}" if member.premium_since else "*Member without nitro*"
+            embed.add_field(name="Nitro subscriber", value=nitro)
+            embed.add_field(name=f"Roles ({max(len(member.roles) - 1, 0)})", value=f"{self.get_roles(member.roles)}", inline=False)
+        
+        embed.set_footer(text=FOOTER_EMBED)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(description="Displays information about the server")
@@ -164,42 +176,51 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
 
     @app_commands.command(description="Displays information about repuls.io game")
     async def about_game(self, interaction: discord.Interaction):
-        play_btn_view = discord.ui.View()
-        play_btn = discord.ui.Button(
-            style=discord.ButtonStyle.link,
-            label="PLAY NOW!",
-            url=Links.GAME
-        )
-        play_btn_view.add_item(play_btn)
-        embed = discord.Embed(
-            title="What is repuls.io ?",
-            url=f"{Links.GAME}home",
-            description=REPULS_DESCRIPTION,
-            color=discord.Color.dark_blue()
-        )
-        embed.add_field(name="Leaderboard", value=f"[Leaderboard]({Links.GAME}leaderboard)", inline=True)
-        embed.add_field(name="Updates", value=f"[Updates]({Links.GAME}updates)", inline=True)
-        embed.add_field(name="Terms & privacy", value=f"[Privacy]({Links.PRIVACY})", inline=True)
-        embed.set_footer(text=FOOTER_EMBED)
-
-        await interaction.response.send_message(embed=embed, view=play_btn_view)
+        view = discord.ui.LayoutView()
+        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        container.add_item(discord.ui.TextDisplay(content=f"### [What is repuls.io]({GameUrl.HOME}) ?\n{REPULS_DESCRIPTION}"))
+        container.add_item(discord.ui.Separator())
+        container.add_item(discord.ui.ActionRow(
+            discord.ui.Button(
+                url=GameUrl.GAME,
+                style=discord.ButtonStyle.link,
+                label="PLAY NOW!"
+            ),
+            discord.ui.Button(
+                url=GameUrl.LEADERBOARD,
+                style=discord.ButtonStyle.link,
+                label="Leaderboard"
+            ),
+            discord.ui.Button(
+                url=GameUrl.UPDATES,
+                style=discord.ButtonStyle.link,
+                label="Updates"
+            ),
+            discord.ui.Button(
+                url=GameUrl.TERMS,
+                style=discord.ButtonStyle.link,
+                label="Terms & privacy"
+            )
+        ))
+        container.add_item(discord.ui.TextDisplay(content=f"-# **{FOOTER_EMBED}**"))
+        view.add_item(container)
+        await interaction.response.send_message(view=view)
 
     @app_commands.command(description="Everything you need to know about the game")
     async def wiki(self, interaction: discord.Interaction):
-        wiki_btn_view = discord.ui.View()
-        wiki_btn = discord.ui.Button(
-            style=discord.ButtonStyle.link,
-            label="Go to the repuls.io Wiki!",
-            url=Links.WIKI
-        )
-        wiki_btn_view.add_item(wiki_btn)
-        embed = discord.Embed(
-            title="Everything you need to know about repuls.io",
-            description=REPULS_WIKI_DESCRIPTION,
-            color=discord.Color.dark_blue()
-        )
-
-        await interaction.response.send_message(embed=embed, view=wiki_btn_view)
+        view = discord.ui.LayoutView()
+        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        container.add_item(discord.ui.TextDisplay(content=f"### Everything you need to know about repuls.io\n{REPULS_WIKI_DESCRIPTION}"))
+        container.add_item(discord.ui.ActionRow(
+            discord.ui.Button(
+                url=Links.WIKI,
+                style=discord.ButtonStyle.link,
+                label="Go to the repuls.io Wiki!"
+            )
+        ))    
+        container.add_item(discord.ui.TextDisplay(content=f"-# **{FOOTER_EMBED}**"))
+        view.add_item(container)
+        await interaction.response.send_message(view=view)
 
     @app_commands.command(description="Launch the server's interactive FAQ")
     async def serverfaq(self, interaction: discord.Interaction):

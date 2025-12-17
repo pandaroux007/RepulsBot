@@ -1,5 +1,6 @@
 """
 Classic ticket system, opens private channels with moderation.
+This can be improved with https://github.com/Rapptz/discord.py/blob/master/examples/modals/report.py
 
 :copyright: (c) 2025-present pandaroux007
 :license: MIT, see LICENSE.txt for details.
@@ -14,7 +15,6 @@ import string
 # bot files
 from cogs_list import CogsNames
 from utils import (
-    check_admin_or_roles,
     nl,
     ADMIN_CMD
 )
@@ -259,9 +259,8 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # ---------------------------------- admin commands
-    @app_commands.command(description="If launched in a ticket, closes it", extras={ADMIN_CMD: True})
-    @check_admin_or_roles()
+    @app_commands.command(description="If launched in a ticket, closes it")
+    @app_commands.default_permissions(ADMIN_CMD)
     async def close_ticket(self, interaction: discord.Interaction, * , reason: str = None):
         if interaction.channel.category and interaction.channel.category.id == IDs.serverChannel.TICKETS_CATEGORY:
             view = CancelCloseView()
@@ -298,13 +297,12 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
                 await interaction.channel.delete()
         else:
             await interaction.response.send_message(f"{DefaultEmojis.ERROR} This command isn't available here. Try again in a ticket!", ephemeral=True)
-    
-    @commands.command(description="Post the unique ticket creation message", extras={ADMIN_CMD: True})
-    @check_admin_or_roles()
-    async def setup_ticket(self, ctx: commands.Context):
-        await ctx.message.delete()
+
+    @app_commands.command(description="Post the unique ticket creation message")
+    @app_commands.default_permissions(ADMIN_CMD)
+    async def setup_ticket(self, interaction: discord.Interaction):
         view = OpenTicketView(self.bot)
-        await ctx.send(view=view)
+        await interaction.channel.send(view=view, ephemeral=True)
 
 async def setup(bot: commands.Bot):
     bot.add_view(OpenTicketView(bot))

@@ -268,7 +268,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await self.bot.wait_until_ready()
 
     # ---------------------------------- control commands
-    @app_commands.command(description="Force a \"video message\" to be featured", extras={ADMIN_CMD: True})
+    @app_commands.command(description="Force a \"video message\" to be featured")
+    @app_commands.default_permissions(ADMIN_CMD)
     @app_commands.describe(message_link="Link to the message containing the video to force to be featured")
     async def set_forced_video(self, interaction: discord.Interaction, message_link: str):
         await interaction.response.defer(ephemeral=True)
@@ -308,7 +309,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             result.description = f"{DefaultEmojis.ERROR} ID of {message.jump_url} registration failed"
         await interaction.followup.send(embed=result, ephemeral=True)
 
-    @app_commands.command(description="Clear the forced featured video", extras={ADMIN_CMD: True})
+    @app_commands.command(description="Clear the forced featured video")
+    @app_commands.default_permissions(ADMIN_CMD)
     async def clear_forced_video(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         result = discord.Embed(
@@ -328,7 +330,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             result.description = f"{DefaultEmojis.ERROR} An error occurred while clearing"
         await interaction.followup.send(embed=result, ephemeral=True)
 
-    @app_commands.command(description="Force the bot to find and send the featured video now", extras={ADMIN_CMD: True})
+    @app_commands.command(description="Force the bot to find and send the featured video now")
+    @app_commands.default_permissions(ADMIN_CMD)
     async def restart_video_loop(self, interaction: discord.Interaction, check_shared_video: bool = False):
         """
         NOTE:

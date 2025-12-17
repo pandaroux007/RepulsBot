@@ -63,7 +63,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
             color=discord.Color.brand_red()
         )
         if isinstance(source, commands.Context):
-            embed.set_footer("This message will disappear in 20 seconds")
+            embed.set_footer(text="This message will disappear in 20 seconds")
             await source.send(embed=embed, delete_after=20)
         elif isinstance(source, discord.Interaction):
             if source.response.is_done():

@@ -2,7 +2,16 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 # bot file
-from constants import AUTHORISED_ROLES
+from constants import IDs
+
+# ---------------------------------- permissions
+# https://discordpy.readthedocs.io/en/latest/api.html?highlight=permissions#discord.Permissions
+ADMIN_CMD = discord.Permissions(administrator=True)
+
+AUTHORISED_ROLES = {
+    IDs.serverRoles.ADMIN,
+    IDs.serverRoles.DEVELOPER
+}
 
 def is_member_admin(member: discord.Member) -> bool:
     user_role_ids = {role.id for role in member.roles}
@@ -14,8 +23,7 @@ def check_admin_or_roles():
         return is_member_admin(ctx.author)
     return commands.check(predicate)
 
-ADMIN_CMD = "admin_only"
-
+# ---------------------------------- formatting
 def hoursdelta(hours) -> datetime:
     return discord.utils.utcnow() - timedelta(hours=hours)
 

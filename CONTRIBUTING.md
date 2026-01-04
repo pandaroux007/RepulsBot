@@ -10,32 +10,40 @@ Open an issue specifying:
 4. Bot version (commit executed)
 
 # Development
+## License
+All contributions are subject to the [MIT License](LICENSE.txt).
+**By participating, you agree to license your work under this license.**
+
 ## Prerequisites
-- Python 3.10+
-- [UV](https://github.com/astral-sh/uv) (modern and fast replacement for `pip`),
+- Python 3.12+ (dependencies in [pyproject.toml](pyproject.toml))
+- [UV](https://docs.astral.sh/uv/getting-started/installation/) (modern and fast replacement for `pip`),
 - Discord account with [developer portal](https://discord.com/developers/applications) enabled,
 - [Mockoon](https://mockoon.com) to simulate API endpoints
 
 ## Fork and code
 1. Fork the repository and clone it locally with:
 ```sh
-git clone https://github.com/your-user/RepulsBot.git
+git clone https://github.com/pandaroux007/RepulsBot.git
 cd RepulsBot
 ```
-2. Install dependencies with `uv` (see [this](https://docs.astral.sh/uv/getting-started/installation/) to install it):
+2. Install dependencies with `uv`:
+The required modules will be installed automatically with `uv run main.py`.
 ```sh
 uv venv
-uv pip install -r pyproject.toml
 ```
 3. Configure your environment:
-    - Create a `.env` file in `src/` with:
+    - Create a `.env` file in `src/data` with:
     ```env
     DISCORD_TOKEN=your_bot_token
-    API_ENDPOINT_URL=http://localhost:3001/api/community/setyoutubefeature # set on the route created in Mockoon
+    API_ENDPOINT_URL=http://localhost:3001/setvideo # set on the route created in Mockoon
     API_TOKEN=useless_for_dev
     ENV=dev # on prod by default (official server IDs), dev allows to use (your) development IDs
+
+    YOUTUBE_KEY1=your_api_key_1
+    YOUTUBE_KEY2=your_api_key_2
+    YOUTUBE_KEY3=your_api_key_3
     ```
-    - Change all the IDs in `src/constants.py`
+    - Change all the IDs in `src/data/constants.py`
 4. Develop new features, fix bugs!
 5. Test the bot by launching it with:
 ```sh
@@ -43,25 +51,19 @@ cd src
 uv run main.py
 ```
 
-## Endpoint test
-Create a new local environment in Mockoon, then configure a new HTTP route, set the method to POST, and configure the route to the one you defined in the `.env`. Finally, launch the environment.
-
 ## Best practices
 - **Naming**: `snake_case` for variables/files
 - **Cogs**: Structure the code into modules (`/src/cogs/`)
-- **Test** locally with [Mockoon](https://mockoon.com) for endpoints
-- **Security**: Never commit tokens/secrets
+- **Test** Locally with [Mockoon](https://mockoon.com) for endpoints
+- **Security**: Store the secret data (token, endpoint) in the .env file
 - Use **RUFF linter**
 - Open a **Pull Request** with:
   - Purpose of changes/bug fixed
   - Added commands and features/bug fixes
   - Remain the [Pull Request template](.github/PULL_REQUEST_TEMPLATE.md)
 
-## License
-All contributions are subject to the [MIT License](LICENSE.txt).
-**By participating, you agree to license your work under this license.**
-
-## Useful resources
-- [`discordpy` documentation](https://discordpy.readthedocs.io/)
-- [UV Guide](https://github.com/astral-sh/uv)
-- [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
+### How to update `discord.py`
+```
+uv lock --upgrade-package discord.py
+uv sync
+```

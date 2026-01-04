@@ -9,10 +9,10 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 # bot files
-from cogs_list import CogsNames
-from constants import DefaultEmojis
-from utils import (
-    plurial,
+from data.cogs import CogsNames
+from tools.utils import plurial
+from data.constants import (
+    DefaultEmojis,
     ADMIN_CMD
 )
 
@@ -80,12 +80,11 @@ class AdminTalkModal(discord.ui.Modal, title="Admin talk function"):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# ---------------------------------- admin cog (see README.md)
 class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="talk", description="Send a message under RepulsBot's name in the chosen channels")
+    @app_commands.command(name="talk", description="[ADMIN] Send a message under RepulsBot's name in the chosen channels")
     @app_commands.default_permissions(ADMIN_CMD)
     async def talk(self, interaction: discord.Interaction):
         await interaction.response.send_modal(AdminTalkModal(interaction.guild))

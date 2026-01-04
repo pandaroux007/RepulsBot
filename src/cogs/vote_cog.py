@@ -2,8 +2,6 @@
 This cog contains all the automatic tasks and functions to find, display
 and send the best YouTube video about the game to the site.
 
-➜ Use https://regexr.com/ to understand, create and correct regex if you are a beginner and want to contribute.
-
 :copyright: (c) 2025-present pandaroux007
 :license: MIT, see LICENSE.txt for details.
 """
@@ -14,26 +12,31 @@ from discord import app_commands
 import re
 import aiohttp
 import random
+import datetime
 # bot files
-from cogs_list import CogsNames
-from utils import (
+from data.cogs import CogsNames
+from tools.utils import (
     hoursdelta,
-    plurial,
-    ADMIN_CMD
+    plurial
 )
 
-from log_system import (
+from tools.log_builder import (
     LogBuilder,
     LogColor,
     BOTLOG,
     log
 )
 
-from constants import (
+from data.constants import (
     DefaultEmojis,
     PrivateData,
-    IDs
+    IDs,
+    ADMIN_CMD
 )
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main import RepulsBot
 
 # https://stackoverflow.com/questions/19377262/regex-for-youtube-url
 YOUTUBE_REGEX = re.compile(
@@ -55,7 +58,7 @@ ALREADY_USED_REACTION = DefaultEmojis.NO_ENTRY
 
 # https://apidog.com/blog/aiohttp-request/
 # https://docs.aiohttp.org/en/stable/client_quickstart.html
-async def send_video_to_endpoint(video_url: str):
+async def send_video_to_endpoint(video_url: str) -> int | str:
     payload = {"video_url": video_url}
     headers = {
         "Authorization": f"Bearer {PrivateData.API_TOKEN}",
@@ -69,45 +72,56 @@ async def send_video_to_endpoint(video_url: str):
     except Exception:
         return "unknown"
 
+async def get_website_featured_video() -> tuple[str | None, datetime.datetime | None]:
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://community.docskigames.com/api/feature-video") as resp:
+                data = await resp.json()
+                video_url = data.get("video_url", None)
+                updated_str = data.get("updatedAt", None)
+                updated_at_dt = datetime.datetime.fromisoformat(updated_str) if updated_str else None
+                return video_url, updated_at_dt
+    except Exception:
+        return None, None
+
 def get_yt_url(message: str) -> str | None:
     video_url = re.search(YOUTUBE_REGEX, message)
     return video_url.group(0) if video_url else None
 
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
-# ---------------------------------- vote cog (see README.md)
 class VoteCog(commands.Cog, name=CogsNames.VOTE):
     """
     Not all messages fetch are an optimization omission, they are used to update the cache,
     especially for the number of reactions (https://github.com/Rapptz/discord.py/issues/861)
     """
     # ---------------------------------- task configuration
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: "RepulsBot"):
         self.bot = bot
-        self.shared_video_task.start()
-        self.featured_video_task.start()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
-        elif message.channel.id == IDs.serverChannel.SHARED_VIDEO:
+        if message.channel.id == IDs.serverChannel.SHARED_VIDEO:
             if re.search(YOUTUBE_REGEX, message.content):
                 await message.add_reaction(VOTE_REACTION)
 
+    def cog_load(self):
+        self.vote_task.start()
+        self.featured_video_task.start()
+
     def cog_unload(self):
-        self.shared_video_task.cancel()
+        self.vote_task.cancel()
         self.featured_video_task.cancel()
 
     # ---------------------------------- get shared videos from public community channel
     @tasks.loop(hours=SHARED_CHECK_HOURS)
-    async def shared_video_task(self):
+    async def vote_task(self):
         shared_videos_channel = self.bot.get_channel(IDs.serverChannel.SHARED_VIDEO)
         last_better_votes = 1 # remove bot vote
         result_videos: list[discord.Message] = []
         async for message in shared_videos_channel.history(limit=SHARED_MESSAGE_LIMIT, after=hoursdelta(SHARED_CHECK_HOURS)):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue # pass all messages without youtube links
-            
+
             msg = await shared_videos_channel.fetch_message(message.id)
             for reaction in msg.reactions:
                 if str(reaction.emoji) == VOTE_REACTION:
@@ -141,36 +155,12 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             embed.title = "Congrats! New most-voted video"
             embed.color = discord.Color.brand_red()
             embed.description = f"🎬️ **[Click here now to watch it]({winner.jump_url})!**"
-
-            async for msg in shared_videos_channel.history(limit=1):
-                if msg.author.id == self.bot.user.id:
-                    await msg.delete()
             await shared_videos_channel.send(embed=embed)
 
             featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
             await featured_videos_channel.send(f"The community has chosen a new video ([voting link]({winner.jump_url}))!\n➜ {get_yt_url(winner.content) or "error"}")
 
     # ---------------------------------- admins select the featured video
-    def _get_forced_id_from_topic(self, channel: discord.TextChannel) -> int | None:
-        topic = (channel.topic or "")
-        match = re.search(r"forced_video:(\d+)", topic)
-        return int(match.group(1)) if match else None
-
-    async def _set_forced_id_in_topic(self, channel: discord.TextChannel, msg_id: int | None) -> bool:
-        """
-        store forced id in topic (overwrite previous)
-        returns True if successful, False if exception.
-        """
-        topic = (channel.topic or "")
-        topic = re.sub(r"\s*forced_video:\d+\s*", '\n', topic).strip()
-        if msg_id is not None:
-            topic = (topic + ' ' + f"forced_video:{msg_id}").strip()
-        try:
-            await channel.edit(topic=topic)
-            return True
-        except Exception:
-            return False
-
     @tasks.loop(hours=FEATURE_CHECK_HOURS)
     async def featured_video_task(self):
         featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
@@ -179,7 +169,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             color=discord.Color.brand_red()
         )
         # priority 1: forced message saved in channel topic
-        forced_id = self._get_forced_id_from_topic(featured_videos_channel)
+        forced_id = await self.bot.youtube_storage.get_forced_video()
         if forced_id:
             try:
                 forced_msg = await featured_videos_channel.fetch_message(forced_id)
@@ -191,7 +181,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                     .send()
                 )
                 forced_msg = None
-                await self._set_forced_id_in_topic(featured_videos_channel, None)
+                await self.bot.youtube_storage.clear_forced_video()
 
             if forced_msg:
                 video_url = get_yt_url(forced_msg.content)
@@ -218,7 +208,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                         .add_field(name="System fallback", value="Attempting to remove the invalid ID and reverting to the normal system")
                         .send()
                     )
-                    await self._set_forced_id_in_topic(featured_videos_channel, None)
+                    await self.bot.youtube_storage.clear_forced_video()
 
         # priority 2: list of approved and unused videos
         validated: list[discord.Message] = []
@@ -259,7 +249,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                 title=embed.description
             )
 
-    @shared_video_task.before_loop
+    @vote_task.before_loop
     async def before_vote_task(self):
         await self.bot.wait_until_ready()
 
@@ -268,7 +258,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await self.bot.wait_until_ready()
 
     # ---------------------------------- control commands
-    @app_commands.command(description="Force a \"video message\" to be featured")
+    @app_commands.command(description="[ADMIN] Force a \"video message\" to be featured")
     @app_commands.default_permissions(ADMIN_CMD)
     @app_commands.describe(message_link="Link to the message containing the video to force to be featured")
     async def set_forced_video(self, interaction: discord.Interaction, message_link: str):
@@ -277,10 +267,6 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             title="Set the forced featured video",
             color=discord.Color.dark_blue()
         )
-        if interaction.channel_id != IDs.serverChannel.FEATURED_VIDEO:
-            result.description = f"{DefaultEmojis.ERROR} This command should be used only on featured videos channel"
-            await interaction.followup.send(embed=result, ephemeral=True)
-            return
 
         match = re.search(r"(\d{17,20})$", message_link)
         if not match:
@@ -290,6 +276,10 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         message_id = int(match.group(1))
         try:
             message = await interaction.channel.fetch_message(message_id)
+            if not get_yt_url(message=message.content):
+                result.description = f"{DefaultEmojis.ERROR} This message doesn't contain a video!"
+                await interaction.followup.send(embed=result, ephemeral=True)
+                return
             emojis = {str(r.emoji) for r in message.reactions}
             if VALIDATED_REACTION in emojis:
                 is_validated = True
@@ -300,7 +290,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             await interaction.followup.send(embed=result, ephemeral=True)
             return
 
-        edited = await self._set_forced_id_in_topic(interaction.channel, message_id)
+        default_forced_until = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
+        edited = await self.bot.youtube_storage.set_forced_video(message_id, default_forced_until)
         if edited:
             result.description = f"{DefaultEmojis.CHECK} Video {message.jump_url} set as forced featured"
             if is_validated is False:
@@ -309,7 +300,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             result.description = f"{DefaultEmojis.ERROR} ID of {message.jump_url} registration failed"
         await interaction.followup.send(embed=result, ephemeral=True)
 
-    @app_commands.command(description="Clear the forced featured video")
+    @app_commands.command(description="[ADMIN] Clear the forced featured video")
     @app_commands.default_permissions(ADMIN_CMD)
     async def clear_forced_video(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -317,12 +308,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             title="Clear the forced featured video",
             color=discord.Color.dark_blue()
         )
-        if interaction.channel_id != IDs.serverChannel.FEATURED_VIDEO:
-            result.description = f"{DefaultEmojis.ERROR} This command should be used only on featured videos channel"
-            await interaction.followup.send(embed=result, ephemeral=True)
-            return
-
-        edited = await self._set_forced_id_in_topic(interaction.channel, None)
+        edited = await self.bot.youtube_storage.clear_forced_video()
         if edited:
             result.description = f"{DefaultEmojis.CHECK} Forced video cleared, the system is working normally again."
             result.set_footer(text="To refresh the site video, please restart the system")
@@ -330,15 +316,38 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             result.description = f"{DefaultEmojis.ERROR} An error occurred while clearing"
         await interaction.followup.send(embed=result, ephemeral=True)
 
-    @app_commands.command(description="Force the bot to find and send the featured video now")
+    @app_commands.command(description="[ADMIN] Indicates if a video is currently being forced to feature, and more")
+    @app_commands.default_permissions(ADMIN_CMD)
+    async def is_forced_video(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        result = discord.Embed(
+            title="Current status of videos",
+            color=discord.Color.dark_blue()
+        )
+        message_id = await self.bot.youtube_storage.get_forced_video()
+        if message_id:
+            forced_video = await interaction.channel.fetch_message(message_id)
+            result.add_field(name="Forced video (stored in db)", value=f"➜ {forced_video.jump_url}", inline=False)
+        else:
+            result.add_field(name="Forced video", value="*No video is currently being forced (no link in the db)*", inline=False)
+
+        current_site_video, updated_at = await get_website_featured_video()
+        if current_site_video:
+            info = f"Video link: {current_site_video.split("?", 1)[0]}"
+            if updated_at:
+                info += f"\n(updated at {discord.utils.format_dt(updated_at)})"
+            result.add_field(name="Video currently on the site", value=info, inline=False)
+
+        await interaction.followup.send(embed=result, ephemeral=True)
+
+    @app_commands.command(description="[ADMIN] Force the bot to find and send the featured video now")
     @app_commands.default_permissions(ADMIN_CMD)
     async def restart_video_loop(self, interaction: discord.Interaction, check_shared_video: bool = False):
         """
-        NOTE:
-        potential bug here, the bot can return a video already sent previously, no duplicate check for now
+        NOTE: potential bug here, the bot can return a video already sent previously, no duplicate check for now
         """
         if check_shared_video:
-            self.shared_video_task.restart()
+            self.vote_task.restart()
         self.featured_video_task.restart()
 
         result = discord.Embed(

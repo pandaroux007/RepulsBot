@@ -13,22 +13,19 @@ from datetime import timedelta
 import random
 import string
 # bot files
-from cogs_list import CogsNames
-from utils import (
-    nl,
-    ADMIN_CMD
-)
-
-from constants import (
-    IDs,
-    DefaultEmojis,
-    ASK_HELP
-)
-
-from log_system import (
+from data.cogs import CogsNames
+from tools.utils import nl
+from tools.log_builder import (
     LogBuilder,
     LogColor,
     BOTLOG
+)
+
+from data.constants import (
+    IDs,
+    DefaultEmojis,
+    ASK_HELP,
+    ADMIN_CMD
 )
 
 SECONDS_BEFORE_TICKET_CLOSING = 4
@@ -254,12 +251,11 @@ class OpenTicketView(discord.ui.LayoutView):
         container.add_item(OpenTicketButton(bot))
         self.add_item(container)
 
-# ---------------------------------- tickets cog (see README.md)
 class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(description="If launched in a ticket, closes it")
+    @app_commands.command(description="[ADMIN] If launched in a ticket, closes it")
     @app_commands.default_permissions(ADMIN_CMD)
     async def close_ticket(self, interaction: discord.Interaction, * , reason: str = None):
         if interaction.channel.category and interaction.channel.category.id == IDs.serverChannel.TICKETS_CATEGORY:
@@ -298,11 +294,13 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
         else:
             await interaction.response.send_message(f"{DefaultEmojis.ERROR} This command isn't available here. Try again in a ticket!", ephemeral=True)
 
-    @app_commands.command(description="Post the unique ticket creation message")
+    @app_commands.command(description="[ADMIN] Post the unique ticket creation message")
     @app_commands.default_permissions(ADMIN_CMD)
     async def setup_ticket(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         view = OpenTicketView(self.bot)
-        await interaction.channel.send(view=view, ephemeral=True)
+        await interaction.channel.send(view=view)
+        await interaction.edit_original_response(content=f"{DefaultEmojis.CHECK} Ticket opening message configured!")
 
 async def setup(bot: commands.Bot):
     bot.add_view(OpenTicketView(bot))

@@ -14,18 +14,32 @@ import os
 import platform
 import time
 # bot files
-from cogs_list import CogsNames
-from constants import (
+from tools.utils import check_admin_or_roles
+from data.cogs import (
+    CogsNames,
+    COGS_LIST
+)
+
+from data.constants import (
     BotInfo,
     DefaultEmojis
 )
 
-# ---------------------------------- users cog (see README.md)
+from tools.youtube_storage import (
+    YouTubeStorage,
+    VIDEO_DB_PATH
+)
+
+# https://www.reddit.com/r/learnpython/comments/ukidl7/what_is_typingtype_checking_for/
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main import RepulsBot
+
 class DebugCog(commands.Cog, name=CogsNames.DEBUG):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: "RepulsBot"):
         self.bot = bot
 
-    @commands.command(description="Information about the server hosting the bot")
+    @commands.command(description="[DEBUG] Information about the server hosting the bot")
     @commands.is_owner()
     async def debug_info(self, ctx: commands.Context):
         """
@@ -37,7 +51,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
         """
         await ctx.message.delete()
         embed = discord.Embed(
-            title="Information about the bot's hosting server",
+            title=f"{DefaultEmojis.INFO} Information about the bot's hosting server",
             color=discord.Color.dark_gray(),
             timestamp=discord.utils.utcnow()
         )
@@ -78,6 +92,68 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await ctx.send(f"{DefaultEmojis.CHECK} The debug report has been sent!", delete_after=5)
         except Exception as error:
             raise discord.DiscordException(str(error))
+
+    @commands.command(description="[DEBUG] Reset the YouTube storage database")
+    @commands.is_owner()
+    async def reset_yt_storage(self, ctx: commands.Context):
+        await ctx.message.delete()
+        embed = discord.Embed(
+            title=f"{DefaultEmojis.WARN} Reset YouTube storage",
+            color=discord.Color.dark_gray(),
+            timestamp=discord.utils.utcnow()
+        )
+
+        try:
+            storage: YouTubeStorage = self.bot.youtube_storage
+            if storage is not None:
+                # https://sqlite.org/wal.html#the_wal_file
+                await storage.close()
+
+            VIDEO_DB_PATH.unlink()
+            
+            self.bot.youtube_storage = YouTubeStorage()
+            await self.bot.youtube_storage.init()
+
+            embed.description = f"{DefaultEmojis.CHECK} YouTube storage reset and recreated!"
+        except Exception as error:
+            raise discord.DiscordException(str(error))
+
+        await ctx.author.send(embed=embed)
+
+    @commands.command(description="[DEBUG] Restart a cog via its name")
+    @commands.is_owner()
+    @check_admin_or_roles()
+    async def restart_cog(self, ctx: commands.Context, name: str):
+        await ctx.message.delete()
+        embed = discord.Embed(
+            title=f"{DefaultEmojis.WARN} Restarting a cog...",
+            color=discord.Color.dark_gray(),
+            timestamp=discord.utils.utcnow()
+        )
+        if name not in COGS_LIST:
+            embed.description = f"{DefaultEmojis.WARN} This cog doesn't exist in the list!"
+            await ctx.send(embed=embed, delete_after=5)
+        else:
+            try:
+                await self.bot.reload_extension(name=f"cogs.{name}")
+                embed.description = f"{DefaultEmojis.CHECK} Cog `{name}` successfully restarted!"
+            except Exception as e:
+                embed.description = f"{DefaultEmojis.ERROR} An error occurred during the restart attempt!\n```\n{e}\n```"
+            
+            await ctx.author.send(embed=embed)
+
+    @commands.command(description="[DEBUG] Lists all cogs, active or not")
+    @commands.is_owner()
+    @check_admin_or_roles()
+    async def list_cog(self, ctx: commands.Context):
+        await ctx.message.delete()
+        embed = discord.Embed(
+            title=f"{DefaultEmojis.INFO} List of all cogs (active or not)",
+            description='\n'.join("- `" + str(item) + "`" for item in COGS_LIST),
+            color=discord.Color.dark_gray(),
+            timestamp=discord.utils.utcnow()
+        )
+        await ctx.author.send(embed=embed)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(DebugCog(bot))

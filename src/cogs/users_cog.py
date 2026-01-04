@@ -12,9 +12,9 @@ from discord.ext import commands
 from discord import app_commands
 from typing import Sequence
 # bot files
-from cogs_list import CogsNames
-from utils import possessive
-from constants import (
+from data.cogs import CogsNames
+from tools.utils import possessive
+from data.constants import (
     DefaultEmojis,
     Links,
     GameUrl,
@@ -22,7 +22,7 @@ from constants import (
     FOOTER_EMBED
 )
 
-from faq_data import (
+from data.faq import (
     ServerFAQ,
     GameFAQ
 )
@@ -66,7 +66,6 @@ The best free instantly accessible multiplayer first-person shooter for your bro
 Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
 """
 
-# ---------------------------------- users cog (see README.md)
 class UsersCog(commands.Cog, name=CogsNames.USERS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -154,7 +153,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         guild = interaction.guild
         embed = discord.Embed(
             title=f"About *{guild.name}* server",
-            description=f"(**ID** {guild.id})",
+            description=f"(**ID**: {guild.id})",
             color=discord.Color.dark_blue()
         )
         embed.set_image(url=guild.banner.url if guild.banner else None)

@@ -9,21 +9,20 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 # bot files
-from cogs_list import CogsNames
-from log_system import (
+from data.cogs import CogsNames
+from tools.log_builder import (
     LogColor,
     BOTLOG,
     log
 )
 
-from constants import (
+from data.constants import (
     IDs,
     DefaultEmojis,
     ASK_HELP,
     AUTHORISED_SERVERS
 )
 
-# ---------------------------------- event cog (see README.md)
 class EventCog(commands.Cog, name=CogsNames.EVENT):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -94,14 +93,9 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        # sync of slash and hybrid commands
-        synced = await self.bot.tree.sync()
-        print(f"{len(synced)} command(s) have been synchronized")
-        
-        await log(bot=self.bot, type=BOTLOG, title=f"{self.bot.user.mention} is now online! {DefaultEmojis.ONLINE}")
-        
         game = discord.Game("🎮️ repuls.io browser game! 🕹️")
         await self.bot.change_presence(activity=game)
+        await log(bot=self.bot, type=BOTLOG, title=f"{self.bot.user.mention} is now online! {DefaultEmojis.ONLINE}")
 
     # ---------------------------------- welcome message
     @commands.Cog.listener()

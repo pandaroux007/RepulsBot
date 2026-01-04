@@ -1,18 +1,12 @@
 """
 This cog contains events dedicated only to logs
 
-### moderation logs
-Moderation logs are dedicated to events that may be useful to admins, such as:
-- message deletions and modifications,
-- automod actions (logged by discord, not the bot), purges,
-- kicked or banned users, or when a timeout is applied,
-- changes to roles are also logged.
+Moderation logs are dedicated to events that may be useful to admins, such as
+message deletions or modifications. Since the bot is not an admin, it will only
+log events from channels to which it has access; staff-only channels are not
+logged unless the bot is explicitly added.
 
-Since the bot is not an admin, it will only log events from channels to which it has access;
-staff-only channels are not logged unless the bot is explicitly added.
-
-### bot logs
-This channel is less critical than the moderation logs; it contains messages from the bot:
+Bot logs are less critical than the moderation logs; it contains messages from the bot:
 - when it goes live,
 - when an error occurs on an order,
 - when a ticket is opened or closed.
@@ -24,13 +18,12 @@ This channel is less critical than the moderation logs; it contains messages fro
 import discord
 from discord.ext import commands
 # bot files
-from cogs_list import CogsNames
-from log_system import (
+from data.cogs import CogsNames
+from tools.log_builder import (
     LogBuilder,
     LogColor
 )
 
-# ---------------------------------- event cog (see README.md)
 class LogCog(commands.Cog, name=CogsNames.LOG):
     def __init__(self, bot: commands.Bot):
         self.bot = bot

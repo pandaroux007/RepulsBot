@@ -1,4 +1,4 @@
-from constants import (
+from data.constants import (
     BotInfo as bot,
     Links as links,
     IDs,

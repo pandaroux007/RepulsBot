@@ -2,13 +2,10 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 # bot file
-from constants import IDs
+from data.constants import IDs
 
 # ---------------------------------- permissions
-# https://discordpy.readthedocs.io/en/latest/api.html?highlight=permissions#discord.Permissions
-ADMIN_CMD = discord.Permissions(administrator=True)
-
-AUTHORISED_ROLES = {
+_AUTHORISED_ROLES = {
     IDs.serverRoles.ADMIN,
     IDs.serverRoles.DEVELOPER
 }
@@ -16,7 +13,7 @@ AUTHORISED_ROLES = {
 def is_member_admin(member: discord.Member) -> bool:
     user_role_ids = {role.id for role in member.roles}
     # https://www.w3schools.com/python/ref_set_intersection.asp
-    return bool(user_role_ids & AUTHORISED_ROLES) or member.guild_permissions.administrator
+    return bool(user_role_ids & _AUTHORISED_ROLES) or member.guild_permissions.administrator
 
 def check_admin_or_roles():
     async def predicate(ctx: commands.Context):
@@ -41,13 +38,3 @@ def plurial(word: str, size: int):
 
 def possessive(word: str) -> str:
     return f"{word}{'\'' if word.endswith('s') else "'s"}"
-
-def get_leaderboard_header(index: int, additional_condition: int = 0, length: int = 2) -> str:
-    if additional_condition <= 1:
-        if index == 1:
-            return "🥇"
-        elif index == 2:
-            return "🥈"
-        elif index == 3:
-            return "🥉"
-    return f"{str(index).zfill(length)}."

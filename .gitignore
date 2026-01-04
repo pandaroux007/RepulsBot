@@ -6,10 +6,12 @@ dist/
 wheels/
 *.egg-info
 
-# Virtual environments
-.venv
-
 # development files
+.venv
 dev/
-.env
 repulsbot.code-workspace
+
+# storage
+.env
+*.db
+*.db-*

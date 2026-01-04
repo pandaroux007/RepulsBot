@@ -32,22 +32,27 @@ Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one
 - *Abyss*
 - *eagoose*
 ### Other contributors
-- *aman_and_cats*
-- *martin_9202* (**NaN**)
-- *the_yerminator* (**NaN**)
-- *lexedia* (**NaN**)
-- *Mellow* (**d.py**)
-- *soheab_* (**d.py**)
+- *AmanLovesCats*
+#### NaN server
+- *martin_9202*
+- *the_yerminator*
+- *lexedia*
+#### discord.py server
+- *Mellow/codinglyl*
+- *Sheeb/soheab_*
+- *Lillifr/fretgfr*
+- *Link/hyliantwink*
+- *死/iyad8888*
 
 </details>
 
 **To learn more about RepulsBot, visit [the wiki](https://github.com/pandaroux007/RepulsBot/wiki) !**
 ___
 # ⚙️ Development
+You can find details about the front-end operation of the bot in [the wiki](https://github.com/pandaroux007/RepulsBot/wiki), this section is intended for developers only.
+
 > [!NOTE]
 > **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!** Even if you don't want to contribute, you can find all the details for configuring and launching the bot in [CONTRIBUTING.md](CONTRIBUTING.md)
-
-You can find details about the front-end operation of the bot in [the wiki](https://github.com/pandaroux007/RepulsBot/wiki), this section is intended for developers only.
 
 ## Development goals
 ### Objectives to be achieved
@@ -62,8 +67,10 @@ You can find details about the front-end operation of the bot in [the wiki](http
 ##### Stand-by for now
 - Show game leaderboard with pagination via discord
 
-### How to update `discord.py`
-```
-uv lock --upgrade-package discord.py
-uv sync
-```
+### Useful tools for contributing
+- Create interfaces with Components v2: https://discord.builders/
+- Learn SQL statements: https://sqlbolt.com/
+- Create, modify, and correct regular expressions: https://regexr.com/
+#### Useful resources
+- [`discord.py` documentation](https://discordpy.readthedocs.io/)
+- [UV Guide](https://github.com/astral-sh/uv)

@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from typing import Self
 # bot file
-from constants import IDs
+from data.constants import IDs
 
 MODLOG = True # Log restricted to admins for server moderation
 BOTLOG = False # Logs of the bot for debugging without access restrictions

@@ -45,12 +45,12 @@ YOUTUBE_REGEX = re.compile(
 )
 
 # shared video (public channel)
-SHARED_CHECK_HOURS = 48
+SHARED_CHECK_HOURS = 24
 SHARED_MESSAGE_LIMIT = 100
 VOTE_REACTION = DefaultEmojis.UP_ARROW
 
 # featured video (private channel)
-FEATURE_CHECK_HOURS = 48
+FEATURE_CHECK_HOURS = 24
 FEATURED_MESSAGES_LIMIT = 30
 # reactions placed under the videos to define its status
 VALIDATED_REACTION = DefaultEmojis.CHECK

@@ -28,6 +28,10 @@ from data.constants import (
     ADMIN_CMD
 )
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main import RepulsBot
+
 SECONDS_BEFORE_TICKET_CLOSING = 4
 PERMS_ACCESS_GRANTED = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
 AUTHORIZED_MEMBERS = [
@@ -100,7 +104,7 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         )
     )
     
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: "RepulsBot"):
         super().__init__()
         self.bot = bot
 
@@ -122,11 +126,7 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         category = discord.utils.get(guild.categories, id=IDs.serverChannel.TICKETS_CATEGORY)
         channel_name = self._build_ticket_channel_name(ticket_type)
         overwrites = self._build_ticket_overwrites(guild, author)
-
-        ticket_channel = await guild.create_text_channel(
-            channel_name, category=category, overwrites=overwrites,
-            topic=f"author_id: {author.id}\ntitle: {ticket_title}"
-        )
+        ticket_channel = await guild.create_text_channel(channel_name, category=category, overwrites=overwrites)
 
         # first channel's message
         header = f"> <@&{IDs.serverRoles.TICKET_HELPER}> New ticket of type **{self._get_ticket_label(ticket_type)}**, opened by {author.mention}"
@@ -151,7 +151,13 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
             .footer(f"Author ID: {author.id}")
             .send()
         )
-        await ticket_channel.edit(topic=ticket_channel.topic + f"\nlog_id: {log_msg.jump_url}")
+        if not await self.bot.tickets_storage.add_ticket(
+            name=ticket_channel.name,
+            title=ticket_title,
+            author=author,
+            open_log_url=log_msg.jump_url
+        ):
+            raise discord.DiscordException("The ticket could not be saved in the database.")
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await (
@@ -228,7 +234,7 @@ class CancelCloseView(discord.ui.LayoutView):
 # ---------------------------------- open ticket
 # https://github.com/Rapptz/discord.py/blob/master/examples/views/embed_like.py#L39-L73
 class OpenTicketButton(discord.ui.ActionRow):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: "RepulsBot"):
         super().__init__()
         self.bot = bot
 
@@ -242,7 +248,7 @@ class OpenTicketButton(discord.ui.ActionRow):
         await interaction.response.send_modal(TicketModal(self.bot))
 
 class OpenTicketView(discord.ui.LayoutView):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: "RepulsBot"):
         super().__init__(timeout=None)
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         container.add_item(discord.ui.TextDisplay(content=f"### {OPEN_TICKET_TITLE}"))
@@ -252,7 +258,7 @@ class OpenTicketView(discord.ui.LayoutView):
         self.add_item(container)
 
 class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: "RepulsBot"):
         self.bot = bot
 
     @app_commands.command(description="[ADMIN] If launched in a ticket, closes it")
@@ -270,26 +276,23 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
                 await view.message.delete()
                 return
             else: # close ticket
-                # https://www.w3schools.com/python/python_ref_string.asp
-                topic = interaction.channel.topic or ''
-                log_msg, title = None, None
-                for line in topic.splitlines():
-                    if line.startswith("author_id:"):
-                        author_id = int(line.split(':', 1)[1].strip())
-                        author_mention = f"<@{author_id}>" if author_id else None
-                    elif line.startswith("title:"):
-                        title = line.split(':', 1)[1].strip()
-                    elif line.startswith("log_id:"):
-                        log_msg = line.split(':', 1)[1].strip()
+                name = interaction.channel.name
+                ticket_info = await self.bot.tickets_storage.get_ticket(name)
                 
+                log_msg = ticket_info.get("open_log_url")
+                title = ticket_info.get("title", "*Unknown*")
+                author_id = ticket_info.get("author_id")
+                author_mention = f"<@{author_id}>" if author_id else "*Unknown*"
+
                 await (
                     LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
-                    .title(f"🎟️ The ticket {f"[`{interaction.channel.name}`]({log_msg})" if log_msg else f"`{interaction.channel.name}`"} has been closed by {interaction.user.mention}")
-                    .add_field(name="Ticket Title", value=f"> {title or "*Unknown*"}")
-                    .add_field(name="Ticket Author", value=author_mention if author_mention else "*Unknown*")
-                    .add_field(name="Reason for closure", value=f"*{reason}*" if reason else '')
+                    .title(f"🎟️ The ticket {f"[`{name}`]({log_msg})" if log_msg else f"`{name}`"} has been closed by {interaction.user.mention}")
+                    .add_field(name="Ticket Title", value=f"> {title}")
+                    .add_field(name="Ticket Author", value=author_mention)
+                    .add_field(name="Reason for closure", value=f"*{reason}*" if reason else "*No reason specified*")
                     .send()
                 )
+                await self.bot.tickets_storage.remove_ticket(name)
                 await interaction.channel.delete()
         else:
             await interaction.response.send_message(f"{DefaultEmojis.ERROR} This command isn't available here. Try again in a ticket!", ephemeral=True)
@@ -302,6 +305,6 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
         await interaction.channel.send(view=view)
         await interaction.edit_original_response(content=f"{DefaultEmojis.CHECK} Ticket opening message configured!")
 
-async def setup(bot: commands.Bot):
+async def setup(bot: "RepulsBot"):
     bot.add_view(OpenTicketView(bot))
     await bot.add_cog(TicketsCog(bot))

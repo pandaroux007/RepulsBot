@@ -115,5 +115,5 @@ class YTAutoCog(commands.Cog, name=CogsNames.YT_AUTO):
         except Exception:
             pass
 
-async def setup(bot: commands.Bot):
+async def setup(bot: "RepulsBot"):
     await bot.add_cog(YTAutoCog(bot))

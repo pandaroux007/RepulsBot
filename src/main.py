@@ -10,6 +10,7 @@ from data.constants import (
     CMD_PREFIX
 )
 from tools.youtube_storage import YouTubeStorage
+from tools.tickets_storage import TicketsStorage
 
 # ---------------------------------- bot creation
 class RepulsBot(commands.Bot):
@@ -20,6 +21,8 @@ class RepulsBot(commands.Bot):
     async def setup_hook(self) -> None:
         self.youtube_storage = YouTubeStorage()
         await self.youtube_storage.init()
+        self.tickets_storage = TicketsStorage()
+        await self.tickets_storage.init()
 
         for cog_name in COGS_LIST:
             await self.load_extension(f"cogs.{cog_name}")
@@ -31,6 +34,8 @@ class RepulsBot(commands.Bot):
     async def close(self) -> None:
         if self.youtube_storage:
             await self.youtube_storage.close()
+        if self.tickets_storage:
+            await self.tickets_storage.close()
 
         await super().close()
 

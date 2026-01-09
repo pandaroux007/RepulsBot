@@ -1,21 +1,16 @@
 import datetime
-from typing import Optional
-import asqlite
-# bot file
+# bot files
+from tools.utils import BaseStorage
 from data.constants import DEFAULT_DB_DIR
 
 VIDEO_DB_PATH = DEFAULT_DB_DIR / "youtube.db"
 
-class YouTubeStorage:
+class YouTubeStorage(BaseStorage):
     def __init__(self):
-        self._conn: Optional[asqlite.Connection] = None
+        super().__init__()
 
     async def init(self) -> None:
-        if self._conn is not None:
-            return
-        self._conn = await asqlite.connect(VIDEO_DB_PATH)
-        await self._conn.execute("PRAGMA journal_mode = WAL;") # https://sqlite.org/wal.html
-        await self._conn.execute("PRAGMA busy_timeout = 5000;") # ms (https://sqlite.org/c3ref/busy_timeout.html)
+        await super().init(VIDEO_DB_PATH)
         await self._conn.execute(
             """
             CREATE TABLE IF NOT EXISTS posted_videos (
@@ -38,22 +33,14 @@ class YouTubeStorage:
         )
         await self._conn.commit()
 
-    async def close(self) -> None:
-        if self._conn is not None:
-            await self._conn.close()
-            self._conn = None
-
-    async def _check_init(self):
-        if self._conn is None:
-            await self.init()
-
     # ---------------------------------- posted videos
+    # https://stackoverflow.com/questions/12876177/how-to-create-a-singleton-tuple-with-only-one-element
     async def add_posted_video(self, video_id: str) -> bool:
         """
         Returns True if inserted (was new), False if it already existed.
         """
         await self._check_init()
-        exists_cur = await self._conn.execute("SELECT 1 FROM posted_videos WHERE video_id = ?", (video_id))
+        exists_cur = await self._conn.execute("SELECT 1 FROM posted_videos WHERE video_id = ?", (video_id,))
         if await exists_cur.fetchone():
             return False
 
@@ -76,7 +63,7 @@ class YouTubeStorage:
         await self._check_init()
         try:
             cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)).isoformat()
-            await self._conn.execute("DELETE FROM posted_videos WHERE posted_at < ?", (cutoff))
+            await self._conn.execute("DELETE FROM posted_videos WHERE posted_at < ?", (cutoff,))
             await self._conn.commit()
             return True
         except Exception:
@@ -95,16 +82,16 @@ class YouTubeStorage:
         except Exception:
             return False
 
-    async def get_forced_video(self) -> Optional[int]:
+    async def get_forced_video(self) -> int | None:
         """
         Returns the message ID containing the link to the forced video, and a datetime object
         containing the deadline beyond which the video is no longer forced to feature (the normal system takes over).
         """
         await self._check_init()
-        cursor = await self._conn.execute("SELECT message_id, forced_until FROM featured_video WHERE id = 1")
-        row = await cursor.fetchone()
+        row = await self._conn.fetchone("SELECT message_id, forced_until FROM featured_video WHERE id = 1")
         if not row:
             return None
+        
         message_id, forced_until_str = row
         forced_until_dt = datetime.datetime.fromisoformat(forced_until_str) if forced_until_str else None
 

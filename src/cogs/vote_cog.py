@@ -129,7 +129,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                     if vote > last_better_votes:
                         last_better_votes = vote
                         result_videos = [msg]
-                    elif vote == last_better_votes:
+                    elif vote > 1 and vote == last_better_votes:
                         result_videos.append(msg)
                     break
 
@@ -261,7 +261,10 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
     @app_commands.command(description="[ADMIN] Force a \"video message\" to be featured")
     @app_commands.default_permissions(ADMIN_CMD)
     @app_commands.describe(message_link="Link to the message containing the video to force to be featured")
-    async def set_forced_video(self, interaction: discord.Interaction, message_link: str):
+    @app_commands.choices(
+        forced_until=[app_commands.Choice(name=f"{index} {plurial("day", index)}", value=index) for index in range(1, 8)]
+    )
+    async def set_forced_video(self, interaction: discord.Interaction, message_link: str, forced_until: app_commands.Choice[int]):
         await interaction.response.defer(ephemeral=True)
         result = discord.Embed(
             title="Set the forced featured video",
@@ -290,12 +293,13 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             await interaction.followup.send(embed=result, ephemeral=True)
             return
 
-        default_forced_until = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
-        edited = await self.bot.youtube_storage.set_forced_video(message_id, default_forced_until)
+        forced_until = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=forced_until.value)
+        edited = await self.bot.youtube_storage.set_forced_video(message_id, forced_until)
         if edited:
             result.description = f"{DefaultEmojis.CHECK} Video {message.jump_url} set as forced featured"
             if is_validated is False:
                 result.add_field(name=f"{DefaultEmojis.WARN} Pay attention!", value="*The message you forced to be featured isn't validated (no check reaction). The forcing works but be sure to **validate the video**.*")
+            result.set_footer(text="To refresh the site video, please restart the system")
         else:
             result.description = f"{DefaultEmojis.ERROR} ID of {message.jump_url} registration failed"
         await interaction.followup.send(embed=result, ephemeral=True)
@@ -342,20 +346,20 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
 
     @app_commands.command(description="[ADMIN] Force the bot to find and send the featured video now")
     @app_commands.default_permissions(ADMIN_CMD)
-    async def restart_video_loop(self, interaction: discord.Interaction, check_shared_video: bool = False):
+    async def restart_video_loop(self, interaction: discord.Interaction, restart_shared_video: bool = False):
         """
         NOTE: potential bug here, the bot can return a video already sent previously, no duplicate check for now
         """
-        if check_shared_video:
+        if restart_shared_video:
             self.vote_task.restart()
         self.featured_video_task.restart()
 
         result = discord.Embed(
-            title=f"Restard the video {plurial("system", 2 if check_shared_video else 1)}",
-            description=f"{DefaultEmojis.CHECK} Restarting the video {plurial("system", 2 if check_shared_video else 1)} completed",
+            title=f"Restart the video {plurial("system", 2 if restart_shared_video else 1)}",
+            description=f"{DefaultEmojis.CHECK} Restarting the video {plurial("system", 2 if restart_shared_video else 1)} completed",
             color=discord.Color.dark_blue()
         )
         await interaction.response.send_message(embed=result, ephemeral=True)
 
-async def setup(bot: commands.Bot):
+async def setup(bot: "RepulsBot"):
     await bot.add_cog(VoteCog(bot))

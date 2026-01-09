@@ -30,6 +30,11 @@ from tools.youtube_storage import (
     VIDEO_DB_PATH
 )
 
+from tools.tickets_storage import (
+    TicketsStorage,
+    TICKETS_DB_PATH
+)
+
 # https://www.reddit.com/r/learnpython/comments/ukidl7/what_is_typingtype_checking_for/
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -95,7 +100,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
 
     @commands.command(description="[DEBUG] Reset the YouTube storage database")
     @commands.is_owner()
-    async def reset_yt_storage(self, ctx: commands.Context):
+    async def reset_youtube_storage(self, ctx: commands.Context):
         await ctx.message.delete()
         embed = discord.Embed(
             title=f"{DefaultEmojis.WARN} Reset YouTube storage",
@@ -104,17 +109,41 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
         )
 
         try:
-            storage: YouTubeStorage = self.bot.youtube_storage
-            if storage is not None:
-                # https://sqlite.org/wal.html#the_wal_file
-                await storage.close()
+            # https://sqlite.org/wal.html#the_wal_file
+            if self.bot.youtube_storage is not None:
+                await self.bot.youtube_storage.close()
 
             VIDEO_DB_PATH.unlink()
             
             self.bot.youtube_storage = YouTubeStorage()
             await self.bot.youtube_storage.init()
 
-            embed.description = f"{DefaultEmojis.CHECK} YouTube storage reset and recreated!"
+            embed.description = f"{DefaultEmojis.CHECK} YouTube database reset and recreated!"
+        except Exception as error:
+            raise discord.DiscordException(str(error))
+
+        await ctx.author.send(embed=embed)
+
+    @commands.command(description="[DEBUG] Reset the tickets storage database")
+    @commands.is_owner()
+    async def reset_tickets_storage(self, ctx: commands.Context):
+        await ctx.message.delete()
+        embed = discord.Embed(
+            title=f"{DefaultEmojis.WARN} Reset tickets storage",
+            color=discord.Color.dark_gray(),
+            timestamp=discord.utils.utcnow()
+        )
+
+        try:
+            if self.bot.tickets_storage is not None:
+                await self.bot.tickets_storage.close()
+
+            TICKETS_DB_PATH.unlink()
+            
+            self.bot.tickets_storage = TicketsStorage()
+            await self.bot.tickets_storage.init()
+
+            embed.description = f"{DefaultEmojis.CHECK} Tickets database reset and recreated!"
         except Exception as error:
             raise discord.DiscordException(str(error))
 
@@ -155,5 +184,5 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
         )
         await ctx.author.send(embed=embed)
 
-async def setup(bot: commands.Bot):
+async def setup(bot: "RepulsBot"):
     await bot.add_cog(DebugCog(bot))

@@ -1,6 +1,12 @@
 import discord
 from discord.ext import commands
-from datetime import datetime, timedelta
+import asqlite
+from pathlib import Path
+from datetime import (
+    datetime,
+    timedelta
+)
+
 # bot file
 from data.constants import IDs
 
@@ -38,3 +44,25 @@ def plurial(word: str, size: int):
 
 def possessive(word: str) -> str:
     return f"{word}{'\'' if word.endswith('s') else "'s"}"
+
+# ---------------------------------- storage
+class BaseStorage():
+    def __init__(self):
+        self._conn: asqlite.Connection | None = None
+
+    async def init(self, path: Path) -> None:
+        if self._conn is not None:
+            return
+        self._conn = await asqlite.connect(path)
+        await self._conn.execute("PRAGMA journal_mode = WAL;") # https://sqlite.org/wal.html
+        await self._conn.execute("PRAGMA busy_timeout = 5000;") # ms (https://sqlite.org/c3ref/busy_timeout.html)
+        await self._conn.commit()
+
+    async def close(self) -> None:
+        if self._conn is not None:
+            await self._conn.close()
+            self._conn = None
+
+    async def _check_init(self):
+        if self._conn is None:
+            await self.init()

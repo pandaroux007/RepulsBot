@@ -56,7 +56,7 @@ class BaseStorage():
             return
         self._pool = await asqlite.create_pool(self._path)
         async with self._pool.acquire() as conn:
-            await conn.execute("PRAGMA journal_mode = WAL;") # https://sqlite.org/wal.html
+            # WAL by default : https://github.com/Rapptz/asqlite/blob/master/asqlite/__init__.py#L499
             await conn.execute("PRAGMA busy_timeout = 5000;") # ms (https://sqlite.org/c3ref/busy_timeout.html)
             await conn.commit()
 

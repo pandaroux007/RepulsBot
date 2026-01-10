@@ -17,6 +17,7 @@ class RepulsBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.youtube_storage: YouTubeStorage | None = None
+        self.tickets_storage: TicketsStorage | None = None
 
     async def setup_hook(self) -> None:
         self.youtube_storage = YouTubeStorage()

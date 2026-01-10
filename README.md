@@ -26,13 +26,13 @@ Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one
 ### Main contributors
 - [*itsdocski*](https://github.com/tahirG)
 - *sergiolan55*
+- *AmanLovesCats*
 ### Question/answer creators for the FAQ
 - *snipertoad*
 - *BratzelBrezel*
 - *Abyss*
 - *eagoose*
 ### Other contributors
-- *AmanLovesCats*
 #### NaN server
 - *martin_9202*
 - *the_yerminator*

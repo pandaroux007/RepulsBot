@@ -27,8 +27,8 @@ def check_admin_or_roles():
     return commands.check(predicate)
 
 # ---------------------------------- formatting
-def hoursdelta(hours) -> datetime:
-    return discord.utils.utcnow() - timedelta(hours=hours)
+def daysdelta(days: int | float) -> datetime:
+    return discord.utils.utcnow() - timedelta(days=days)
 
 def nl(string: str) -> str:
     """ returns a string without line breaks """
@@ -47,22 +47,24 @@ def possessive(word: str) -> str:
 
 # ---------------------------------- storage
 class BaseStorage():
-    def __init__(self):
-        self._conn: asqlite.Connection | None = None
+    def __init__(self, path: Path):
+        self._pool: asqlite.Pool | None = None
+        self._path: Path | None = path
 
-    async def init(self, path: Path) -> None:
-        if self._conn is not None:
+    async def init(self) -> None:
+        if self._pool is not None:
             return
-        self._conn = await asqlite.connect(path)
-        await self._conn.execute("PRAGMA journal_mode = WAL;") # https://sqlite.org/wal.html
-        await self._conn.execute("PRAGMA busy_timeout = 5000;") # ms (https://sqlite.org/c3ref/busy_timeout.html)
-        await self._conn.commit()
+        self._pool = await asqlite.create_pool(self._path)
+        async with self._pool.acquire() as conn:
+            await conn.execute("PRAGMA journal_mode = WAL;") # https://sqlite.org/wal.html
+            await conn.execute("PRAGMA busy_timeout = 5000;") # ms (https://sqlite.org/c3ref/busy_timeout.html)
+            await conn.commit()
 
     async def close(self) -> None:
-        if self._conn is not None:
-            await self._conn.close()
-            self._conn = None
+        if self._pool is not None:
+            await self._pool.close()
+            self._pool = None
 
     async def _check_init(self):
-        if self._conn is None:
+        if self._pool is None:
             await self.init()

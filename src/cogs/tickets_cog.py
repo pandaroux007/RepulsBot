@@ -154,7 +154,7 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         if not await self.bot.tickets_storage.add_ticket(
             name=ticket_channel.name,
             title=ticket_title,
-            author=author,
+            author=author.id,
             open_log_url=log_msg.jump_url
         ):
             raise discord.DiscordException("The ticket could not be saved in the database.")

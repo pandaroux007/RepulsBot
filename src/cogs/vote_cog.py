@@ -16,7 +16,7 @@ import datetime
 # bot files
 from data.cogs import CogsNames
 from tools.utils import (
-    hoursdelta,
+    daysdelta,
     plurial
 )
 
@@ -47,11 +47,13 @@ YOUTUBE_REGEX = re.compile(
 # shared video (public channel)
 SHARED_CHECK_HOURS = 24
 SHARED_MESSAGE_LIMIT = 100
+SHARED_BACK_UNTIL = 1 # scroll through messages up to 1 day ago
 VOTE_REACTION = DefaultEmojis.UP_ARROW
 
 # featured video (private channel)
-FEATURE_CHECK_HOURS = 24
+FEATURED_CHECK_HOURS = 24
 FEATURED_MESSAGES_LIMIT = 30
+FEATURED_BACK_UNTIL = 5
 # reactions placed under the videos to define its status
 VALIDATED_REACTION = DefaultEmojis.CHECK
 ALREADY_USED_REACTION = DefaultEmojis.NO_ENTRY
@@ -118,7 +120,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         shared_videos_channel = self.bot.get_channel(IDs.serverChannel.SHARED_VIDEO)
         last_better_votes = 1 # remove bot vote
         result_videos: list[discord.Message] = []
-        async for message in shared_videos_channel.history(limit=SHARED_MESSAGE_LIMIT, after=hoursdelta(SHARED_CHECK_HOURS)):
+        SEARCH_WINDOW = daysdelta(SHARED_BACK_UNTIL)
+        async for message in shared_videos_channel.history(limit=SHARED_MESSAGE_LIMIT, after=SEARCH_WINDOW):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue # pass all messages without youtube links
 
@@ -136,9 +139,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         embed = discord.Embed()
         # no videos to send
         if len(result_videos) < 1:
-            last_check = discord.utils.format_dt(hoursdelta(SHARED_CHECK_HOURS))
             embed.color = discord.Color.dark_blue()
-            embed.description = f"No new most voted video since {last_check}..."
+            embed.description = f"No new most voted video since {discord.utils.format_dt(SEARCH_WINDOW)}..."
             await shared_videos_channel.send(embed=embed)
         # one or more videos found
         else:
@@ -161,7 +163,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             await featured_videos_channel.send(f"The community has chosen a new video ([voting link]({winner.jump_url}))!\n➜ {get_yt_url(winner.content) or "error"}")
 
     # ---------------------------------- admins select the featured video
-    @tasks.loop(hours=FEATURE_CHECK_HOURS)
+    @tasks.loop(hours=FEATURED_CHECK_HOURS)
     async def featured_video_task(self):
         featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
         embed = discord.Embed(
@@ -212,8 +214,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
 
         # priority 2: list of approved and unused videos
         validated: list[discord.Message] = []
-        search_window = hoursdelta(FEATURE_CHECK_HOURS)
-        async for message in featured_videos_channel.history(limit=FEATURED_MESSAGES_LIMIT, after=search_window):
+        SEARCH_WINDOW = daysdelta(FEATURED_BACK_UNTIL)
+        async for message in featured_videos_channel.history(limit=FEATURED_MESSAGES_LIMIT, after=SEARCH_WINDOW):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue
             msg = await featured_videos_channel.fetch_message(message.id)
@@ -224,7 +226,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                 validated.append(msg)
 
         if not validated:
-            embed.description = f"No validated video available since {discord.utils.format_dt(search_window, 'd')}. Admins must validate or force at least one of them, then restart the verification."
+            embed.description = f"No validated video available since {discord.utils.format_dt(SEARCH_WINDOW, 'd')}. Admins must validate or force at least one of them, then restart the verification."
             embed.color = discord.Color.dark_orange()
             await featured_videos_channel.send(embed=embed)
             return

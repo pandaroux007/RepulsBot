@@ -23,7 +23,6 @@ class PrivateData:
     ]
 
 DEFAULT_DB_DIR = Path(__file__).parent.parent / "data"
-DEFAULT_DB_DIR.mkdir(parents=True, exist_ok=True)
 
 _MODE = os.getenv("ENV", "prod")
 _MODE_DEV = "dev"

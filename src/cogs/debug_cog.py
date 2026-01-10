@@ -103,7 +103,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
     async def reset_youtube_storage(self, ctx: commands.Context):
         await ctx.message.delete()
         embed = discord.Embed(
-            title=f"{DefaultEmojis.WARN} Reset YouTube storage",
+            title="Reset YouTube storage",
             color=discord.Color.dark_gray(),
             timestamp=discord.utils.utcnow()
         )
@@ -129,7 +129,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
     async def reset_tickets_storage(self, ctx: commands.Context):
         await ctx.message.delete()
         embed = discord.Embed(
-            title=f"{DefaultEmojis.WARN} Reset tickets storage",
+            title="Reset tickets storage",
             color=discord.Color.dark_gray(),
             timestamp=discord.utils.utcnow()
         )
@@ -155,7 +155,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
     async def restart_cog(self, ctx: commands.Context, name: str):
         await ctx.message.delete()
         embed = discord.Embed(
-            title=f"{DefaultEmojis.WARN} Restarting a cog...",
+            title=f"Restart the '{name}' cog",
             color=discord.Color.dark_gray(),
             timestamp=discord.utils.utcnow()
         )

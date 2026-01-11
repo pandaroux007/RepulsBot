@@ -280,7 +280,14 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             return
         message_id = int(match.group(1))
         try:
-            message = await interaction.channel.fetch_message(message_id)
+            try:
+                featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
+                message = await featured_videos_channel.fetch_message(message_id)
+            except discord.NotFound:
+                result.description = f"{DefaultEmojis.ERROR} The link must come from the featured videos channel"
+                await interaction.followup.send(embed=result, ephemeral=True)
+                return
+
             if not get_yt_url(message=message.content):
                 result.description = f"{DefaultEmojis.ERROR} This message doesn't contain a video!"
                 await interaction.followup.send(embed=result, ephemeral=True)
@@ -295,10 +302,10 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             await interaction.followup.send(embed=result, ephemeral=True)
             return
 
-        forced_until = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=forced_until.value)
-        edited = await self.bot.youtube_storage.set_forced_video(message_id, forced_until)
+        forced_until_dt = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=forced_until.value)
+        edited = await self.bot.youtube_storage.set_forced_video(message_id, forced_until_dt.isoformat())
         if edited:
-            result.description = f"{DefaultEmojis.CHECK} Video {message.jump_url} set as forced featured"
+            result.description = f"{DefaultEmojis.CHECK} Video {message.jump_url} set as forced featured for {forced_until.value} {plurial("day", forced_until.value)}"
             if is_validated is False:
                 result.add_field(name=f"{DefaultEmojis.WARN} Pay attention!", value="*The message you forced to be featured isn't validated (no check reaction). The forcing works but be sure to **validate the video**.*")
             result.set_footer(text="To refresh the site video, please restart the system")
@@ -332,7 +339,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         )
         message_id = await self.bot.youtube_storage.get_forced_video()
         if message_id:
-            forced_video = await interaction.channel.fetch_message(message_id)
+            featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
+            forced_video = await featured_videos_channel.fetch_message(message_id)
             result.add_field(name="Forced video (stored in db)", value=f"➜ {forced_video.jump_url}", inline=False)
         else:
             result.add_field(name="Forced video", value="*No video is currently being forced (no link in the db)*", inline=False)

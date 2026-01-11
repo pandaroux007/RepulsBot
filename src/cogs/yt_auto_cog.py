@@ -28,9 +28,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import RepulsBot
 
-YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
-SEARCH_QUERY = "repuls.io"
 CHECK_INTERVAL_HOURS = 1
+YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
+# https://developers.google.com/youtube/v3/docs/search/list#q
+SEARCH_QUERY = "repuls.io"
 
 # must be equal to or greater than the publishedAfter parameter of the request!
 MAX_POSTED_RETENTION_DAYS = 2
@@ -70,10 +71,8 @@ class YTAutoCog(commands.Cog, name=CogsNames.YT_AUTO):
             for key in getattr(PrivateData, "YOUTUBE_KEYS", []):
                 if not key:
                     continue
-                now = datetime.now(timezone.utc)
-                one_day_ago = (now - timedelta(days=1)).isoformat()
 
-                # https://developers.google.com/youtube/v3/docs/search/list#q 
+                one_day_ago = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
                 params = {
                     "key": key,
                     "part": "snippet",

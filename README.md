@@ -38,9 +38,10 @@ Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one
 - *the_yerminator*
 - *lexedia*
 #### discord.py server
+- *solstice/solsticeshard*
+- *Lillifr/fretgfr*
 - *Mellow/codinglyl*
 - *Sheeb/soheab_*
-- *Lillifr/fretgfr*
 - *Link/hyliantwink*
 - *死/iyad8888*
 

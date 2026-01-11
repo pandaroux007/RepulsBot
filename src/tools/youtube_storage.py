@@ -16,13 +16,13 @@ class YouTubeStorage(BaseStorage):
                 """
                 CREATE TABLE IF NOT EXISTS posted_videos (
                     video_id TEXT PRIMARY KEY NOT NULL,
-                    posted_at TEXT NOT NULL
+                    posted_at TEXT NOT NULL DEFAULT (DATETIME(CURRENT_TIMESTAMP))
                 )
                 """
             )
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS featured_video (
+                CREATE TABLE IF NOT EXISTS forced_video (
                     id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
                     message_id INTEGER,
                     forced_until TEXT
@@ -30,7 +30,7 @@ class YouTubeStorage(BaseStorage):
                 """
             )
             await conn.execute(
-                "INSERT OR IGNORE INTO featured_video(id, message_id, forced_until) VALUES(1, NULL, NULL)"
+                "INSERT OR IGNORE INTO forced_video(id, message_id, forced_until) VALUES(1, NULL, NULL)"
             )
             await conn.commit()
 
@@ -46,11 +46,7 @@ class YouTubeStorage(BaseStorage):
             if await exists_cur.fetchone():
                 return False
             try:
-                now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
-                await conn.execute(
-                    "INSERT INTO posted_videos(video_id, posted_at) VALUES(?, ?)",
-                    (video_id, now)
-                )
+                await conn.execute("INSERT INTO posted_videos(video_id) VALUES(?)", (video_id,))
                 await conn.commit()
                 return True
             except Exception:
@@ -64,21 +60,20 @@ class YouTubeStorage(BaseStorage):
         await self._check_init()
         try:
             async with self._pool.acquire() as conn:
-                cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)).isoformat()
-                await conn.execute("DELETE FROM posted_videos WHERE posted_at < ?", (cutoff,))
+                await conn.execute("DELETE FROM posted_videos WHERE DATETIME(posted_at) < DATETIME('now', '-' || ? || ' days')", (days,))
                 await conn.commit()
                 return True
         except Exception:
             return False
 
     # ---------------------------------- featured forced video
-    async def set_forced_video(self, message_id: int, forced_until: datetime.datetime) -> bool:
+    async def set_forced_video(self, message_id: int, forced_until: str) -> bool:
         await self._check_init()
         try:
             async with self._pool.acquire() as conn:
                 await conn.execute(
-                    "UPDATE featured_video SET message_id = ?, forced_until = ? WHERE id = 1",
-                    (message_id, forced_until.isoformat())
+                    "UPDATE forced_video SET message_id = ?, forced_until = ? WHERE id = 1",
+                    (message_id, forced_until)
                 )
                 await conn.commit()
                 return True
@@ -92,7 +87,8 @@ class YouTubeStorage(BaseStorage):
         """
         await self._check_init()
         async with self._pool.acquire() as conn:
-            row = await conn.fetchone("SELECT message_id, forced_until FROM featured_video WHERE id = 1")
+            cur = await conn.execute("SELECT message_id, forced_until FROM forced_video WHERE id = 1")
+            row = await cur.fetchone()
             if not row:
                 return None
         
@@ -111,7 +107,7 @@ class YouTubeStorage(BaseStorage):
         await self._check_init()
         try:
             async with self._pool.acquire() as conn:
-                await conn.execute("UPDATE featured_video SET message_id = NULL, forced_until = NULL WHERE id = 1")
+                await conn.execute("UPDATE forced_video SET message_id = NULL, forced_until = NULL WHERE id = 1")
                 await conn.commit()
                 return True
         except Exception:

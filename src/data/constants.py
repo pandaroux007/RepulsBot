@@ -56,9 +56,8 @@ class ServerRoleID: # "<@&role_id>"
 
 # these IDs do not change
 class RepulsTeamMemberID: # "<@member_id>"
-    # GRAPHIC_DESIGNER = 896507294983020574 # caracal
-    MAIN_DEVELOPER = 213028561584521216 # docski
     BOT_DEVELOPER = 1329483867937050652 # pandaroux007
+    MAIN_DEVELOPER = 213028561584521216 # docski
 
 class AuthorizedServersID:
     MAIN_SERVER = 603655329120518223

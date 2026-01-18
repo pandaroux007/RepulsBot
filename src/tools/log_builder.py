@@ -29,6 +29,11 @@ class LogBuilder:
         self._fields = []
         self._mediatitle = None
         self._mediafiles = []
+        self._enable_ping = False
+
+    def enable_ping(self):
+        self._enable_ping = True
+        return self
 
     def title(self, text: str) -> Self:
         self._title = text
@@ -92,7 +97,12 @@ class LogBuilder:
         container.add_item(discord.ui.TextDisplay(content=f"-# {footer}{discord.utils.format_dt(discord.utils.utcnow(), 'F')}"))
 
         view.add_item(container)
-        return await log_channel.send(view=view, files=self._mediafiles, silent=True, allowed_mentions=discord.AllowedMentions.none())
+        return await log_channel.send(
+            view=view,
+            files=self._mediafiles,
+            silent=self._enable_ping,
+            allowed_mentions=discord.AllowedMentions.none() if not self._enable_ping else discord.AllowedMentions.all()
+        )
 
 # kept for compatibility
 async def log(bot: commands.Bot, title: str, msg: str = '', type: bool = MODLOG, color: discord.Color = LogColor.BLUE) -> discord.Message | None:

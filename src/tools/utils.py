@@ -11,19 +11,24 @@ from datetime import (
 from data.constants import IDs
 
 # ---------------------------------- permissions
-_AUTHORISED_ROLES = {
+_MAINTAINER_MEMBERS = {
+    IDs.repulsTeam.BOT_DEVELOPER,
+    IDs.repulsTeam.MAIN_DEVELOPER
+}
+
+_AUTHORIZED_ROLES = {
     IDs.serverRoles.ADMIN,
     IDs.serverRoles.DEVELOPER
 }
 
-def is_member_admin(member: discord.Member) -> bool:
-    user_role_ids = {role.id for role in member.roles}
-    # https://www.w3schools.com/python/ref_set_intersection.asp
-    return bool(user_role_ids & _AUTHORISED_ROLES) or member.guild_permissions.administrator
-
-def check_admin_or_roles():
+def check_if_maintainer():
     async def predicate(ctx: commands.Context):
-        return is_member_admin(ctx.author)
+        is_authorized_member = ctx.author.id in _MAINTAINER_MEMBERS
+        # ---------------------------------- check roles
+        # https://www.w3schools.com/python/ref_set_intersection.asp
+        _user_role_ids = {role.id for role in ctx.author.roles}
+        is_admin_member = bool(_user_role_ids & _AUTHORIZED_ROLES) or ctx.author.guild_permissions.administrator
+        return (is_authorized_member or is_admin_member)
     return commands.check(predicate)
 
 # ---------------------------------- formatting

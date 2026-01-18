@@ -13,8 +13,10 @@ import psutil
 import os
 import platform
 import time
+from pathlib import Path
+import asyncio
 # bot files
-from tools.utils import check_admin_or_roles
+from tools.utils import check_if_maintainer
 from data.cogs import (
     CogsNames,
     COGS_LIST
@@ -22,14 +24,20 @@ from data.cogs import (
 
 from data.constants import (
     BotInfo,
-    DefaultEmojis
+    DefaultEmojis,
+    IDs
+)
+
+from tools.log_builder import (
+    LogBuilder,
+    LogColor,
+    MODLOG
 )
 
 from tools.youtube_storage import (
     YouTubeStorage,
     VIDEO_DB_PATH
 )
-
 from tools.tickets_storage import (
     TicketsStorage,
     TICKETS_DB_PATH
@@ -40,12 +48,27 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import RepulsBot
 
+async def get_commit():
+    # https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
+    # https://stackoverflow.com/questions/70119286/how-do-i-write-an-async-version-of-subprocess-check-output
+    current_path = Path(__file__).parent
+    process = await asyncio.create_subprocess_exec(
+        'git', 'rev-parse', '--short', 'HEAD',
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=current_path,
+    )
+    stdout_data, stderr_data = await process.communicate()
+    if process.returncode == 0:
+        return stdout_data.decode('ascii').strip()
+
 class DebugCog(commands.Cog, name=CogsNames.DEBUG):
     def __init__(self, bot: "RepulsBot"):
         self.bot = bot
 
+    # ---------------------------------- purely informative commands
     @commands.command(description="[DEBUG] Information about the server hosting the bot")
-    @commands.is_owner()
+    @check_if_maintainer()
     async def debug_info(self, ctx: commands.Context):
         """
         Useful links for contributing
@@ -84,10 +107,13 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             f"Boot time: since {global_uptime}"
         ))
 
+        current_commit = await get_commit()
+
         embed.add_field(inline=False, name="System software specifications", value=(
             f"{self.bot.user.display_name}: **v{BotInfo.VERSION}**\n"
             f"discord.py: **v{discord.__version__}**\n"
-            f"python3: **v{platform.python_version()}**"
+            f"python3: **v{platform.python_version()}**\n"
+            f"git commit: ***[`{current_commit}`]({BotInfo.GITHUB}/commit/{current_commit})***" if current_commit else ''
         ))
 
         embed.add_field(inline=False, name="Information about the server's OS", value=f"OS: `{platform.platform(aliased=True)}`")
@@ -97,9 +123,22 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await ctx.send(f"{DefaultEmojis.CHECK} The debug report has been sent!", delete_after=5)
         except Exception as error:
             raise discord.DiscordException(str(error))
+        
+    @commands.command(description="[DEBUG] Lists all cogs, active or not")
+    @check_if_maintainer()
+    async def list_cog(self, ctx: commands.Context):
+        await ctx.message.delete()
+        embed = discord.Embed(
+            title=f"{DefaultEmojis.INFO} List of all cogs (active or not)",
+            description='\n'.join("- `" + str(item) + "`" for item in COGS_LIST),
+            color=discord.Color.dark_gray(),
+            timestamp=discord.utils.utcnow()
+        )
+        await ctx.author.send(embed=embed)
 
+    # ---------------------------------- potentially dangerous commands
     @commands.command(description="[DEBUG] Reset the YouTube storage database")
-    @commands.is_owner()
+    @check_if_maintainer()
     async def reset_youtube_storage(self, ctx: commands.Context):
         await ctx.message.delete()
         embed = discord.Embed(
@@ -119,13 +158,20 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await self.bot.youtube_storage.init()
 
             embed.description = f"{DefaultEmojis.CHECK} YouTube database reset and recreated!"
+            await (
+                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
+                .enable_ping()
+                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - YouTube database reset and recreated!")
+                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the YouTube database was reset by {ctx.author.mention}")
+                .send()
+            )
         except Exception as error:
             raise discord.DiscordException(str(error))
 
         await ctx.author.send(embed=embed)
 
     @commands.command(description="[DEBUG] Reset the tickets storage database")
-    @commands.is_owner()
+    @check_if_maintainer()
     async def reset_tickets_storage(self, ctx: commands.Context):
         await ctx.message.delete()
         embed = discord.Embed(
@@ -144,14 +190,20 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await self.bot.tickets_storage.init()
 
             embed.description = f"{DefaultEmojis.CHECK} Tickets database reset and recreated!"
+            await (
+                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
+                .enable_ping()
+                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - Tickets database reset and recreated!")
+                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the tickets database was reset by {ctx.author.mention}")
+                .send()
+            )
         except Exception as error:
             raise discord.DiscordException(str(error))
 
         await ctx.author.send(embed=embed)
 
     @commands.command(description="[DEBUG] Restart a cog via its name")
-    @commands.is_owner()
-    @check_admin_or_roles()
+    @check_if_maintainer()
     async def restart_cog(self, ctx: commands.Context, name: str):
         await ctx.message.delete()
         embed = discord.Embed(
@@ -166,23 +218,17 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             try:
                 await self.bot.reload_extension(name=f"cogs.{name}")
                 embed.description = f"{DefaultEmojis.CHECK} Cog `{name}` successfully restarted!"
+                await (
+                    LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
+                    .enable_ping()
+                    .title(f"{DefaultEmojis.INFO} CRITICAL INFO - A cog has been restarted!")
+                    .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, `{name}` has been restarted by {ctx.author.mention}")
+                    .send()
+                )
             except Exception as e:
                 embed.description = f"{DefaultEmojis.ERROR} An error occurred during the restart attempt!\n```\n{e}\n```"
             
             await ctx.author.send(embed=embed)
-
-    @commands.command(description="[DEBUG] Lists all cogs, active or not")
-    @commands.is_owner()
-    @check_admin_or_roles()
-    async def list_cog(self, ctx: commands.Context):
-        await ctx.message.delete()
-        embed = discord.Embed(
-            title=f"{DefaultEmojis.INFO} List of all cogs (active or not)",
-            description='\n'.join("- `" + str(item) + "`" for item in COGS_LIST),
-            color=discord.Color.dark_gray(),
-            timestamp=discord.utils.utcnow()
-        )
-        await ctx.author.send(embed=embed)
 
 async def setup(bot: "RepulsBot"):
     await bot.add_cog(DebugCog(bot))

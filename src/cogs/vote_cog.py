@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 # https://stackoverflow.com/questions/19377262/regex-for-youtube-url
 YOUTUBE_REGEX = re.compile(
-    r'((?:https?:)?\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtu\.be)\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?[\w\-]+(?:\S+)?)',
+    r'(?:https?:)?\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtu\.be)\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?([\w\-]+)',
     re.IGNORECASE
 )
 
@@ -86,9 +86,13 @@ async def get_website_featured_video() -> tuple[str | None, datetime.datetime | 
     except Exception:
         return None, None
 
-def get_yt_url(message: str) -> str | None:
+def get_yt_url(message: str, return_id: bool = False) -> str | tuple[str, str] | None:
     video_url = re.search(YOUTUBE_REGEX, message)
-    return video_url.group(0) if video_url else None
+    if not video_url:
+        return None
+    if not return_id:
+        return video_url.group(0) # full url
+    return [video_url.group(0), video_url.group(1)] # url and video's id
 
 # https://discordpy.readthedocs.io/en/latest/ext/tasks/index.html
 class VoteCog(commands.Cog, name=CogsNames.VOTE):
@@ -171,7 +175,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             color=discord.Color.brand_red()
         )
         # priority 1: forced message saved in channel topic
-        forced_id = await self.bot.youtube_storage.get_forced_video()
+        forced_id, _useless_forced_until = await self.bot.youtube_storage.get_forced_video()
         if forced_id:
             try:
                 forced_msg = await featured_videos_channel.fetch_message(forced_id)
@@ -333,26 +337,35 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
     @app_commands.default_permissions(ADMIN_CMD)
     async def is_forced_video(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        result = discord.Embed(
-            title="Current status of videos",
-            color=discord.Color.dark_blue()
-        )
-        message_id = await self.bot.youtube_storage.get_forced_video()
-        if message_id:
-            featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
-            forced_video = await featured_videos_channel.fetch_message(message_id)
-            result.add_field(name="Forced video (stored in db)", value=f"➜ {forced_video.jump_url}", inline=False)
+
+        view = discord.ui.LayoutView()
+        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        container.add_item(discord.ui.TextDisplay(f"### {DefaultEmojis.INFO} Current status of forced video"))
+        message_id, forced_until = await self.bot.youtube_storage.get_forced_video()
+        if not message_id:
+            container.add_item(discord.ui.TextDisplay("*No forced video currently (nothing in the database)*"))
         else:
-            result.add_field(name="Forced video", value="*No video is currently being forced (no link in the db)*", inline=False)
+            featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
+            video_msg = await featured_videos_channel.fetch_message(message_id)
+            video_url, video_id = get_yt_url(video_msg.content, return_id=True)
+            # https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
+            container.add_item(discord.ui.Section((
+                    "➜ A video is currently being forced\n"
+                    f"- Until: {discord.utils.format_dt(forced_until, 'R')}\n"
+                    f"- Link: {video_url}\n"
+                    f"- Taken from: [`source message`]({video_msg.jump_url})"
+                ),
+                accessory=discord.ui.Thumbnail(media=f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg")
+            ))
 
         current_site_video, updated_at = await get_website_featured_video()
         if current_site_video:
-            info = f"Video link: {current_site_video.split("?", 1)[0]}"
-            if updated_at:
-                info += f"\n(updated at {discord.utils.format_dt(updated_at)})"
-            result.add_field(name="Video currently on the site", value=info, inline=False)
+            info = f"➜ {current_site_video}" + f"\n*(updated at {discord.utils.format_dt(updated_at)})*" if updated_at else ''
+            container.add_item(discord.ui.Separator())
+            container.add_item(discord.ui.TextDisplay(f"**🌐 Video currently on the site**\n{info}"))
 
-        await interaction.followup.send(embed=result, ephemeral=True)
+        view.add_item(container)
+        await interaction.followup.send(view=view, ephemeral=True)
 
     @app_commands.command(description="[ADMIN] Force the bot to find and send the featured video now")
     @app_commands.default_permissions(ADMIN_CMD)

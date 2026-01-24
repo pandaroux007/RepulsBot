@@ -1,17 +1,12 @@
+import asqlite
 import discord
 from datetime import datetime
-# bot files
-from tools.utils import BaseStorage
-from data.constants import DEFAULT_DB_DIR
 
-TICKETS_DB_PATH = DEFAULT_DB_DIR / "tickets.db"
+class TicketsStorage():
+    def __init__(self, pool: asqlite.Pool):
+        self._pool = pool
 
-class TicketsStorage(BaseStorage):
-    def __init__(self):
-        super().__init__(TICKETS_DB_PATH)
-
-    async def init(self) -> None:
-        await super().init()
+    async def init_tables(self) -> None:
         async with self._pool.acquire() as conn:
             await conn.execute(
                 """
@@ -26,9 +21,14 @@ class TicketsStorage(BaseStorage):
             )
             await conn.commit()
 
+    async def reset_table(self) -> None:
+        async with self._pool.acquire() as conn:
+            await conn.execute("DROP TABLE tickets")
+            await conn.commit()
+        await self.init_tables()
+
     # ---------------------------------- posted videos
     async def add_ticket(self, name: str, title: str, author: discord.Member, open_log_url: str) -> bool:
-        await self._check_init()
         try:
             async with self._pool.acquire() as conn:
                 now = discord.utils.utcnow().isoformat()
@@ -59,7 +59,6 @@ class TicketsStorage(BaseStorage):
             }
 
     async def remove_ticket(self, name: int) -> bool:
-        await self._check_init()
         try:
             async with self._pool.acquire() as conn:
                 await conn.execute("DELETE FROM tickets WHERE name = ?", (name,))

@@ -2,6 +2,7 @@
 import discord
 from discord.ext import commands
 import asyncio
+import asqlite
 # bot files
 from data.cogs import COGS_LIST
 from data.constants import (
@@ -9,6 +10,7 @@ from data.constants import (
     IDs,
     CMD_PREFIX
 )
+from data.constants import DB_PATH
 from tools.youtube_storage import YouTubeStorage
 from tools.tickets_storage import TicketsStorage
 
@@ -16,14 +18,23 @@ from tools.tickets_storage import TicketsStorage
 class RepulsBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.db_pool: asqlite.Pool | None = None
         self.youtube_storage: YouTubeStorage | None = None
         self.tickets_storage: TicketsStorage | None = None
 
+    async def setup_database(self) -> None:
+        self.db_pool = await asqlite.create_pool(DB_PATH)
+        async with self.db_pool.acquire() as conn:
+            # WAL by default : https://github.com/Rapptz/asqlite/blob/master/asqlite/__init__.py#L499
+            await conn.execute("PRAGMA busy_timeout = 5000;")
+
+        self.youtube_storage = YouTubeStorage(self.db_pool)
+        await self.youtube_storage.init_tables()
+        self.tickets_storage = TicketsStorage(self.db_pool)
+        await self.tickets_storage.init_tables()
+
     async def setup_hook(self) -> None:
-        self.youtube_storage = YouTubeStorage()
-        await self.youtube_storage.init()
-        self.tickets_storage = TicketsStorage()
-        await self.tickets_storage.init()
+        await self.setup_database()
 
         for cog_name in COGS_LIST:
             await self.load_extension(f"cogs.{cog_name}")
@@ -33,11 +44,7 @@ class RepulsBot(commands.Bot):
         print(f"{len(synced)} command(s) have been synchronized")
 
     async def close(self) -> None:
-        if self.youtube_storage:
-            await self.youtube_storage.close()
-        if self.tickets_storage:
-            await self.tickets_storage.close()
-
+        await self.db_pool.close()
         await super().close()
 
 async def main():

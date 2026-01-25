@@ -22,7 +22,7 @@ class PrivateData:
         os.getenv("YOUTUBE_KEY3")
     ]
 
-DEFAULT_DB_DIR = Path(__file__).parent.parent / "data"
+DB_PATH = Path(__file__).parent.parent / "data" / "storage.db"
 
 _MODE = os.getenv("ENV", "prod")
 _MODE_DEV = "dev"
@@ -94,7 +94,7 @@ class DefaultEmojis:
     ONLINE = '\U0001F7E2' # :green_circle:
 
 class BotInfo:
-    VERSION = "1.5.1"
+    VERSION = "1.5.2"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     REPORT = f"{GITHUB}/issues"
 

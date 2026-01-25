@@ -25,22 +25,14 @@ from data.cogs import (
 from data.constants import (
     BotInfo,
     DefaultEmojis,
-    IDs
+    IDs,
+    DB_PATH
 )
 
 from tools.log_builder import (
     LogBuilder,
     LogColor,
     MODLOG
-)
-
-from tools.youtube_storage import (
-    YouTubeStorage,
-    VIDEO_DB_PATH
-)
-from tools.tickets_storage import (
-    TicketsStorage,
-    TICKETS_DB_PATH
 )
 
 # https://www.reddit.com/r/learnpython/comments/ukidl7/what_is_typingtype_checking_for/
@@ -137,71 +129,6 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
         await ctx.author.send(embed=embed)
 
     # ---------------------------------- potentially dangerous commands
-    @commands.command(description="[DEBUG] Reset the YouTube storage database")
-    @check_if_maintainer()
-    async def reset_youtube_storage(self, ctx: commands.Context):
-        await ctx.message.delete()
-        embed = discord.Embed(
-            title="Reset YouTube storage",
-            color=discord.Color.dark_gray(),
-            timestamp=discord.utils.utcnow()
-        )
-
-        try:
-            # https://sqlite.org/wal.html#the_wal_file
-            if self.bot.youtube_storage is not None:
-                await self.bot.youtube_storage.close()
-
-            VIDEO_DB_PATH.unlink()
-            
-            self.bot.youtube_storage = YouTubeStorage()
-            await self.bot.youtube_storage.init()
-
-            embed.description = f"{DefaultEmojis.CHECK} YouTube database reset and recreated!"
-            await (
-                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                .enable_ping()
-                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - YouTube database reset and recreated!")
-                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the YouTube database was reset by {ctx.author.mention}")
-                .send()
-            )
-        except Exception as error:
-            raise discord.DiscordException(str(error))
-
-        await ctx.author.send(embed=embed)
-
-    @commands.command(description="[DEBUG] Reset the tickets storage database")
-    @check_if_maintainer()
-    async def reset_tickets_storage(self, ctx: commands.Context):
-        await ctx.message.delete()
-        embed = discord.Embed(
-            title="Reset tickets storage",
-            color=discord.Color.dark_gray(),
-            timestamp=discord.utils.utcnow()
-        )
-
-        try:
-            if self.bot.tickets_storage is not None:
-                await self.bot.tickets_storage.close()
-
-            TICKETS_DB_PATH.unlink()
-            
-            self.bot.tickets_storage = TicketsStorage()
-            await self.bot.tickets_storage.init()
-
-            embed.description = f"{DefaultEmojis.CHECK} Tickets database reset and recreated!"
-            await (
-                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                .enable_ping()
-                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - Tickets database reset and recreated!")
-                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the tickets database was reset by {ctx.author.mention}")
-                .send()
-            )
-        except Exception as error:
-            raise discord.DiscordException(str(error))
-
-        await ctx.author.send(embed=embed)
-
     @commands.command(description="[DEBUG] Restart a cog via its name")
     @check_if_maintainer()
     async def restart_cog(self, ctx: commands.Context, name: str):
@@ -229,6 +156,82 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
                 embed.description = f"{DefaultEmojis.ERROR} An error occurred during the restart attempt!\n```\n{e}\n```"
             
             await ctx.author.send(embed=embed)
+
+    @commands.command(description="[DEBUG] Destroys and then recreates the database")
+    @check_if_maintainer()
+    async def reinit_storage(self, ctx: commands.Context):
+        await ctx.message.delete()
+        try:
+            if self.bot.db_pool is not None:
+                await self.bot.db_pool.close()
+
+            DB_PATH.unlink()
+            await self.bot.setup_database()
+
+            embed = discord.Embed(
+                title="Recreating the database",
+                description=f"{DefaultEmojis.CHECK} Database deleted and then recreated!",
+                color=discord.Color.dark_gray(),
+                timestamp=discord.utils.utcnow()
+            )
+            await ctx.author.send(embed=embed)
+            await (
+                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
+                .enable_ping()
+                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - The entire database has been reset!")
+                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the bot's database was reset by {ctx.author.mention}")
+                .send()
+            )
+        except Exception as error:
+            raise discord.DiscordException(str(error))
+
+    @commands.command(description="[DEBUG] Reset the tickets storage in database")
+    @check_if_maintainer()
+    async def reset_tickets_storage(self, ctx: commands.Context):
+        await ctx.message.delete()
+        try:
+            await self.bot.tickets_storage.reset_table()
+
+            embed = discord.Embed(
+                title="Reset tickets storage in database",
+                description=f"{DefaultEmojis.CHECK} Tickets storage reset!",
+                color=discord.Color.dark_gray(),
+                timestamp=discord.utils.utcnow()
+            )
+            await ctx.author.send(embed=embed)
+            await (
+                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
+                .enable_ping()
+                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - Tickets storage in the database reset!")
+                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the tickets storage was reset by {ctx.author.mention}")
+                .send()
+            )
+        except Exception as error:
+            raise discord.DiscordException(str(error))
+        
+    @commands.command(description="[DEBUG] Reset the youtube storage in database")
+    @check_if_maintainer()
+    async def reset_youtube_storage(self, ctx: commands.Context):
+        await ctx.message.delete()
+        try:
+            await self.bot.youtube_storage.reset_table()
+
+            embed = discord.Embed(
+                title="Reset youtube storage in database",
+                description=f"{DefaultEmojis.CHECK} Tickets storage reset!",
+                color=discord.Color.dark_gray(),
+                timestamp=discord.utils.utcnow()
+            )
+            await ctx.author.send(embed=embed)
+            await (
+                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
+                .enable_ping()
+                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - YouTube storage in the database reset!")
+                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the youtube storage was reset by {ctx.author.mention}")
+                .send()
+            )
+        except Exception as error:
+            raise discord.DiscordException(str(error))
 
 async def setup(bot: "RepulsBot"):
     await bot.add_cog(DebugCog(bot))

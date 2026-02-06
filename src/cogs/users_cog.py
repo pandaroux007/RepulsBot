@@ -27,6 +27,13 @@ from data.faq import (
     GameFAQ
 )
 
+def get_roles(roles: Sequence[discord.Role]) -> str:
+    # https://stackoverflow.com/questions/68079391/discord-py-info-command-how-to-mention-roles-of-a-member
+    return ' '.join([role.mention for role in roles if role.name != "@everyone"])
+
+def get_emojis(emojis: tuple[discord.Emoji]) -> str:
+    return ' '.join(str(e) for e in emojis)
+
 # ---------------------------------- faq selector
 # https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=select#discord.ui.Select
 # https://discordpy.readthedocs.io/en/stable/interactions/api.html?highlight=view#discord.ui.View
@@ -55,17 +62,6 @@ class FAQSelect(discord.ui.Select):
         )
         await interaction.response.edit_message(embed=embed, view=self.view)
 
-REPULS_WIKI_DESCRIPTION = """
-Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are? 
-Then you'll find everything you need on the official Wiki!
-"""
-
-REPULS_DESCRIPTION = f"""
-[Repuls.io]({GameUrl.GAME}) is the future of browser games.
-The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n
-Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
-"""
-
 class UsersCog(commands.Cog, name=CogsNames.USERS):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -75,7 +71,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(f"{DefaultEmojis.CHECK} **pong!** (*It took me {round(self.bot.latency * 1000, 2)}ms to respond to your command!*)")
 
     @app_commands.command(description="Displays a member's avatar")
-    async def avatar(self, interaction: discord.Interaction, member: discord.Member):
+    async def member_avatar(self, interaction: discord.Interaction, member: discord.Member):
         embed = discord.Embed(
             title=f"Avatar of {member.display_name}!",
             color=discord.Color.dark_blue()
@@ -88,7 +84,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(description="Get the server member count")
-    async def membercount(self, interaction: discord.Interaction):
+    async def member_count(self, interaction: discord.Interaction):
         embed = discord.Embed(
             color=discord.Color.dark_blue(),
             timestamp=discord.utils.utcnow()
@@ -107,83 +103,92 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(embed=embed)
 
     # ---------------------------------- "about" commands
-    def get_roles(self, roles: Sequence[discord.Role]) -> str:
-        # https://stackoverflow.com/questions/68079391/discord-py-info-command-how-to-mention-roles-of-a-member
-        return ' '.join([role.mention for role in roles if role.name != "@everyone"])
-
-    def get_emojis(self, emojis: tuple[discord.Emoji]) -> str:
-        return ' '.join(str(e) for e in emojis)
-
     @app_commands.command(description="Displays information about a server member")
-    async def about_member(self, interaction: discord.Interaction, member: discord.Member):
-        embed = discord.Embed(
-            title=f"Information about **{member.display_name}**",
-            color=discord.Color.dark_blue()
-        )
+    async def member_info(self, interaction: discord.Interaction, member: discord.Member):
+        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         if member.id == self.bot.user.id:
-            embed.title = "Hi! How can I help you ?"
-            embed.description = (
+            container.add_item(discord.ui.TextDisplay(content="### Hi! How can I help you ?"))
+            container.add_item(discord.ui.TextDisplay(content=(
                 f"It's me, {self.bot.user.mention}, the official Discord bot for this server! "
                 "If you need help, look at the menu `/` in the bottom right corner and click on me to see what I can do.\n"
-                f"And if you prefer to have fun, **go meet the players on [repuls.io]({GameUrl.GAME})**!"
-            )
-            embed.add_field(
-                name='', value=(
-                    f"To offer your help, report a bug or give feedback, you can create a ticket, contact "
-                    f"the developer <@{self.bot.owner_id}> directly, or create a [GitHub issue]({BotInfo.REPORT})"
-                )
-            )
+                f"And if you prefer to have fun, **go meet the players on [repuls.io]({GameUrl.GAME})**!\n\n"
+                "To offer your help, report a bug or give feedback, you can create a ticket, contact "
+                f"the developer <@{self.bot.owner_id}> directly, or create a [GitHub issue]({BotInfo.REPORT})"
+            )))
         else:
-            embed.description = f"Profile: {member.mention}"
-            embed.set_thumbnail(url=member.display_avatar.url or None)
-            embed.add_field(name="Member name", value=f"{member.name}")
-            embed.add_field(name="Nickname", value=member.nick or "*no nickname*")
-            embed.add_field(name="Member ID", value=member.id)
-            embed.add_field(name="Account created", value=discord.utils.format_dt(member.created_at, 'D'))
-            embed.add_field(name="Joined guild", value=discord.utils.format_dt(member.joined_at, 'D'))
-            nitro = f"since {discord.utils.format_dt(member.premium_since)}" if member.premium_since else "*Member without nitro*"
-            embed.add_field(name="Nitro subscriber", value=nitro)
-            embed.add_field(name=f"Roles ({max(len(member.roles) - 1, 0)})", value=f"{self.get_roles(member.roles)}", inline=False)
-        
-        embed.set_footer(text=FOOTER_EMBED)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+            content = discord.ui.TextDisplay(content=(
+                f"**Profile**: {member.mention}\n"
+                f"**Member name**: {member.name}" + (f" | **Nickname**: {member.nick}\n" if member.nick else '\n') +
+                f"**Account created**: {discord.utils.format_dt(member.created_at, 'D')}\n"
+                f"**Joined guild**: {discord.utils.format_dt(member.joined_at, 'D')}\n" +
+                (f"**Nitro subscriber**: since {discord.utils.format_dt(member.premium_since)}\n" if member.premium_since else '')
+            ))
+            container.add_item(discord.ui.Section(content, accessory=discord.ui.Thumbnail(member.display_avatar.url)))
+            if len(member.roles) - 1:
+                container.add_item(discord.ui.TextDisplay(content=f"### Roles ({max(len(member.roles) - 1, 0)})\n>>> {get_roles(member.roles)}"))
 
-    @app_commands.command(description="Displays information about the server")
-    async def about_server(self, interaction: discord.Interaction):
+        container.add_item(discord.ui.Separator())
+        container.add_item(discord.ui.TextDisplay(content=f"-# Member ID: *{member.id}* ・ **{FOOTER_EMBED}**"))
+
+        view = discord.ui.LayoutView()
+        view.add_item(container)
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+    @app_commands.command(description="Displays information about this discord server")
+    async def server_info(self, interaction: discord.Interaction):
         guild = interaction.guild
-        embed = discord.Embed(
-            title=f"About *{guild.name}* server",
-            description=f"(**ID**: {guild.id})",
-            color=discord.Color.dark_blue()
-        )
-        embed.set_image(url=guild.banner.url if guild.banner else None)
-        embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
-        embed.add_field(name="Owner", value=guild.owner.mention, inline=True)
-        embed.add_field(name="Created on", value=discord.utils.format_dt(guild.created_at), inline=True)
-        embed.add_field(name="Members", value=guild.member_count, inline=True)
-        embed.add_field(name="Boosts", value=guild.premium_subscription_count, inline=True)
-        embed.add_field(name="Channels", value=f"{len(guild.text_channels)} Text | {len(guild.voice_channels)} Voice", inline=True)
-        if guild.rules_channel:
-            embed.add_field(name="Rules", value=guild.rules_channel.jump_url)
-        embed.add_field(name=f"Emojis ({len(guild.emojis)})", value=self.get_emojis(guild.emojis), inline=False)
-        embed.add_field(name=f"Roles ({len(guild.roles)})", value=self.get_roles(guild.roles), inline=False)
+        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        if guild.banner:
+            container.add_item(discord.ui.MediaGallery(
+                discord.MediaGalleryItem(guild.banner.url)
+            ))
+            container.add_item(discord.ui.Separator())
+
+        content = discord.ui.TextDisplay(content=(
+            f"**Owner**: {guild.owner.mention}\n"
+            f"{bool(guild.rules_channel) * f"**Rules**: {guild.rules_channel.jump_url}\n"}"
+            f"**Members**: {guild.member_count}\n"
+            f"**Created on**: {discord.utils.format_dt(guild.created_at)}\n"
+            f"**Channels**: {len(guild.text_channels)} Text | {len(guild.voice_channels)} Voice | {len(guild.categories)} Categories\n"
+            f"{bool(guild.premium_subscription_count) * f"**Boosts**: {guild.premium_subscription_count}\n"}"
+        ))
+        container.add_item(discord.ui.Section(content, accessory=discord.ui.Thumbnail(guild.icon.url)) if guild.icon else content)
+
         if guild.description:
-            embed.add_field(name="Description", value=f"*{guild.description}*", inline=False)
-        embed.set_footer(text=FOOTER_EMBED)
-        
-        await interaction.response.send_message(embed=embed)
+            container.add_item(discord.ui.TextDisplay(content=f"### Description\n>>> {guild.description}"))
+        if guild.emojis:
+            container.add_item(discord.ui.TextDisplay(content=f"### Emojis ({len(guild.emojis)})\n>>> {get_emojis(guild.emojis)}"))
+        if guild.roles:
+            container.add_item(discord.ui.TextDisplay(content=f"### Roles ({len(guild.roles)})\n>>> {get_roles(guild.roles)}"))
+
+        container.add_item(discord.ui.Separator())
+        container.add_item(discord.ui.TextDisplay(content=f"-# **{guild.name}** Server ID: *{guild.id}* ・ **{FOOTER_EMBED}**"))
+
+        view = discord.ui.LayoutView()
+        view.add_item(container)
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     @app_commands.command(description="Displays information about repuls.io game")
-    async def about_game(self, interaction: discord.Interaction):
-        view = discord.ui.LayoutView()
+    async def game_info(self, interaction: discord.Interaction):
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
-        container.add_item(discord.ui.TextDisplay(content=f"### [What is repuls.io]({GameUrl.HOME}) ?\n{REPULS_DESCRIPTION}"))
-        container.add_item(discord.ui.Separator())
+        container.add_item(discord.ui.TextDisplay(content=(
+            f"### What is repuls.io ?\n"
+            f"➜ [Repuls.io]({GameUrl.HOME}) is the future of browser games."
+            "The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n\n"
+            "Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! "
+            "Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with "
+            "a giant mech! **That's** the repuls experience son!"
+        )))
         container.add_item(discord.ui.ActionRow(
             discord.ui.Button(
                 url=GameUrl.GAME,
                 style=discord.ButtonStyle.link,
                 label="PLAY NOW!"
+            ),
+            discord.ui.Button(
+                url=GameUrl.BETA,
+                style=discord.ButtonStyle.link,
+                label="BETA"
             ),
             discord.ui.Button(
                 url=GameUrl.LEADERBOARD,
@@ -198,29 +203,29 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
             discord.ui.Button(
                 url=GameUrl.TERMS,
                 style=discord.ButtonStyle.link,
-                label="Terms & privacy"
+                label="Privacy"
             )
         ))
-        container.add_item(discord.ui.TextDisplay(content=f"-# **{FOOTER_EMBED}**"))
-        view.add_item(container)
-        await interaction.response.send_message(view=view)
-
-    @app_commands.command(description="Everything you need to know about the game")
-    async def wiki(self, interaction: discord.Interaction):
-        view = discord.ui.LayoutView()
-        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
-        container.add_item(discord.ui.TextDisplay(content=f"### Everything you need to know about repuls.io\n{REPULS_WIKI_DESCRIPTION}"))
+        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.large))
+        container.add_item(discord.ui.TextDisplay(content=(
+            "### Everything you need to know\n"
+            "Do you love repuls.io but don't know how the game works, what maps, weapons, top players, game modes, etc. are ? "
+            "Then you'll find everything you need on the official Wiki!"
+        )))
         container.add_item(discord.ui.ActionRow(
             discord.ui.Button(
                 url=Links.WIKI,
                 style=discord.ButtonStyle.link,
                 label="Go to the repuls.io Wiki!"
             )
-        ))    
+        ))
+        container.add_item(discord.ui.TextDisplay(content="If you still have questions, take a look at the `/gamefaq` and `/serverfaq` commands."))
         container.add_item(discord.ui.TextDisplay(content=f"-# **{FOOTER_EMBED}**"))
+        view = discord.ui.LayoutView()
         view.add_item(container)
         await interaction.response.send_message(view=view)
 
+    # ---------------------------------- FAQ commands
     @app_commands.command(description="Launch the server's interactive FAQ")
     async def serverfaq(self, interaction: discord.Interaction):
         embed = discord.Embed(

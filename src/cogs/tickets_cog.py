@@ -119,7 +119,6 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         overwrites = self._build_ticket_overwrites(guild, ticket_author)
         ticket_channel = await guild.create_text_channel(ticket_name, category=category, overwrites=overwrites)
         # first channel's message
-        view = discord.ui.LayoutView()
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         container.add_item(discord.ui.Section(
             f"### > {ticket_title}\n<@&{IDs.serverRoles.TICKET_HELPER}> {ticket_content}",
@@ -127,6 +126,8 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         ))
         container.add_item(discord.ui.Separator())
         container.add_item(discord.ui.TextDisplay(content=f"-# 🎟️ Ticket of type **{self._get_ticket_label(ticket_type)}**・opened by {ticket_author.mention}"))
+
+        view = discord.ui.LayoutView()
         view.add_item(container)
         await ticket_channel.send(view=view)
 

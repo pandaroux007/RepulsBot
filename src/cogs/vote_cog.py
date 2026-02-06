@@ -30,6 +30,7 @@ from tools.log_builder import (
 from data.constants import (
     DefaultEmojis,
     PrivateData,
+    PublicAPI,
     IDs,
     ADMIN_CMD
 )
@@ -77,7 +78,7 @@ async def send_video_to_endpoint(video_url: str) -> int | str:
 async def get_website_featured_video() -> tuple[str | None, datetime.datetime | None]:
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://community.docskigames.com/api/feature-video") as resp:
+            async with session.get(PublicAPI.FEATURED_VIDEO) as resp:
                 data = await resp.json()
                 video_url = data.get("video_url", None)
                 updated_str = data.get("updatedAt", None)
@@ -338,12 +339,11 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
     async def is_forced_video(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
 
-        view = discord.ui.LayoutView()
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
-        container.add_item(discord.ui.TextDisplay(f"### {DefaultEmojis.INFO} Current status of forced video"))
+        container.add_item(discord.ui.TextDisplay(content=f"### {DefaultEmojis.INFO} Current status of forced video"))
         message_id, forced_until = await self.bot.youtube_storage.get_forced_video()
         if not message_id:
-            container.add_item(discord.ui.TextDisplay("*No forced video currently (nothing in the database)*"))
+            container.add_item(discord.ui.TextDisplay(content="*No forced video currently (nothing in the database)*"))
         else:
             featured_videos_channel = self.bot.get_channel(IDs.serverChannel.FEATURED_VIDEO)
             video_msg = await featured_videos_channel.fetch_message(message_id)
@@ -362,8 +362,9 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         if current_site_video:
             info = f"➜ {current_site_video}" + f"\n*(updated at {discord.utils.format_dt(updated_at)})*" if updated_at else ''
             container.add_item(discord.ui.Separator())
-            container.add_item(discord.ui.TextDisplay(f"**🌐 Video currently on the site**\n{info}"))
+            container.add_item(discord.ui.TextDisplay(content=f"**🌐 Video currently on the site**\n{info}"))
 
+        view = discord.ui.LayoutView()
         view.add_item(container)
         await interaction.followup.send(view=view, ephemeral=True)
 

@@ -8,6 +8,15 @@ CMD_PREFIX = '!'
 # https://discordpy.readthedocs.io/en/latest/api.html?highlight=permissions#discord.Permissions
 ADMIN_CMD = discord.Permissions(administrator=True)
 
+DB_PATH = Path(__file__).parent.parent / "data" / "storage.db"
+
+class PublicAPI:
+    CCU = "https://stats.docskigames.com/api/ccu-current"
+    SERVERS = "https://regions.docskigames.com/getServers"
+    FEATURED_VIDEO = "https://community.docskigames.com/api/feature-video"
+    LEADERBOARD = "https://leaderboards.docskigames.com/api/getScore"
+
+# ------------------------------------- env file's data
 _ENV_FILE = Path(__file__).parent / ".env"
 load_dotenv(_ENV_FILE)
 
@@ -21,8 +30,6 @@ class PrivateData:
         os.getenv("YOUTUBE_KEY2"),
         os.getenv("YOUTUBE_KEY3")
     ]
-
-DB_PATH = Path(__file__).parent.parent / "data" / "storage.db"
 
 _MODE = os.getenv("ENV", "prod")
 _MODE_DEV = "dev"
@@ -100,16 +107,17 @@ class BotInfo:
 
 class GameUrl:
     GAME = "https://repuls.io"
+    BETA = f"{GAME}/beta"
     HOME = f"{GAME}/home"
     LEADERBOARD = f"{GAME}/leaderboard"
     UPDATES = f"{GAME}/updates"
     TERMS = f"{GAME}/terms"
     ESPORTS = f"{GAME}/esports"
-    ESPORTS_ROADMAP_URL = "https://repuls.io/esports/REPULS_eSPORTS_ROADMAP.png"
+    ESPORTS_ROADMAP_URL = f"{GAME}/esports/REPULS_eSPORTS_ROADMAP.png"
 
 class Links:
     # PRIVACY = "https://docskigames.com/privacy/"
-    MAIN_SERVER = "https://discord.com/invite/2YKgx2HSfR"
+    # MAIN_SERVER = "https://discord.com/invite/2YKgx2HSfR"
     RWNC_SERVER = "https://discord.com/invite/YzfQndsdn3"
     WIKI = "https://repulsio.fandom.com/wiki/Repuls.io_Wiki"
     CLEAR_DATA_TUTORIAL = "https://github.com/pandaroux007/RepulsBot/wiki/Troubleshoot-game-loading-issues"

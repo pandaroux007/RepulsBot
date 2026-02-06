@@ -68,7 +68,6 @@ class LogBuilder:
         log_channel = self.bot.get_channel(IDs.serverChannel.BOTLOG if self.logtype == BOTLOG else IDs.serverChannel.MODLOG)
         if not log_channel:
             return None
-        view = discord.ui.LayoutView()
         container = discord.ui.Container(accent_color = self.color)
 
         if self._title:
@@ -96,6 +95,7 @@ class LogBuilder:
         footer = f"*{self._footer}* ・ " if self._footer else '' # "・" char is U+30FB ("Katakana middle dot")
         container.add_item(discord.ui.TextDisplay(content=f"-# {footer}{discord.utils.format_dt(discord.utils.utcnow(), 'F')}"))
 
+        view = discord.ui.LayoutView()
         view.add_item(container)
         return await log_channel.send(
             view=view,

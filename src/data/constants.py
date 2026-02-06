@@ -94,7 +94,7 @@ class DefaultEmojis:
     ONLINE = '\U0001F7E2' # :green_circle:
 
 class BotInfo:
-    VERSION = "1.5.2"
+    VERSION = "1.5.3"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     REPORT = f"{GITHUB}/issues"
 

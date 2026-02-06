@@ -115,20 +115,8 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await ctx.send(f"{DefaultEmojis.CHECK} The debug report has been sent!", delete_after=5)
         except Exception as error:
             raise discord.DiscordException(str(error))
-        
-    @commands.command(description="[DEBUG] Lists all cogs, active or not")
-    @check_if_maintainer()
-    async def list_cog(self, ctx: commands.Context):
-        await ctx.message.delete()
-        embed = discord.Embed(
-            title=f"{DefaultEmojis.INFO} List of all cogs (active or not)",
-            description='\n'.join("- `" + str(item) + "`" for item in COGS_LIST),
-            color=discord.Color.dark_gray(),
-            timestamp=discord.utils.utcnow()
-        )
-        await ctx.author.send(embed=embed)
 
-    # ---------------------------------- potentially dangerous commands
+    # ---------------------------------- potentially risky commands.
     @commands.command(description="[DEBUG] Restart a cog via its name")
     @check_if_maintainer()
     async def restart_cog(self, ctx: commands.Context, name: str):
@@ -156,34 +144,6 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
                 embed.description = f"{DefaultEmojis.ERROR} An error occurred during the restart attempt!\n```\n{e}\n```"
             
             await ctx.author.send(embed=embed)
-
-    @commands.command(description="[DEBUG] Destroys and then recreates the database")
-    @check_if_maintainer()
-    async def reinit_storage(self, ctx: commands.Context):
-        await ctx.message.delete()
-        try:
-            if self.bot.db_pool is not None:
-                await self.bot.db_pool.close()
-
-            DB_PATH.unlink()
-            await self.bot.setup_database()
-
-            embed = discord.Embed(
-                title="Recreating the database",
-                description=f"{DefaultEmojis.CHECK} Database deleted and then recreated!",
-                color=discord.Color.dark_gray(),
-                timestamp=discord.utils.utcnow()
-            )
-            await ctx.author.send(embed=embed)
-            await (
-                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                .enable_ping()
-                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - The entire database has been reset!")
-                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the bot's database was reset by {ctx.author.mention}")
-                .send()
-            )
-        except Exception as error:
-            raise discord.DiscordException(str(error))
 
     @commands.command(description="[DEBUG] Reset the tickets storage in database")
     @check_if_maintainer()
@@ -228,6 +188,35 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
                 .enable_ping()
                 .title(f"{DefaultEmojis.INFO} CRITICAL INFO - YouTube storage in the database reset!")
                 .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the youtube storage was reset by {ctx.author.mention}")
+                .send()
+            )
+        except Exception as error:
+            raise discord.DiscordException(str(error))
+        
+    # ---------------------------------- potentially destructive commands
+    @commands.command(description="[DEBUG] Destroys and then recreates the database")
+    @check_if_maintainer()
+    async def reinit_storage(self, ctx: commands.Context):
+        await ctx.message.delete()
+        try:
+            if self.bot.db_pool is not None:
+                await self.bot.db_pool.close()
+
+            DB_PATH.unlink()
+            await self.bot.setup_database()
+
+            embed = discord.Embed(
+                title="Recreating the database",
+                description=f"{DefaultEmojis.CHECK} Database deleted and then recreated!",
+                color=discord.Color.dark_gray(),
+                timestamp=discord.utils.utcnow()
+            )
+            await ctx.author.send(embed=embed)
+            await (
+                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
+                .enable_ping()
+                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - The entire database has been reset!")
+                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the bot's database was reset by {ctx.author.mention}")
                 .send()
             )
         except Exception as error:

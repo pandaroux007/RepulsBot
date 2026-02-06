@@ -46,13 +46,13 @@ YOUTUBE_REGEX = re.compile(
 
 # shared video (public channel)
 SHARED_CHECK_HOURS = 24
-SHARED_MESSAGE_LIMIT = 100
-SHARED_BACK_UNTIL = 1 # scroll through messages up to 1 day ago
+SHARED_MESSAGE_LIMIT = 150
+SHARED_BACK_UNTIL = 5 # scroll through messages up to 5 day ago
 VOTE_REACTION = DefaultEmojis.UP_ARROW
 
 # featured video (private channel)
 FEATURED_CHECK_HOURS = 24
-FEATURED_MESSAGES_LIMIT = 30
+FEATURED_MESSAGES_LIMIT = 100
 FEATURED_BACK_UNTIL = 5
 # reactions placed under the videos to define its status
 VALIDATED_REACTION = DefaultEmojis.CHECK
@@ -125,7 +125,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         last_better_votes = 1 # remove bot vote
         result_videos: list[discord.Message] = []
         SEARCH_WINDOW = daysdelta(SHARED_BACK_UNTIL)
-        async for message in shared_videos_channel.history(limit=SHARED_MESSAGE_LIMIT, after=SEARCH_WINDOW):
+        async for message in shared_videos_channel.history(limit=SHARED_MESSAGE_LIMIT, after=SEARCH_WINDOW, oldest_first=True):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue # pass all messages without youtube links
 
@@ -219,7 +219,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         # priority 2: list of approved and unused videos
         validated: list[discord.Message] = []
         SEARCH_WINDOW = daysdelta(FEATURED_BACK_UNTIL)
-        async for message in featured_videos_channel.history(limit=FEATURED_MESSAGES_LIMIT, after=SEARCH_WINDOW):
+        async for message in featured_videos_channel.history(limit=FEATURED_MESSAGES_LIMIT, after=SEARCH_WINDOW, oldest_first=True):
             if not re.search(YOUTUBE_REGEX, message.content):
                 continue
             msg = await featured_videos_channel.fetch_message(message.id)
@@ -355,7 +355,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                     f"- Link: {video_url}\n"
                     f"- Taken from: [`source message`]({video_msg.jump_url})"
                 ),
-                accessory=discord.ui.Thumbnail(media=f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg")
+                accessory=discord.ui.Thumbnail(media=f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg")
             ))
 
         current_site_video, updated_at = await get_website_featured_video()
@@ -369,17 +369,12 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
 
     @app_commands.command(description="[ADMIN] Force the bot to find and send the featured video now")
     @app_commands.default_permissions(ADMIN_CMD)
-    async def restart_video_loop(self, interaction: discord.Interaction, restart_shared_video: bool = False):
-        """
-        NOTE: potential bug here, the bot can return a video already sent previously, no duplicate check for now
-        """
-        if restart_shared_video:
-            self.vote_task.restart()
+    async def restart_featured_loop(self, interaction: discord.Interaction):
         self.featured_video_task.restart()
 
         result = discord.Embed(
-            title=f"Restart the video {plurial("system", 2 if restart_shared_video else 1)}",
-            description=f"{DefaultEmojis.CHECK} Restarting the video {plurial("system", 2 if restart_shared_video else 1)} completed",
+            title="Restart the featured video loop",
+            description=f"{DefaultEmojis.CHECK} Restarting the featured video system completed",
             color=discord.Color.dark_blue()
         )
         await interaction.response.send_message(embed=result, ephemeral=True)

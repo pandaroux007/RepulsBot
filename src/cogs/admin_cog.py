@@ -85,6 +85,7 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
         self.bot = bot
 
     @app_commands.command(name="talk", description="[ADMIN] Send a message under RepulsBot's name in the chosen channels")
+    @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
     async def talk(self, interaction: discord.Interaction):
         await interaction.response.send_modal(AdminTalkModal(interaction.guild))

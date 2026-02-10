@@ -266,6 +266,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
 
     # ---------------------------------- control commands
     @app_commands.command(description="[ADMIN] Force a \"video message\" to be featured")
+    @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
     @app_commands.describe(message_link="Link to the message containing the video to force to be featured")
     @app_commands.choices(
@@ -319,6 +320,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await interaction.followup.send(embed=result, ephemeral=True)
 
     @app_commands.command(description="[ADMIN] Clear the forced featured video")
+    @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
     async def clear_forced_video(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -335,6 +337,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await interaction.followup.send(embed=result, ephemeral=True)
 
     @app_commands.command(description="[ADMIN] Indicates if a video is currently being forced to feature, and more")
+    @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
     async def is_forced_video(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -369,6 +372,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await interaction.followup.send(view=view, ephemeral=True)
 
     @app_commands.command(description="[ADMIN] Force the bot to find and send the featured video now")
+    @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
     async def restart_featured_loop(self, interaction: discord.Interaction):
         self.featured_video_task.restart()

@@ -38,14 +38,18 @@ class AdminTalkModal(discord.ui.Modal, title="Admin talk function"):
         )
     )
 
-    def __init__(self, guild: discord.Guild):
+    def __init__(self, interaction: discord.Interaction, initial_message: str):
         super().__init__()
-        self.guild = guild
+        self.guild = interaction.guild
+        assert isinstance(self.message.component, discord.ui.TextInput)
+        self.message.component.default = initial_message
+        assert isinstance(self.channels.component, discord.ui.ChannelSelect)
+        self.channels.component.default_values = [interaction.channel]
 
     async def on_submit(self, interaction: discord.Interaction):
         # https://github.com/Rapptz/discord.py/blob/master/examples/modals/label.py#L66
-        assert isinstance(self.channels.component, discord.ui.ChannelSelect)
         assert isinstance(self.message.component, discord.ui.TextInput)
+        assert isinstance(self.channels.component, discord.ui.ChannelSelect)
 
         message = self.message.component.value
         channels = [
@@ -85,9 +89,15 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
         self.bot = bot
 
     @app_commands.command(name="talk", description="[ADMIN] Send a message under RepulsBot's name in the chosen channels")
+    @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
-    async def talk(self, interaction: discord.Interaction):
-        await interaction.response.send_modal(AdminTalkModal(interaction.guild))
+    async def talk(self, interaction: discord.Interaction, message: str, multiple_channels: bool = False):
+        if multiple_channels is False:
+            await interaction.response.defer()
+            await interaction.channel.send(message)
+            await interaction.delete_original_response()
+        else:
+            await interaction.response.send_modal(AdminTalkModal(interaction, message))
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(AdminCog(bot))

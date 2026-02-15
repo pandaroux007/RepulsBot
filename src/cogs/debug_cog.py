@@ -15,6 +15,7 @@ import platform
 import time
 from pathlib import Path
 import asyncio
+import math
 # bot files
 from tools.utils import check_if_maintainer
 from data.cogs import (
@@ -54,12 +55,23 @@ async def get_commit():
     if process.returncode == 0:
         return stdout_data.decode('ascii').strip()
 
+def format_size(size_bytes, decimals=2):
+    # https://www.digitalocean.com/community/tutorials/how-to-get-file-size-in-python#human-readable-size-conversion-function-bytes-kb-mb-gb
+    if size_bytes == 0:
+        return "0 Octet"
+
+    power = 1024
+    units = ["o", "Ko", "Mo", "Go", "To"]
+    i = int(math.floor(math.log(size_bytes, power)))
+    return f"{size_bytes / (power ** i):.{decimals}f} {units[i]}"
+
 class DebugCog(commands.Cog, name=CogsNames.DEBUG):
     def __init__(self, bot: "RepulsBot"):
         self.bot = bot
 
     # ---------------------------------- purely informative commands
     @commands.command(description="[DEBUG] Information about the server hosting the bot")
+    @commands.guild_only()
     @check_if_maintainer()
     async def debug_info(self, ctx: commands.Context):
         """
@@ -99,6 +111,12 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             f"Boot time: since {global_uptime}"
         ))
 
+        try:
+            file_size = DB_PATH.stat().st_size
+            embed.add_field(inline=False, name="Database weight", value=format_size(file_size))
+        except Exception:
+            pass
+
         current_commit = await get_commit()
 
         embed.add_field(inline=False, name="System software specifications", value=(
@@ -118,6 +136,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
 
     # ---------------------------------- potentially risky commands.
     @commands.command(description="[DEBUG] Restart a cog via its name")
+    @commands.guild_only()
     @check_if_maintainer()
     async def restart_cog(self, ctx: commands.Context, name: str):
         await ctx.message.delete()
@@ -146,6 +165,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await ctx.author.send(embed=embed)
 
     @commands.command(description="[DEBUG] Reset the tickets storage in database")
+    @commands.guild_only()
     @check_if_maintainer()
     async def reset_tickets_storage(self, ctx: commands.Context):
         await ctx.message.delete()
@@ -168,8 +188,9 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             )
         except Exception as error:
             raise discord.DiscordException(str(error))
-        
+
     @commands.command(description="[DEBUG] Reset the youtube storage in database")
+    @commands.guild_only()
     @check_if_maintainer()
     async def reset_youtube_storage(self, ctx: commands.Context):
         await ctx.message.delete()
@@ -192,9 +213,10 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             )
         except Exception as error:
             raise discord.DiscordException(str(error))
-        
+
     # ---------------------------------- potentially destructive commands
     @commands.command(description="[DEBUG] Destroys and then recreates the database")
+    @commands.guild_only()
     @check_if_maintainer()
     async def reinit_storage(self, ctx: commands.Context):
         await ctx.message.delete()

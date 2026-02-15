@@ -20,12 +20,13 @@ class YouTubeStorage():
                 CREATE TABLE IF NOT EXISTS forced_video (
                     id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
                     message_id INTEGER,
+                    days_forced INTEGER,
                     forced_until TEXT
                 )
                 """
             )
             await conn.execute(
-                "INSERT OR IGNORE INTO forced_video(id, message_id, forced_until) VALUES(1, NULL, NULL)"
+                "INSERT OR IGNORE INTO forced_video(id, message_id, days_forced, forced_until) VALUES(1, NULL, NULL, NULL)"
             )
             await conn.commit()
 
@@ -54,10 +55,6 @@ class YouTubeStorage():
             return False
 
     async def purge_old_posted_videos(self, days: int) -> bool:
-        """
-        Delete posted_videos older than `days`.
-        Returns number of deleted rows
-        """
         try:
             async with self._pool.acquire() as conn:
                 await conn.execute("DELETE FROM posted_videos WHERE DATETIME(posted_at) < DATETIME('now', '-' || ? || ' days')", (days,))
@@ -67,12 +64,35 @@ class YouTubeStorage():
             return False
 
     # ---------------------------------- featured forced video
-    async def set_forced_video(self, message_id: int, forced_until: str) -> bool:
+    async def set_forced_video(self, message_id: int, days: int) -> bool:
         try:
             async with self._pool.acquire() as conn:
                 await conn.execute(
-                    "UPDATE forced_video SET message_id = ?, forced_until = ? WHERE id = 1",
-                    (message_id, forced_until)
+                    "UPDATE forced_video SET message_id = ?, days_forced = ?, forced_until = NULL WHERE id = 1",
+                    (message_id, days)
+                )
+                await conn.commit()
+                return True
+        except Exception:
+            return False
+        
+    async def activate_forced_video(self) -> bool:
+        """
+        Calculate forced_until based on days_forced when the video is actually sent.
+        """
+        try:
+            async with self._pool.acquire() as conn:
+                cur = await conn.execute("SELECT days_forced FROM forced_video WHERE id = 1")
+                row = await cur.fetchone()
+                if not row or not row[0]:
+                    return False
+                
+                days = row[0]
+                forced_until_dt = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=days)
+                
+                await conn.execute(
+                    "UPDATE forced_video SET forced_until = ? WHERE id = 1",
+                    (forced_until_dt.isoformat(),)
                 )
                 await conn.commit()
                 return True
@@ -81,8 +101,7 @@ class YouTubeStorage():
 
     async def get_forced_video(self) -> tuple[int | None, datetime.datetime | None]:
         """
-        Returns the message ID containing the link to the forced video, and a datetime object
-        containing the deadline beyond which the video is no longer forced to feature (the normal system takes over).
+        Returns the message ID and forced_until datetime.
         """
         async with self._pool.acquire() as conn:
             cur = await conn.execute("SELECT message_id, forced_until FROM forced_video WHERE id = 1")
@@ -99,16 +118,12 @@ class YouTubeStorage():
                     await self.clear_forced_video()
                     return None, None
 
-            if message_id and (forced_until_dt is None):
-                await self.clear_forced_video()
-                return None, None
-
             return message_id, forced_until_dt
 
     async def clear_forced_video(self) -> bool:
         try:
             async with self._pool.acquire() as conn:
-                await conn.execute("UPDATE forced_video SET message_id = NULL, forced_until = NULL WHERE id = 1")
+                await conn.execute("UPDATE forced_video SET message_id = NULL, days_forced = NULL, forced_until = NULL WHERE id = 1")
                 await conn.commit()
                 return True
         except Exception:

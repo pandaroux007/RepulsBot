@@ -10,12 +10,6 @@ ADMIN_CMD = discord.Permissions(administrator=True)
 
 DB_PATH = Path(__file__).parent.parent / "data" / "storage.db"
 
-class PublicAPI:
-    CCU = "https://stats.docskigames.com/api/ccu-current"
-    SERVERS = "https://regions.docskigames.com/getServers"
-    FEATURED_VIDEO = "https://community.docskigames.com/api/feature-video"
-    LEADERBOARD = "https://leaderboards.docskigames.com/api/getScore"
-
 # ------------------------------------- env file's data
 _ENV_FILE = Path(__file__).parent / ".env"
 load_dotenv(_ENV_FILE)
@@ -94,6 +88,7 @@ class DefaultEmojis:
     CHECK = '\u2705' # :white_check_mark:
     WARN = f'\u26A0{VARIATION_SELECTOR_IMG}' # :warning:
     ERROR = '\u274C' # :x:
+    CROSS = ERROR
     INFO = f'\u2139{VARIATION_SELECTOR_IMG}' # :information_source:
     NO_ENTRY = '\u26D4' # :no_entry:
     UP_ARROW = '\u2B06' # :up_arrow:

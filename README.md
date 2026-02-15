@@ -76,12 +76,13 @@ You can find details about the front-end operation of the bot in [the wiki](http
 ## In reflection (bot selection, waiting for API, etc.)
 - View player information from discord (level, stats, RC count, perhaps a glimpse of the character)
 - Obtaining information about an in-game clan from discord
-- Passing tickets through the threads
+- Moderating the live game chat (no moderation action but a warning + report to the moderators)
+- ~~Passing tickets through the threads~~
 ## What is delegated to RCC-bot
+- Making Sierra AI "live"
 - Manage competitions and display eSports results
 
-> [!IMPORTANT]
-> *Until the RCC-bot creator and the game's developer clearly define what should be handled by RepulsBot and what should not, this is the only thing that will not be implemented automatically.*
+*Until the RCC-bot creator and the game's developer clearly define what should be handled by RepulsBot and what should not, this is the only thing that will not be implemented automatically.*
 
 </details>
 

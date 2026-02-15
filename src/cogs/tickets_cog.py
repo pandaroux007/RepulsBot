@@ -254,6 +254,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
         self.bot = bot
 
     @app_commands.command(description="[ADMIN] If launched in a ticket, closes it")
+    @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
     async def close_ticket(self, interaction: discord.Interaction, * , reason: str = None):
         if interaction.channel.category_id != IDs.serverChannel.TICKETS_CATEGORY:
@@ -289,6 +290,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
             await interaction.channel.delete()
 
     @app_commands.command(description="[ADMIN] Post the unique ticket creation message")
+    @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
     async def setup_ticket(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)

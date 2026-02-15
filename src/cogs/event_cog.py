@@ -93,8 +93,7 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        game = discord.Game("🎮️ repuls.io browser game! 🕹️")
-        await self.bot.change_presence(activity=game)
+        await self.bot.change_presence(activity=discord.Game("🎮️ repuls.io browser game! 🕹️"))
         await log(bot=self.bot, type=BOTLOG, title=f"{self.bot.user.mention} is now online! {DefaultEmojis.ONLINE}")
 
     # ---------------------------------- welcome message

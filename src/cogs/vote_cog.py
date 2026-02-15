@@ -63,6 +63,9 @@ def is_unused(m: discord.Message) -> bool:
 def is_validated(m: discord.Message) -> bool:
     return VALIDATED_REACTION in {str(r.emoji) for r in m.reactions}
 
+def is_rejected(m: discord.Message) -> bool:
+    return REJECTED_REACTION in {str(r.emoji) for r in m.reactions}
+
 def get_yt_url(message: str, return_id: bool = False) -> str | tuple[str, str] | None:
     video_url = re.search(YOUTUBE_REGEX, message)
     if not video_url:
@@ -103,12 +106,9 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         votes_map: dict[int, list[discord.Message]] = {}
         SEARCH_WINDOW = daysdelta(SHARED_BACK_UNTIL)
         async for message in shared_videos_channel.history(limit=SHARED_MESSAGE_LIMIT, after=SEARCH_WINDOW, oldest_first=True):
-            if not get_yt_url(message.content) or not message.reactions:
+            if not get_yt_url(message.content) or not message.reactions or is_rejected(message):
                 continue  # pass all messages without youtube links
-
             for reaction in message.reactions:
-                if str(reaction.emoji) == REJECTED_REACTION:
-                    continue
                 if str(reaction.emoji) == VOTE_REACTION:
                     vote = reaction.count
                     if vote > 1: # ignore bot vote

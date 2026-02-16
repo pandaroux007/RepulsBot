@@ -8,6 +8,7 @@ class CogsNames:
     ADMIN = "admin_cog"
     TICKETS = "tickets_cog"
     USERS = "users_cog"
+    STATS = "stats_cog"
     YT_AUTO = "yt_auto_cog"
 
 COGS_LIST = [
@@ -18,5 +19,6 @@ COGS_LIST = [
     CogsNames.ADMIN,
     CogsNames.TICKETS,
     CogsNames.USERS,
+    CogsNames.STATS,
     CogsNames.YT_AUTO,
 ]

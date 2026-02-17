@@ -80,7 +80,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
             embed.set_image(url=member.avatar.url)
         else:
             embed.add_field(name="This user has no avatar", value="*nothing to display...*")
-        
+
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(description="Get the server member count")
@@ -96,10 +96,10 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
     async def esports_roadmap(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Repuls eSports roadmap!",
-            description=f"[See on the official website]({GameUrl.ESPORTS})",
+            description=f"[See on the official website]({GameUrl.ESPORTS_ROADMAP})",
             color=discord.Color.dark_blue()
         )
-        embed.set_image(url=GameUrl.ESPORTS_ROADMAP_URL)
+        embed.set_image(url=GameUrl.ESPORTS_ROADMAP_IMG)
         await interaction.response.send_message(embed=embed)
 
     # ---------------------------------- "about" commands

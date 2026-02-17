@@ -387,7 +387,7 @@ wheels = [
 
 [[package]]
 name = "repulsbot"
-version = "1.0"
+version = "1"
 source = { virtual = "." }
 dependencies = [
     { name = "asqlite" },

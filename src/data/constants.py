@@ -16,8 +16,10 @@ load_dotenv(_ENV_FILE)
 
 class PrivateData:
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-    API_ENDPOINT_URL = os.getenv("API_ENDPOINT_URL")
-    API_TOKEN = os.getenv("API_TOKEN")
+    VIDEO_ENDPOINT_URL = os.getenv("VIDEO_ENDPOINT_URL")
+    VIDEO_ENDPOINT_TOKEN = os.getenv("VIDEO_ENDPOINT_TOKEN")
+    PLAYFAB_USERNAME = os.getenv("PLAYFAB_USERNAME")
+    PLAYFAB_PASSWORD = os.getenv("PLAYFAB_PASSWORD")
     # 3 API keys for fallback
     YOUTUBE_KEYS = [
         os.getenv("YOUTUBE_KEY1"),
@@ -107,8 +109,9 @@ class GameUrl:
     LEADERBOARD = f"{GAME}/leaderboard"
     UPDATES = f"{GAME}/updates"
     TERMS = f"{GAME}/terms"
-    ESPORTS = f"{GAME}/esports"
-    ESPORTS_ROADMAP_URL = f"{GAME}/esports/REPULS_eSPORTS_ROADMAP.png"
+    ESPORTS_ROADMAP = f"{GAME}/esports"
+    ESPORTS_ROADMAP_IMG = f"{ESPORTS_ROADMAP}/REPULS_eSPORTS_ROADMAP.png"
+    # ICON = f"{GAME}/img/repuls_logo_icon.png"
 
 class Links:
     # PRIVACY = "https://docskigames.com/privacy/"

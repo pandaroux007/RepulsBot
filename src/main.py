@@ -8,11 +8,12 @@ from data.cogs import COGS_LIST
 from data.constants import (
     PrivateData,
     IDs,
-    CMD_PREFIX
+    CMD_PREFIX,
+    DB_PATH
 )
-from data.constants import DB_PATH
 from tools.youtube_storage import YouTubeStorage
 from tools.tickets_storage import TicketsStorage
+from tools.api_client import PlayFab
 
 # ---------------------------------- bot creation
 class RepulsBot(commands.Bot):
@@ -21,6 +22,7 @@ class RepulsBot(commands.Bot):
         self.db_pool: asqlite.Pool | None = None
         self.youtube_storage: YouTubeStorage | None = None
         self.tickets_storage: TicketsStorage | None = None
+        self.playfab_manager: PlayFab | None = None
 
     async def setup_database(self) -> None:
         self.db_pool = await asqlite.create_pool(DB_PATH)
@@ -35,6 +37,8 @@ class RepulsBot(commands.Bot):
 
     async def setup_hook(self) -> None:
         await self.setup_database()
+
+        self.playfab_manager = PlayFab(self)
 
         for cog_name in COGS_LIST:
             await self.load_extension(f"cogs.{cog_name}")
@@ -60,4 +64,7 @@ async def main():
 
 # ---------------------------------- bot run
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        exit(0)

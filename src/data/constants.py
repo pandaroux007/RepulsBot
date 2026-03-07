@@ -88,9 +88,10 @@ VARIATION_SELECTOR_IMG = '\uFE0F' # '\uFE0E' for text
 
 class DefaultEmojis:
     CHECK = '\u2705' # :white_check_mark:
+    CROSS = '\u274C' # :x:
     WARN = f'\u26A0{VARIATION_SELECTOR_IMG}' # :warning:
-    ERROR = '\u274C' # :x:
-    CROSS = ERROR
+    ERROR = CROSS
+    CRITICAL = '\U0001F6A8' # :police_car_light:
     INFO = f'\u2139{VARIATION_SELECTOR_IMG}' # :information_source:
     NO_ENTRY = '\u26D4' # :no_entry:
     UP_ARROW = '\u2B06' # :up_arrow:

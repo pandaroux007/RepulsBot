@@ -71,6 +71,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(f"{DefaultEmojis.CHECK} **pong!** (*It took me {round(self.bot.latency * 1000, 2)}ms to respond to your command!*)")
 
     @app_commands.command(description="Displays a member's avatar")
+    @app_commands.guild_only()
     async def member_avatar(self, interaction: discord.Interaction, member: discord.Member):
         embed = discord.Embed(
             title=f"Avatar of {member.display_name}!",
@@ -84,6 +85,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(description="Get the server member count")
+    @app_commands.guild_only()
     async def member_count(self, interaction: discord.Interaction):
         embed = discord.Embed(
             color=discord.Color.dark_blue(),
@@ -93,6 +95,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(description="Displays the eSports competitions of the year")
+    @app_commands.guild_only()
     async def esports_roadmap(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Repuls eSports roadmap!",
@@ -102,8 +105,38 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         embed.set_image(url=GameUrl.ESPORTS_ROADMAP_IMG)
         await interaction.response.send_message(embed=embed)
 
+    @app_commands.command(description="View a member's permissions in a specific channel")
+    @app_commands.guild_only()
+    @app_commands.describe(
+        target="User to inspect (you by default)",
+        channel="Channel to analyze (this one by default)"
+    )
+    async def viewperms(self, interaction: discord.Interaction, target: discord.Member = None, channel: discord.abc.GuildChannel = None):
+        target = target or interaction.user
+        channel = channel or interaction.channel
+
+        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        view = discord.ui.LayoutView()
+        view.add_item(container)
+        if target.is_timed_out():
+            container.add_item(discord.ui.TextDisplay(content="> *🛡️ This user currently has no permissions on this server*"))
+            await interaction.response.send_message(view=view, ephemeral=True)
+            return
+
+        allowed_list: list[str] = []
+        for name, is_allowed in channel.permissions_for(target):
+            if is_allowed:
+                allowed_list.append(name.replace('_', ' ').title())
+
+        container.add_item(discord.ui.TextDisplay(content=f"### Perms of {target.mention} in {channel.mention}\n"))
+        container.add_item(discord.ui.Separator())
+        container.add_item(discord.ui.TextDisplay(content=", ".join(allowed_list) if allowed_list else "*No permissions in this channel*"))
+
+        await interaction.response.send_message(view=view, ephemeral=True)
+
     # ---------------------------------- "about" commands
     @app_commands.command(description="Displays information about a server member")
+    @app_commands.guild_only()
     async def member_info(self, interaction: discord.Interaction, member: discord.Member):
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         if member.id == self.bot.user.id:
@@ -135,6 +168,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(view=view, ephemeral=True)
 
     @app_commands.command(description="Displays information about this discord server")
+    @app_commands.guild_only()
     async def server_info(self, interaction: discord.Interaction):
         guild = interaction.guild
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
@@ -169,6 +203,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(view=view, ephemeral=True)
 
     @app_commands.command(description="Displays information about repuls.io game")
+    @app_commands.guild_only()
     async def game_info(self, interaction: discord.Interaction):
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         container.add_item(discord.ui.TextDisplay(content=(
@@ -227,6 +262,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
 
     # ---------------------------------- FAQ commands
     @app_commands.command(description="Launch the server's interactive FAQ")
+    @app_commands.guild_only()
     async def serverfaq(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title=f"{possessive(interaction.guild.name)} server FAQ",
@@ -237,6 +273,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @app_commands.command(description="Frequently Asked Questions about the repuls.io game")
+    @app_commands.guild_only()
     async def gamefaq(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Repuls.io game FAQ",

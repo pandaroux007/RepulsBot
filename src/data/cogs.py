@@ -9,6 +9,7 @@ class CogsNames:
     TICKETS = "tickets_cog"
     USERS = "users_cog"
     STATS = "stats_cog"
+    GAME_BROWSER = "game_browser_cog"
     YT_AUTO = "yt_auto_cog"
 
 COGS_LIST = [
@@ -20,5 +21,6 @@ COGS_LIST = [
     CogsNames.TICKETS,
     CogsNames.USERS,
     CogsNames.STATS,
+    CogsNames.GAME_BROWSER,
     CogsNames.YT_AUTO,
 ]

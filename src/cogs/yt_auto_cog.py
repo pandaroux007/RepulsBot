@@ -20,8 +20,15 @@ from datetime import (
 # bot files
 from data.cogs import CogsNames
 from data.constants import (
+    DefaultEmojis,
     PrivateData,
     IDs
+)
+
+from tools.log_builder import (
+    LogColor,
+    BOTLOG,
+    log
 )
 
 from typing import TYPE_CHECKING
@@ -49,10 +56,7 @@ class YTAutoCog(commands.Cog, name=CogsNames.YT_AUTO):
     # ---------------------------------- task
     @tasks.loop(hours=CHECK_INTERVAL_HOURS)
     async def youtube_task(self):
-        try:
-            await self.bot.youtube_storage.purge_old_posted_videos(MAX_POSTED_RETENTION_DAYS)
-        except Exception:
-            pass
+        await self.bot.youtube_storage.purge_old_posted_videos(MAX_POSTED_RETENTION_DAYS)
 
         new_videos = await self.fetch_new_videos()
         if not new_videos:
@@ -64,8 +68,8 @@ class YTAutoCog(commands.Cog, name=CogsNames.YT_AUTO):
 
     async def fetch_new_videos(self):
         """
-        Original creator: amanlovescat
-        Modifications for production: pandaroux007
+        :Original creator: amanlovescat
+        :Modifications for production: pandaroux007
         """
         async with aiohttp.ClientSession() as session:
             for key in getattr(PrivateData, "YOUTUBE_KEYS", []):
@@ -100,7 +104,11 @@ class YTAutoCog(commands.Cog, name=CogsNames.YT_AUTO):
                             if inserted:
                                 new_vids.append(id)
                         return new_vids
-                except Exception:
+                except Exception as e:
+                    await log(
+                        bot=self.bot, type=BOTLOG, color=LogColor.RED,
+                        title=f"{DefaultEmojis.ERROR} Error with one of the YouTube APIs", msg=f"```\n{e}\n```"
+                    )
                     continue
 
         return []
@@ -109,10 +117,7 @@ class YTAutoCog(commands.Cog, name=CogsNames.YT_AUTO):
     @youtube_task.before_loop
     async def before_youtube_task(self):
         await self.bot.wait_until_ready()
-        try:
-            await self.bot.youtube_storage.purge_old_posted_videos(MAX_POSTED_RETENTION_DAYS)
-        except Exception:
-            pass
+        await self.bot.youtube_storage.purge_old_posted_videos(MAX_POSTED_RETENTION_DAYS)
 
 async def setup(bot: "RepulsBot"):
     await bot.add_cog(YTAutoCog(bot))

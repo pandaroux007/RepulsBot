@@ -10,6 +10,7 @@ from discord.ext import commands
 from discord import app_commands
 # bot files
 from data.cogs import CogsNames
+from tools.utils import number
 from tools.log_builder import (
     LogColor,
     BOTLOG,
@@ -99,9 +100,9 @@ class EventCog(commands.Cog, name=CogsNames.EVENT):
     # ---------------------------------- welcome message
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        welcome_channel = self.bot.get_channel(IDs.serverChannel.WELCOME)
-        rules_channel = self.bot.get_channel(IDs.serverChannel.RULES)
-        await welcome_channel.send(f"Welcome {member.mention}! Please read {rules_channel.jump_url}, then have fun!")
+        welcome_channel: discord.PartialMessageable = self.bot.get_partial_messageable(IDs.serverChannel.WELCOME)
+        rules_channel: discord.PartialMessageable = self.bot.get_partial_messageable(IDs.serverChannel.RULES)
+        await welcome_channel.send(content=f"Welcome {member.mention} ({number(member.guild.member_count)} member)! Please read {rules_channel.jump_url}, then have fun!")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(EventCog(bot))

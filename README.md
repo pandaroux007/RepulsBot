@@ -43,6 +43,7 @@ Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one
 - *BratzelBrezel*
 - *Abyss*
 - *eagoose*
+- *AlfaStephano48*
 ### Other contributors
 #### NaN server
 - *martin_9202*
@@ -64,27 +65,6 @@ You can find details about the front-end operation of the bot in [the wiki](http
 
 > [!NOTE]
 > **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!** Even if you don't want to contribute, you can find all the details for configuring and launching the bot in [CONTRIBUTING.md](CONTRIBUTING.md)
-
-<details>
-<summary><strong>Development stage</strong></summary>
-
-## Development goals
-- [**`in progress`**] Display information on lobbies, stats, etc.
-- [**`next step`**] Show game leaderboard with pagination via discord
-- For authorized players, asset store of the game from discord (ft. Caracal)
-- Discord 1v1s ([details here](https://discord.com/channels/603655329120518223/686216026412941429/1370057672304492554))
-## In reflection (bot selection, waiting for API, etc.)
-- View player information from discord (level, stats, RC count, perhaps a glimpse of the character)
-- Obtaining information about an in-game clan from discord
-- Moderating the live game chat (no moderation action but a warning + report to the moderators)
-- ~~Passing tickets through the threads~~
-## What is delegated to RCC-bot
-- Making Sierra AI "live"
-- Manage competitions and display eSports results
-
-*Until the RCC-bot creator and the game's developer clearly define what should be handled by RepulsBot and what should not, this is the only thing that will not be implemented automatically.*
-
-</details>
 
 ### Useful tools for contributing
 - Create interfaces with Components v2: https://discord.builders/

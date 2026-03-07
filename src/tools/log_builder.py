@@ -64,7 +64,7 @@ class LogBuilder:
         self._mediatitle = title
         return self
 
-    async def send(self) -> discord.Message | None: 
+    async def send(self, enable_ping: bool = False) -> discord.Message | None: 
         log_channel = self.bot.get_channel(IDs.serverChannel.BOTLOG if self.logtype == BOTLOG else IDs.serverChannel.MODLOG)
         if not log_channel:
             return None
@@ -100,8 +100,8 @@ class LogBuilder:
         return await log_channel.send(
             view=view,
             files=self._mediafiles,
-            silent=self._enable_ping,
-            allowed_mentions=discord.AllowedMentions.none() if not self._enable_ping else discord.AllowedMentions.all()
+            silent=enable_ping,
+            allowed_mentions=discord.AllowedMentions.none() if not enable_ping else discord.AllowedMentions.all()
         )
 
 # kept for compatibility

@@ -31,11 +31,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import RepulsBot
 
+TICKET_COOLDOWN_HOURS = 24
 SECONDS_BEFORE_TICKET_CLOSING = 4
-PERMS_ACCESS_GRANTED = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-AUTHORIZED_MEMBERS = [
+AUTHORIZED_ROLES = [
     IDs.serverRoles.ADMIN,
-    IDs.serverRoles.DEVELOPER,
+    IDs.serverRoles.DEVELOPER
 ]
 
 TICKET_TYPES = [
@@ -145,13 +145,13 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
             .footer(f"Author ID: {ticket_author.id}")
             .send()
         )
-        if not await self.bot.tickets_storage.add_ticket(
+        await self.bot.tickets_storage.add_ticket(
             name=ticket_name,
             title=ticket_title,
-            author=ticket_author.id,
-            open_log_url=log_msg.jump_url
-        ):
-            raise discord.DiscordException("The ticket could not be saved in the database.")
+            author=ticket_author,
+            open_log_url=log_msg.jump_url,
+            cooldown_hours=TICKET_COOLDOWN_HOURS
+        )
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await (
@@ -166,6 +166,7 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         return next((label for label, _, abbr in TICKET_TYPES if abbr == type_abbr), "Other")
 
     def _build_ticket_overwrites(self, guild: discord.Guild, author: discord.Member) -> dict:
+        PERMS_ACCESS_GRANTED = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
         # permissions to the bot, ticket author and authorized members to view the private channel
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(view_channel=False),
@@ -173,10 +174,10 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
             guild.me: PERMS_ACCESS_GRANTED
         }
 
-        for role_id in AUTHORIZED_MEMBERS:
-                role = guild.get_role(role_id)
-                if role:
-                    overwrites[role] = PERMS_ACCESS_GRANTED
+        for role_id in AUTHORIZED_ROLES:
+            role = guild.get_role(role_id)
+            if role:
+                overwrites[role] = PERMS_ACCESS_GRANTED
         return overwrites
 
     def _build_ticket_channel_name(self, type_abbr: str) -> str:
@@ -190,7 +191,7 @@ class CancelClosingButton(discord.ui.Button):
         super().__init__(
             style=discord.ButtonStyle.danger,
             label="Cancel closing",
-            emoji="✋"
+            emoji='✋'
         )
         self.callback_func = callback
 
@@ -232,12 +233,20 @@ class OpenTicketButton(discord.ui.ActionRow):
 
     @discord.ui.button(
         style=discord.ButtonStyle.secondary,
-        emoji="🎟️",
+        emoji='🎟️',
         label="Click here to open a new ticket",
         custom_id="open_ticket"
     )
     async def new_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(TicketModal(self.bot))
+        await self.bot.tickets_storage.purge_cooldown_users()
+        member_role_ids = {role.id for role in interaction.user.roles}
+        is_allowed, cooldown_until = await self.bot.tickets_storage.is_ticket_allowed(interaction.user)
+        if bool(member_role_ids & AUTHORIZED_ROLES) or interaction.user.guild_permissions.administrator or is_allowed:
+            await interaction.response.send_modal(TicketModal(self.bot))
+        else:
+            await interaction.response.send_message(content=(
+                f"> ⏱️ {f"**You will be able to create a new ticket** {discord.utils.format_dt(cooldown_until, 'R')}" if cooldown_until else "**You cannot create a ticket** at this time."}... Come back later!"
+            ), ephemeral=True)
 
 class OpenTicketView(discord.ui.LayoutView):
     def __init__(self, bot: "RepulsBot"):
@@ -264,29 +273,24 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
         view = CancelCloseView()
         await interaction.response.send_message(view=view, ephemeral=True)
         view.message = await interaction.original_response()
-        
+
         await view.wait() # wait view timeout (SECONDS_BEFORE_TICKET_CLOSING)
 
         if view.cancelled: # cancel closing
             return
         else: # close ticket
-            name = interaction.channel.name
-            ticket_info = await self.bot.tickets_storage.get_ticket(name)
-
-            log_msg = ticket_info.get("open_log_url")
-            title = ticket_info.get("title", "*Unknown*")
-            author_id = ticket_info.get("author_id")
-            author_mention = f"<@{author_id}>" if author_id else "*Unknown*"
-
-            await (
+            ticket = await self.bot.tickets_storage.get_ticket(interaction.channel.name)
+            log = (
                 LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
-                .title(f"🎟️ The ticket {f"[`{name}`]({log_msg})" if log_msg else f"`{name}`"} has been closed by {interaction.user.mention}")
-                .add_field(name="Ticket Title", value=f"> {title}")
-                .add_field(name="Ticket Author", value=author_mention)
+                .title(f"🎟️ The ticket {ticket.mention} has been closed by {interaction.user.mention}")
+                .add_field(name="Ticket Title", value=f"> {ticket.title}")
+                .add_field(name="Ticket Author", value=ticket.author)
                 .add_field(name="Reason for closure", value=f"*{reason}*" if reason else "*No reason specified*")
-                .send()
             )
-            await self.bot.tickets_storage.remove_ticket(name)
+            if ticket.created_at:
+                log.description(f"-# **Ticket had been created at {discord.utils.format_dt(ticket.created_at, 'F')}**")
+            await log.send()
+            await self.bot.tickets_storage.remove_ticket(ticket.name)
             await interaction.channel.delete()
 
     @app_commands.command(description="[ADMIN] Post the unique ticket creation message")

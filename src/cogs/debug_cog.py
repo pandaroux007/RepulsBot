@@ -15,12 +15,15 @@ import platform
 import time
 from pathlib import Path
 import asyncio
-import math
 # bot files
-from tools.utils import check_if_maintainer
 from data.cogs import (
     CogsNames,
     COGS_LIST
+)
+
+from tools.utils import (
+    check_if_maintainer,
+    plurial
 )
 
 from data.constants import (
@@ -54,16 +57,6 @@ async def get_commit():
     stdout_data, stderr_data = await process.communicate()
     if process.returncode == 0:
         return stdout_data.decode('ascii').strip()
-
-def format_size(size_bytes, decimals=2):
-    # https://www.digitalocean.com/community/tutorials/how-to-get-file-size-in-python#human-readable-size-conversion-function-bytes-kb-mb-gb
-    if size_bytes == 0:
-        return "0 Octet"
-
-    power = 1024
-    units = ["o", "Ko", "Mo", "Go", "To"]
-    i = int(math.floor(math.log(size_bytes, power)))
-    return f"{size_bytes / (power ** i):.{decimals}f} {units[i]}"
 
 class DebugCog(commands.Cog, name=CogsNames.DEBUG):
     def __init__(self, bot: "RepulsBot"):
@@ -113,7 +106,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
 
         try:
             file_size = DB_PATH.stat().st_size
-            embed.add_field(inline=False, name="Database weight", value=format_size(file_size))
+            embed.add_field(inline=False, name="Database weight", value=f"{file_size} {plurial("octet", file_size)}")
         except Exception:
             pass
 
@@ -154,10 +147,9 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
                 embed.description = f"{DefaultEmojis.CHECK} Cog `{name}` successfully restarted!"
                 await (
                     LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                    .enable_ping()
-                    .title(f"{DefaultEmojis.INFO} CRITICAL INFO - A cog has been restarted!")
+                    .title(f"{DefaultEmojis.CRITICAL} CRITICAL INFO - A cog has been restarted!")
                     .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, `{name}` has been restarted by {ctx.author.mention}")
-                    .send()
+                    .send(enable_ping=True)
                 )
             except Exception as e:
                 embed.description = f"{DefaultEmojis.ERROR} An error occurred during the restart attempt!\n```\n{e}\n```"
@@ -181,10 +173,9 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await ctx.author.send(embed=embed)
             await (
                 LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                .enable_ping()
-                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - Tickets storage in the database reset!")
+                .title(f"{DefaultEmojis.CRITICAL} CRITICAL INFO - Tickets storage in the database reset!")
                 .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the tickets storage was reset by {ctx.author.mention}")
-                .send()
+                .send(enable_ping=True)
             )
         except Exception as error:
             raise discord.DiscordException(str(error))
@@ -206,10 +197,9 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await ctx.author.send(embed=embed)
             await (
                 LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                .enable_ping()
-                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - YouTube storage in the database reset!")
+                .title(f"{DefaultEmojis.CRITICAL} CRITICAL INFO - YouTube storage in the database reset!")
                 .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the youtube storage was reset by {ctx.author.mention}")
-                .send()
+                .send(enable_ping=True)
             )
         except Exception as error:
             raise discord.DiscordException(str(error))
@@ -236,10 +226,9 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             await ctx.author.send(embed=embed)
             await (
                 LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                .enable_ping()
-                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - The entire database has been reset!")
+                .title(f"{DefaultEmojis.CRITICAL} CRITICAL INFO - The entire database has been reset!")
                 .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the bot's database was reset by {ctx.author.mention}")
-                .send()
+                .send(enable_ping=True)
             )
         except Exception as error:
             raise discord.DiscordException(str(error))

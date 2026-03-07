@@ -51,7 +51,7 @@ class LogCog(commands.Cog, name=CogsNames.LOG):
         attach_removed = await self.get_removed_attachments(before, after)
         if not text_changed and not attach_removed:
             return
-        
+
         builder = (
             LogBuilder(self.bot, color=LogColor.ORANGE)
             .title(f"✏️ Message from {after.author.mention} edited in {after.channel.mention} ")
@@ -70,12 +70,15 @@ class LogCog(commands.Cog, name=CogsNames.LOG):
         if message.author.bot:
             return
         attachments = await self.get_removed_attachments(message)
+        responded_to = message.reference if message.type == discord.MessageType.reply else None
         builder = (
             LogBuilder(self.bot, color=LogColor.RED)
             .title(f"🗑️ Message sent by {message.author.mention} deleted in {message.channel.mention}")
             .add_field(name="Content:", value=(message.content or "*This message was empty*"))
             .footer(f"Message ID: {message.id}")
         )
+        if responded_to:
+            builder.description(f"This message was a reply to {responded_to.jump_url}")
         if attachments:
             builder.add_media(title="Attachments of the deleted message", files=attachments)
         await builder.send()

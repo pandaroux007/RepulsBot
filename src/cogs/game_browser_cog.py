@@ -8,6 +8,7 @@ This cog provides commands to find and start games.
 import discord
 from discord.ext import commands
 from discord import app_commands
+import math
 # bot files
 from data.cogs import CogsNames
 from data.constants import (
@@ -31,8 +32,6 @@ from tools.log_builder import (
     BOTLOG,
     log
 )
-
-import math
 
 class GameBrowserView(discord.ui.LayoutView):
     pagination_row = discord.ui.ActionRow()

@@ -8,97 +8,23 @@ from __future__ import annotations
 import discord
 from discord.ext import commands
 from discord import app_commands
+import re
 # bot files
 from data.cogs import CogsNames
 from tools.utils import plurial
 from data.constants import (
     DefaultEmojis,
-    ADMIN_CMD
+    ADMIN_CMD,
+    DISCORD_MSG_ID_REGEX
 )
 
-class AddFileToAnnouncement(discord.ui.Modal, title="Add file(s) to the announcement"):
+class AnnouncementModal(discord.ui.Modal, title="Send announcement message(s)"):
     header = discord.ui.TextDisplay(content=(
-        "If you don't want to send any files, simply send the modal without providing anything. **All fields below are optional!**"
+        "This command allows you to **select one or more of your messages** (that you sent in a private channel "
+        "previously) to send them on my behalf (__RepulsBot__) in **one or more channels** to be defined in this modal "
+        "(I will send your messages there identically, **including files**, and I will add the pings you define here to the first message)."
     ))
-    files = discord.ui.Label(
-        text="Send files from your computer",
-        component=discord.ui.FileUpload(
-            max_values=10,
-            required=False
-        )
-    )
-    links = discord.ui.Label(
-        text="Or links to discord/web image(s)",
-        component=discord.ui.TextInput(
-            style=discord.TextStyle.long,
-            placeholder="Copy the links to your images here (separated by commas)",
-            required=False,
-            max_length=500
-        )
-    )
-
-    def __init__(self, parent: MakeAnnouncementModal):
-        super().__init__()
-        self.parent = parent
-
-    async def on_submit(self, interaction: discord.Interaction):
-        assert isinstance(self.files.component, discord.ui.FileUpload)
-        assert isinstance(self.links.component, discord.ui.TextInput)
-        assert isinstance(self.parent.channels.component, discord.ui.ChannelSelect)
-
-        links_str = self.links.component.value if self.links.component.value else ""
-        links = [link.strip() for link in links_str.split(',') if link.strip()]
-        if links:
-            self.parent.content += "\n" + "\n".join(links)
-
-        await self.parent.parent._send_and_confirm(
-            interaction,
-            message=self.parent.content,
-            channels=self.parent.channels.component.values,
-            attachments=self.files.component.values
-        )
-
-class AddAttachmentsInterface(discord.ui.LayoutView):
-    buttons_row = discord.ui.ActionRow()
-
-    def __init__(self, parent: MakeAnnouncementModal):
-        super().__init__()
-        self.parent = parent
-        self.container = discord.ui.Container(accent_color=discord.Color.dark_blue())
-        self.add_item(self.container)
-        self.remove_item(self.buttons_row)
-        self.container.clear_items()
-        self.container.add_item(discord.ui.TextDisplay(content=(
-            "### ⚙️ Click here to add files or send now\n"
-        )))
-        self.container.add_item(discord.ui.Separator())
-        self.container.add_item(self.buttons_row)
-
-    @buttons_row.button(label="Send as is now", emoji='📤', style=discord.ButtonStyle.primary)
-    async def send_now(self, interaction: discord.Interaction, button: discord.ui.Button):
-        assert isinstance(self.parent.channels.component, discord.ui.ChannelSelect)
-        await self.parent.parent._send_and_confirm(interaction, self.parent.content, self.parent.channels.component.values, [])
-        await interaction.delete_original_response()
-
-    @buttons_row.button(label="Add attachments", emoji='🔗', style=discord.ButtonStyle.secondary)
-    async def add_attachments(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(AddFileToAnnouncement(parent=self.parent))
-        await interaction.delete_original_response()
-
-class MakeAnnouncementModal(discord.ui.Modal, title="Send an announcement message"):
-    header = discord.ui.TextDisplay(content=(
-        "Once your announcement is sent, **you will no longer be able to edit it**. You can still delete messages and resend them. "
-        "See [the Markdown available on Discord](https://support.discord.com/hc/en-us/articles/210298617-Markdown-Text-101-Chat-Formatting-Bold-Italic-Underline)."
-    ))
-    message = discord.ui.Label(
-        text="The announcement message you wish to send",
-        component=discord.ui.TextInput(
-            style=discord.TextStyle.long,
-            placeholder="Here you can use Markdown tags, links, headings, etc...",
-            required=True,
-            max_length=1700
-        )
-    )
+    info = discord.ui.TextDisplay(content="### Messages provided\n")
     channels = discord.ui.Label(
         text="The channel(s) where to send the announcement",
         component=discord.ui.ChannelSelect(
@@ -116,96 +42,115 @@ class MakeAnnouncementModal(discord.ui.Modal, title="Send an announcement messag
         )
     )
 
-    def __init__(self, parent: AdminCog, initial_message: str, initial_channel: discord.TextChannel):
+    def __init__(self, messages: list[discord.Message], failed_links: list[str]):
         super().__init__()
-        self.parent = parent
-        self.content: str = None
-        if initial_message:
-            assert isinstance(self.message.component, discord.ui.TextInput)
-            self.message.component.default = initial_message
-        assert isinstance(self.channels.component, discord.ui.ChannelSelect)
-        self.channels.component.default_values = [initial_channel]
+        self.base_messages: list[discord.Message] = messages
+        assert isinstance(self.info, discord.ui.TextDisplay)
+        self.info.content += (
+            '\n'.join(f"- {msg.jump_url}" for msg in self.base_messages) +
+            ("\n### Some messages could not be found\n>>> " + '\n'.join(f"- [{link[-14:]}...]({link})" for link in failed_links) if failed_links else '')
+        )
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        assert isinstance(self.message.component, discord.ui.TextInput)
         assert isinstance(self.channels.component, discord.ui.ChannelSelect)
         assert isinstance(self.roles.component, discord.ui.RoleSelect)
-
-        self.content = self.message.component.value
+        channels = [interaction.client.get_partial_messageable(channel.id) for channel in self.channels.component.values]
         roles_mentions = [role.mention for role in self.roles.component.values]
-        if roles_mentions:
-            self.content = ", ".join(roles_mentions) + f"\n{self.content}"
 
-        await interaction.followup.send(view=AddAttachmentsInterface(parent=self), ephemeral=True)
-
-class AdminCog(commands.Cog, name=CogsNames.ADMIN):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-
-    async def _send_and_confirm(self, interaction: discord.Interaction, message: str, channels: list[app_commands.AppCommandChannel], attachments: list[discord.Attachment]) -> None:
-        await interaction.response.defer()
-        failed_sends: list[app_commands.AppCommandChannel] = []
-        success_sent: list[discord.Message] = []
-
-        _channels = [interaction.client.get_partial_messageable(channel.id) for channel in channels]
-        for channel in _channels:
-            try:
-                files = [await a.to_file() for a in attachments]
-                msg = await channel.send(message, files=(files if files else None))
-                success_sent.append(msg)
-            except Exception:
-                failed_sends.append(channel)
-
-        success_list = ", ".join(f"{msg.jump_url}" for msg in success_sent)
-        failed_list = '\n'.join(f"- {ch.mention}" for ch in failed_sends)
+        success_sent: list[discord.PartialMessageable] = []
+        failed_sends: dict[discord.PartialMessageable, int] = {}
+        for channel in channels:
+            for idx, message in enumerate(self.base_messages):
+                message_to_send: str = ", ".join(roles_mentions) + f"\n{message.content}" if idx == 0 and roles_mentions else message.content
+                try:
+                    files = [await a.to_file() for a in message.attachments]
+                    await channel.send(content=message_to_send, files=(files if files else None))
+                except Exception:
+                    failed_sends.setdefault(channel, 0)
+                    failed_sends[channel] += 1
+            if failed_sends.get(channel) is None:
+                success_sent.append(channel)
 
         view = discord.ui.LayoutView()
         container = discord.ui.Container(accent_color=discord.Color.brand_green())
         view.add_item(container)
+        container.add_item(discord.ui.TextDisplay(content="## Result of the `announcement` command"))
+        container.add_item(discord.ui.Separator())
 
-        container.add_item(discord.ui.TextDisplay(content="## Result of the talk command"))
         if len(failed_sends) == len(channels):
             container.accent_color = discord.Color.brand_red()
             container.add_item(discord.ui.TextDisplay(content=(
                 f"> {DefaultEmojis.ERROR} The message could not be sent in any of the specified channels. **Contact the developer for assistance**."
             )))
         else:
+            success_list = ", ".join(f"{ch.mention}" for ch in success_sent)
+            failed_list = '\n'.join(f"- {ch.mention} ({errors} failed {plurial("message", errors)})" for ch, errors in failed_sends.items())
             if len(success_sent) == len(channels):
-                container.add_item(discord.ui.TextDisplay(content=f"> {DefaultEmojis.CHECK} Message sent in {len(channels)} channel(s)!\n({success_list})"))
+                container.add_item(discord.ui.TextDisplay(content=f"{DefaultEmojis.CHECK} Message sent in {len(channels)} channel(s)!\n> {success_list}"))
             else:
                 container.add_item(discord.ui.TextDisplay(content=(
                     f"> {DefaultEmojis.WARN} **The message was sent in {len(success_sent)} of the {len(channels)} {plurial("channel", len(channels))} requested**\n"
                     f"### {DefaultEmojis.ONLINE} Message(s) sent successfully\n{success_list}\n### {DefaultEmojis.OFFLINE} Channel(s) with failure\n{failed_list}"
                 )))
-            container.add_item(discord.ui.TextDisplay(content=(
-                "### Message preview\n"
-                f">>> {(message if len(message) <= 800 else message[:797] + "...")}"
-            )))
-            if attachments:
-                container.add_item(discord.ui.Separator())
-                container.add_item(discord.ui.TextDisplay(content="### The command was used with attachments"))
-                gallery = discord.ui.MediaGallery()
-                gallery.items = [discord.MediaGalleryItem(media=attachment.url) for attachment in attachments]
-                container.add_item(gallery)
 
-        container.add_item(discord.ui.TextDisplay(f"-# Used by {interaction.user.mention} ・ {discord.utils.format_dt(interaction.created_at, 'F')}"))
         await interaction.followup.send(view=view, ephemeral=True)
 
-    @app_commands.command(description="[ADMIN] Send a message under RepulsBot's name in the chosen channels")
+class AdminCog(commands.Cog, name=CogsNames.ADMIN):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    @app_commands.command(description="[ADMIN] Send a message quickly with RepulsBot in the current channel")
     @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
     @app_commands.describe(
-        message="The message you wish to send (useful for inserting emojis without copy-pasting)",
-        is_announcement="Switch to True to ping roles, send images, or send to multiple channels"
+        content="The message you wish to send (only emojis are available there, no files)",
+        reply_to="Link (optional) to the message you want to reply to"
     )
-    async def talk(self, interaction: discord.Interaction, message: str | None, is_announcement: bool = False):
-        if not message or is_announcement is True:
-            await interaction.response.send_modal(MakeAnnouncementModal(self, message, interaction.channel))
+    async def talk(self, interaction: discord.Interaction, content: str, reply_to: str | None = None):
+        await interaction.response.defer(ephemeral=True)
+        if not reply_to:
+            await interaction.channel.send(content)
         else:
-            await interaction.response.defer(ephemeral=True)
-            await interaction.channel.send(message)
-            await interaction.delete_original_response()
+            match = re.search(DISCORD_MSG_ID_REGEX, reply_to)
+            if not match:
+                await interaction.followup.send(content=f"{DefaultEmojis.WARN} Couldn't parse a message id from `reply_to` link", ephemeral=True)
+                return
+            message_id = int(match.group(1))
+            try:
+                message_to_reply = await interaction.channel.fetch_message(message_id)
+                await message_to_reply.reply(content=content)
+            except discord.NotFound:
+                await interaction.followup.send(embed=(
+                    f"{DefaultEmojis.WARN} There doesn't seem to be any message at this link\n"
+                    "### Message preview\n"
+                    f">>> {(content if len(content) <= 1930 else content[:1927] + "...")}"
+                ), ephemeral=True)
+        await interaction.delete_original_response()
+
+    @app_commands.command(description="[ADMIN] Create an announcement with images, mentions, etc. in one or more channels")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ADMIN_CMD)
+    @app_commands.describe(messages="One (or more, in order and separated by commas) link(s) to the messages to be turned into an announcement")
+    async def announcement(self, interaction: discord.Interaction, messages: str):
+        links = [link.strip() for link in messages.split(',') if link.strip()]
+        messages_found_list: list[discord.Message] = []
+        messages_not_found_list: list[str] = []
+        for link in links:
+            match = re.search(DISCORD_MSG_ID_REGEX, link)
+            if not match:
+                messages_not_found_list.append(link)
+                continue
+            message_id = int(match.group(1))
+            try:
+                message = await interaction.channel.fetch_message(message_id)
+                messages_found_list.append(message)
+            except discord.NotFound:
+                messages_not_found_list.append(link)
+        if len(links) > 0 and len(links) > len(messages_not_found_list):
+            await interaction.response.send_modal(AnnouncementModal(messages_found_list, messages_not_found_list))
+        else:
+            await interaction.response.send_message(content=f"{DefaultEmojis.WARN} None of the provided links appear to be valid?\n", ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(AdminCog(bot))

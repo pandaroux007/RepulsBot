@@ -26,7 +26,8 @@ from tools.log_builder import (
 from data.constants import (
     DefaultEmojis,
     IDs,
-    ADMIN_CMD
+    ADMIN_CMD,
+    DISCORD_MSG_ID_REGEX
 )
 
 from typing import TYPE_CHECKING
@@ -293,7 +294,7 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             color=discord.Color.dark_blue()
         )
 
-        match = re.search(r"(\d{17,20})$", message_link)
+        match = re.search(DISCORD_MSG_ID_REGEX, message_link)
         if not match:
             result.description = f"{DefaultEmojis.ERROR} Couldn't parse a message id from input message link"
             await interaction.followup.send(embed=result, ephemeral=True)

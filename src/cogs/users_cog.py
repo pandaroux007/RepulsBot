@@ -206,10 +206,13 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
     @app_commands.guild_only()
     async def game_info(self, interaction: discord.Interaction):
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        container.add_item(discord.ui.Section(discord.ui.TextDisplay(content=(
+                f"### What is repuls.io ?\n"
+                f"➜ [Repuls.io]({GameUrl.HOME}) is the future of browser games. "
+                "The best free instantly accessible multiplayer FPS for your browser with no sign-up or payment required!"
+            )), accessory=discord.ui.Thumbnail(media=GameUrl.ICON)
+        ))
         container.add_item(discord.ui.TextDisplay(content=(
-            f"### What is repuls.io ?\n"
-            f"➜ [Repuls.io]({GameUrl.HOME}) is the future of browser games."
-            "The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!\n\n"
             "Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! "
             "Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with "
             "a giant mech! **That's** the repuls experience son!"

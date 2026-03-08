@@ -8,6 +8,8 @@ CMD_PREFIX = '!'
 # https://discordpy.readthedocs.io/en/latest/api.html?highlight=permissions#discord.Permissions
 ADMIN_CMD = discord.Permissions(administrator=True)
 
+DISCORD_MSG_ID_REGEX = r"(\d{17,20})$"
+
 DB_PATH = Path(__file__).parent.parent / "data" / "storage.db"
 
 # ------------------------------------- env file's data
@@ -112,7 +114,7 @@ class GameUrl:
     TERMS = f"{GAME}/terms"
     ESPORTS_ROADMAP = f"{GAME}/esports"
     ESPORTS_ROADMAP_IMG = f"{ESPORTS_ROADMAP}/REPULS_eSPORTS_ROADMAP.png"
-    # ICON = f"{GAME}/img/repuls_logo_icon.png"
+    ICON = f"{GAME}/img/repuls_logo_icon.png"
 
 class Links:
     # PRIVACY = "https://docskigames.com/privacy/"

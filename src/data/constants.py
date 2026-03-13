@@ -39,6 +39,7 @@ _MODE_DEV = "dev"
 class ServerChannelID:
     BOTLOG = 1399029942221799475             if _MODE == _MODE_DEV else 1399017426880041141
     MODLOG = 1403797711764852756             if _MODE == _MODE_DEV else 1044053262975893514
+    REPORTS = 1480631911012630661            if _MODE == _MODE_DEV else MODLOG
     RULES = 1389989335318794420              if _MODE == _MODE_DEV else 758364818348048444
     WELCOME = 1446881118061072467            if _MODE == _MODE_DEV else 665786571424923648
     FEATURED_VIDEO = 1427982134857043990     if _MODE == _MODE_DEV else 1458152386404159599
@@ -101,7 +102,7 @@ class DefaultEmojis:
     ONLINE = '\U0001F7E2' # :green_circle:
 
 class BotInfo:
-    VERSION = "1.6.0"
+    VERSION = "1.6.1"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     REPORT = f"{GITHUB}/issues"
 

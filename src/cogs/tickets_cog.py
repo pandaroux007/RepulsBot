@@ -14,17 +14,17 @@ import string
 # bot files
 from data.cogs import CogsNames
 from tools.utils import nl
-from tools.log_builder import (
-    LogBuilder,
-    LogColor,
-    BOTLOG
-)
-
 from data.constants import (
     IDs,
     DefaultEmojis,
     ASK_HELP,
     ADMIN_CMD
+)
+
+from tools.log_builder import (
+    LogBuilder,
+    LogColor,
+    BOTLOG
 )
 
 from typing import TYPE_CHECKING
@@ -161,6 +161,7 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
             .send()
         )
         await interaction.response.send_message(f"> {DefaultEmojis.ERROR} Oops! Something went wrong...{ASK_HELP}", ephemeral=True)
+        return await super().on_error(interaction, error)
 
     def _get_ticket_label(self, type_abbr: str) -> str:
         return next((label for label, _, abbr in TICKET_TYPES if abbr == type_abbr), "Other")

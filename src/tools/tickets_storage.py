@@ -48,7 +48,7 @@ class TicketsStorage():
                 )
                 await conn.execute(
                     """
-                    CREATE TABLE IF NOT EXISTS cooldowns (
+                    CREATE TABLE IF NOT EXISTS ticket_cooldown (
                         member_id INTEGER PRIMARY KEY NOT NULL,
                         cooldown_until TEXT NOT NULL
                     )
@@ -61,18 +61,25 @@ class TicketsStorage():
                 title=f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - An exception was raised during init of the ticketing system tables.", msg=f"```\n{e}\n```"
             )
 
-    async def reset_table(self) -> None:
+    async def reset_table(self) -> bool:
+        """
+        Returns
+        --------
+        `bool`: True if successful, False otherwise
+        """
         try:
             async with self._pool.acquire() as conn:
                 await conn.execute("DROP TABLE tickets")
-                await conn.execute("DROP TABLE cooldowns")
+                await conn.execute("DROP TABLE ticket_cooldown")
                 await conn.commit()
             await self.init_tables()
+            return True
         except Exception as e:
             await log(
                 bot=self._bot, type=BOTLOG, color=LogColor.RED,
                 title=f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - An exception was raised during reset of the ticketing system tables.", msg=f"```\n{e}\n```"
             )
+            return False
 
     # ---------------------------------- manage tickets
     async def add_ticket(self, name: str, title: str, author: discord.Member, open_log_url: str, cooldown_hours: int) -> None:
@@ -84,8 +91,8 @@ class TicketsStorage():
                     (name, now.isoformat(), title, author.id, open_log_url)
                 )
                 await conn.execute(
-                    "INSERT OR REPLACE INTO cooldowns(member_id, cooldown_until) VALUES(?, ?)",
-                    (author.id, (now + timedelta(seconds=20)).isoformat()) # ------------------------------------< test! normally hours!
+                    "INSERT OR REPLACE INTO ticket_cooldown(member_id, cooldown_until) VALUES(?, ?)",
+                    (author.id, (now + timedelta(hours=cooldown_hours)).isoformat())
                 )
                 await conn.commit()
         except Exception as e:
@@ -126,7 +133,7 @@ class TicketsStorage():
     async def purge_cooldown_users(self) -> None:
         try:
             async with self._pool.acquire() as conn:
-                await conn.execute("DELETE FROM cooldowns WHERE cooldown_until < ?", (discord.utils.utcnow().isoformat(),))
+                await conn.execute("DELETE FROM ticket_cooldown WHERE cooldown_until < ?", (discord.utils.utcnow().isoformat(),))
                 await conn.commit()
         except Exception as e:
             await log(
@@ -146,7 +153,7 @@ class TicketsStorage():
         try:
             async with self._pool.acquire() as conn:
                 row = await conn.fetchone(
-                    "SELECT cooldown_until FROM cooldowns WHERE member_id = ?", (member.id,)
+                    "SELECT cooldown_until FROM ticket_cooldown WHERE member_id = ?", (member.id,)
                 )
                 if not row:
                     return (True, None)

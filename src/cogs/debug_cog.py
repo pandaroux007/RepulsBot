@@ -127,7 +127,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
         except Exception as error:
             raise discord.DiscordException(str(error))
 
-    # ---------------------------------- potentially risky commands.
+    # ---------------------------------- potentially risky commands
     @commands.command(description="[DEBUG] Restart a cog via its name")
     @commands.guild_only()
     @check_if_maintainer()
@@ -146,7 +146,7 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
                 await self.bot.reload_extension(name=f"cogs.{name}")
                 embed.description = f"{DefaultEmojis.CHECK} Cog `{name}` successfully restarted!"
                 await (
-                    LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
+                    LogBuilder(self.bot, type=MODLOG, color=LogColor.BLUE)
                     .title(f"{DefaultEmojis.CRITICAL} CRITICAL INFO - A cog has been restarted!")
                     .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, `{name}` has been restarted by {ctx.author.mention}")
                     .send(enable_ping=True)
@@ -156,53 +156,40 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             
             await ctx.author.send(embed=embed)
 
-    @commands.command(description="[DEBUG] Reset the tickets storage in database")
+    @commands.command(description="[DEBUG] Reset a given section in the database")
     @commands.guild_only()
     @check_if_maintainer()
-    async def reset_tickets_storage(self, ctx: commands.Context):
+    async def reset_db_section(self, ctx: commands.Context, *, section_name: str):
         await ctx.message.delete()
-        try:
-            await self.bot.tickets_storage.reset_table()
+        embed = discord.Embed(
+            title="Reset a section",
+            color=discord.Color.dark_gray(),
+            timestamp=discord.utils.utcnow()
+        )
+        is_successful: bool = False
+        if section_name == "videos":
+            is_successful = await self.bot.youtube_storage.reset_table()
+        elif section_name == "tickets":
+            is_successful = await self.bot.tickets_storage.reset_table()
+        elif section_name == "moderation":
+            is_successful = await self.bot.moderation_storage.reset_table()
+        else:
+            embed.description = f"> {DefaultEmojis.WARN} The `{section_name}` section doesn't exist, try another"
+            await ctx.author.send(embed=embed)
+            return
 
-            embed = discord.Embed(
-                title="Reset tickets storage in database",
-                description=f"{DefaultEmojis.CHECK} Tickets storage reset!",
-                color=discord.Color.dark_gray(),
-                timestamp=discord.utils.utcnow()
-            )
+        if is_successful:
+            embed.description = f"> {DefaultEmojis.CHECK} The `{section_name}` section has been successfully reset"
             await ctx.author.send(embed=embed)
             await (
-                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                .title(f"{DefaultEmojis.CRITICAL} CRITICAL INFO - Tickets storage in the database reset!")
-                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the tickets storage was reset by {ctx.author.mention}")
+                LogBuilder(self.bot, type=MODLOG, color=LogColor.BLUE)
+                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - A section has been reset in the db!")
+                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the `{section_name}` section was reset by {ctx.author.mention}")
                 .send(enable_ping=True)
             )
-        except Exception as error:
-            raise discord.DiscordException(str(error))
-
-    @commands.command(description="[DEBUG] Reset the youtube storage in database")
-    @commands.guild_only()
-    @check_if_maintainer()
-    async def reset_youtube_storage(self, ctx: commands.Context):
-        await ctx.message.delete()
-        try:
-            await self.bot.youtube_storage.reset_table()
-
-            embed = discord.Embed(
-                title="Reset youtube storage in database",
-                description=f"{DefaultEmojis.CHECK} Tickets storage reset!",
-                color=discord.Color.dark_gray(),
-                timestamp=discord.utils.utcnow()
-            )
+        else:
+            embed.description = f"> {DefaultEmojis.ERROR} This section cannot be reset"
             await ctx.author.send(embed=embed)
-            await (
-                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
-                .title(f"{DefaultEmojis.CRITICAL} CRITICAL INFO - YouTube storage in the database reset!")
-                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the youtube storage was reset by {ctx.author.mention}")
-                .send(enable_ping=True)
-            )
-        except Exception as error:
-            raise discord.DiscordException(str(error))
 
     # ---------------------------------- potentially destructive commands
     @commands.command(description="[DEBUG] Destroys and then recreates the database")

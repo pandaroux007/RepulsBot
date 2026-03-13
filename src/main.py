@@ -12,16 +12,18 @@ from data.constants import (
 )
 from tools.youtube_storage import YouTubeStorage
 from tools.tickets_storage import TicketsStorage
+from tools.moderation_storage import ModerationStorage
 from tools.api_client import PlayFabClient
 
 # ---------------------------------- bot creation
 class RepulsBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.db_pool: asqlite.Pool | None = None
-        self.youtube_storage: YouTubeStorage | None = None
-        self.tickets_storage: TicketsStorage | None = None
-        self.playfab_manager: PlayFabClient | None = None
+        self.db_pool: asqlite.Pool = None
+        self.youtube_storage: YouTubeStorage = None
+        self.tickets_storage: TicketsStorage = None
+        self.moderation_storage: ModerationStorage = None
+        self.playfab_manager: PlayFabClient = None
 
     async def setup_database(self) -> None:
         self.db_pool = await asqlite.create_pool(DB_PATH)
@@ -33,6 +35,8 @@ class RepulsBot(commands.Bot):
         await self.youtube_storage.init_tables()
         self.tickets_storage = TicketsStorage(self, self.db_pool)
         await self.tickets_storage.init_tables()
+        self.moderation_storage = ModerationStorage(self, self.db_pool)
+        await self.moderation_storage.init_tables()
 
     async def setup_hook(self) -> None:
         await self.setup_database()
@@ -55,6 +59,7 @@ if __name__ == "__main__":
         command_prefix=CMD_PREFIX,
         intents=discord.Intents.all(),
         help_command=None,
-        owner_id=IDs.repulsTeam.BOT_DEVELOPER
+        owner_id=IDs.repulsTeam.BOT_DEVELOPER,
+        activity=discord.Game("🎮️ repuls.io browser game! 🕹️")
     )
     bot.run(PrivateData.DISCORD_TOKEN)

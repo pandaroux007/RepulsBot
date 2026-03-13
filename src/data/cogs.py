@@ -3,7 +3,6 @@
 class CogsNames:
     VOTE = "vote_cog"
     LOG = "log_cog"
-    EVENT = "event_cog"
     DEBUG = "debug_cog"
     ADMIN = "admin_cog"
     TICKETS = "tickets_cog"
@@ -15,7 +14,6 @@ class CogsNames:
 COGS_LIST = [
     CogsNames.VOTE,
     CogsNames.LOG,
-    CogsNames.EVENT,
     CogsNames.DEBUG,
     CogsNames.ADMIN,
     CogsNames.TICKETS,

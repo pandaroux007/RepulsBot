@@ -23,7 +23,7 @@ class YouTubeStorage():
                     """
                     CREATE TABLE IF NOT EXISTS posted_videos (
                         video_id TEXT PRIMARY KEY NOT NULL,
-                        posted_at TEXT NOT NULL DEFAULT (DATETIME(CURRENT_TIMESTAMP))
+                        posted_at TEXT NOT NULL DEFAULT (DATETIME('now'))
                     )
                     """
                 )

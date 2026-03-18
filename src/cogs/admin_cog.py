@@ -124,7 +124,7 @@ class ReportModal(discord.ui.Modal, title="Report a message to the staff"):
         )
         await interaction.followup.send(content=(
             f">>> 🛰️ Hmm... Sorry, the reporting function seems to be **temporarily unavailable**.{ASK_HELP}"
-        ))
+        ), ephemeral=True)
         return await super().on_error(interaction, error)
 
 class AnnouncementModal(discord.ui.Modal, title="Send announcement message(s)"):
@@ -216,6 +216,9 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
 
     @app_commands.guild_only()
     async def report_message(self, interaction: discord.Interaction, message: discord.Message):
+        if message.author.bot:
+            await interaction.response.send_message("> You cannot report bot messages 🤖", ephemeral=True)
+            return
         user_reports_number = await self.bot.moderation_storage.get_reports_number(interaction.user.id)
         if user_reports_number is None or user_reports_number > 3:
             await interaction.response.send_message("> Oh! You've reported too many messages today and you've reached the limit 🙄", ephemeral=True)

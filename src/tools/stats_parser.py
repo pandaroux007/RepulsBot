@@ -341,8 +341,10 @@ async def fetch_player(playfab_connection: PlayFabClient, name: str) -> PlayerPr
 
         avatar = dict(json.loads(result["UserData"]["Loadout"]["Value"]))
         profile._avatar_mods = [str(mod) for mod in avatar.get("avatarMods", [])]
-        profile.primary_color = f"#{avatar["color_pri"]}" if avatar.get("color_pri") else None
-        profile.secondary_color = f"#{avatar["color_sec"]}" if avatar.get("color_sec") else None
+        if avatar.get("color_pri", None):
+            profile.primary_color = f"#{avatar["color_pri"]}"
+        if avatar.get("color_sec", None):
+            profile.secondary_color = f"#{avatar["color_sec"]}"
 
         if profile.primary_color and profile.secondary_color:
             buffer = BytesIO()

@@ -50,6 +50,7 @@ class ServerRoleID: # "<@&role_id>"
     YOUTUBER = 1381223948854759494           if _MODE == _MODE_DEV else 781295509331116054
     STREAMER = 1381223990349004850           if _MODE == _MODE_DEV else 781295771894153266
     ADMIN = 1376617317382754456              if _MODE == _MODE_DEV else 800091356974022677
+    HELPER = 1461389067043209439             if _MODE == _MODE_DEV else 1438579395492184206
     TRUSTED = 1381224331685920930            if _MODE == _MODE_DEV else 910540568164188252
     DEVELOPER = 1381224153478336553          if _MODE == _MODE_DEV else 682090620726411304
     ASTRONAUT = 1388550692213362879          if _MODE == _MODE_DEV else 1317870046726324284
@@ -58,7 +59,7 @@ class ServerRoleID: # "<@&role_id>"
     ESPORTS_ORGANIZER = 1388880454479904808  if _MODE == _MODE_DEV else 1371212276421496925
     CLAN_LEADER = 1394988076551635014        if _MODE == _MODE_DEV else 850917985429880863
     MUTED = 1420425892429168821              if _MODE == _MODE_DEV else 805854637126713394
-    TICKET_HELPER = 1420425652221251585      if _MODE == _MODE_DEV else 1399022819861336194
+    TICKET_RESPONDER = 1420425652221251585   if _MODE == _MODE_DEV else 1399022819861336194
 
 # these IDs do not change
 class RepulsTeamMemberID: # "<@member_id>"
@@ -74,11 +75,28 @@ AUTHORISED_SERVERS = {
     AuthorizedServersID.TEST_SERVER
 }
 
+AUTHORIZED_ROLES = {
+    ServerRoleID.ADMIN,
+    ServerRoleID.DEVELOPER
+}
+
 # class grouping the different IDs
 class IDs:
     serverChannel = ServerChannelID
     serverRoles = ServerRoleID
     repulsTeam = RepulsTeamMemberID
+
+class DefaultAntiraidSettings:
+    # NOTE: 1 trigger = one activation of the anti-spam system
+    ANTIRAID_STATE = 1 # (0/1 = SQL boolean) antiraid enabled by default
+
+    USER_MAX_TRIGGERS_BEFORE_MOD = 3 # maximum number of triggers before auto-moderator action
+    USER_MSG_SPAM_THRESHOLD = 4
+    USER_MSG_SPAM_INTERVAL_S = 2
+
+    CHANNEL_LOCK_DURATION_MN = 30
+    CHANNEL_MAX_TRIGGERS_BEFORE_LOCK = 5
+    CHANNEL_TRIGGERS_INTERVAL_S = 300 # 5mn
 
 # ------------------------------------- texts and links
 """
@@ -102,7 +120,7 @@ class DefaultEmojis:
     ONLINE = '\U0001F7E2' # :green_circle:
 
 class BotInfo:
-    VERSION = "1.6.1"
+    VERSION = "1.7.0"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     REPORT = f"{GITHUB}/issues"
 

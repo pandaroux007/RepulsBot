@@ -17,6 +17,7 @@ from tools.utils import nl
 from data.constants import (
     IDs,
     DefaultEmojis,
+    AUTHORIZED_ROLES,
     ASK_HELP,
     ADMIN_CMD
 )
@@ -33,10 +34,6 @@ if TYPE_CHECKING:
 
 TICKET_COOLDOWN_HOURS = 24
 SECONDS_BEFORE_TICKET_CLOSING = 4
-AUTHORIZED_ROLES = [
-    IDs.serverRoles.ADMIN,
-    IDs.serverRoles.DEVELOPER
-]
 
 TICKET_TYPES = [
     #     label       |       description         |   abbreviation
@@ -121,7 +118,7 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         # first channel's message
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         container.add_item(discord.ui.Section(
-            f"### > {ticket_title}\n<@&{IDs.serverRoles.TICKET_HELPER}> {ticket_content}",
+            f"### > {ticket_title}\n<@&{IDs.serverRoles.TICKET_RESPONDER}> {ticket_content}",
             accessory=discord.ui.Thumbnail(media=ticket_author.display_avatar.url)
         ))
         container.add_item(discord.ui.Separator())

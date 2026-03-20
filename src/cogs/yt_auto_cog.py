@@ -39,6 +39,7 @@ CHECK_INTERVAL_HOURS = 1
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 # https://developers.google.com/youtube/v3/docs/search/list#q
 SEARCH_QUERY = "repuls.io"
+MAX_RESULTS = 10
 
 # must be equal to or greater than the publishedAfter parameter of the request!
 MAX_POSTED_RETENTION_DAYS = 2
@@ -62,9 +63,17 @@ class YTAutoCog(commands.Cog, name=CogsNames.YT_AUTO):
         if not new_videos:
             return
 
-        target = self.bot.get_channel(IDs.serverChannel.SHARED_VIDEO)
+        video_channel = self.bot.get_channel(IDs.serverChannel.SHARED_VIDEO)
+        already_posted: set[str] = set()
+        async for message in video_channel.history(limit=MAX_RESULTS):
+            for vid in new_videos:
+                if vid in message.content:
+                    already_posted.add(vid)
+
         for vid in new_videos:
-            await target.send(f"https://youtu.be/{vid}")
+            if vid in already_posted:
+                continue
+            await video_channel.send(f"https://youtu.be/{vid}")
 
     async def fetch_new_videos(self):
         """
@@ -84,7 +93,7 @@ class YTAutoCog(commands.Cog, name=CogsNames.YT_AUTO):
                     "type": "video",
                     "order": "date",
                     "publishedAfter": one_day_ago,
-                    "maxResults": 10
+                    "maxResults": MAX_RESULTS
                 }
 
                 try:

@@ -13,7 +13,7 @@ class CogsNames:
     YT_AUTO = "yt_auto_cog"
 
 COGS_LIST = [
-    # CogsNames.VOTE,
+    CogsNames.VOTE,
     CogsNames.LOG,
     CogsNames.DEBUG,
     CogsNames.ADMIN,

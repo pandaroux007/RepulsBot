@@ -1,6 +1,5 @@
 import json
 import aiohttp
-from datetime import datetime
 import re
 from io import BytesIO
 from PIL import (
@@ -176,16 +175,12 @@ WEAPON_PARSING_TABLE = {
 }
 
 class PlayerProfile:
-    def __init__(self, name: str, playfab_id: str):
+    def __init__(self):
         # Account information
-        self.display_name: str = name
+        self.display_name: str = None
         self.username: str = None
-        self.playfab_id: str = playfab_id
-        self.created: datetime = None
-        self.last_login: datetime = None
-        self.repuls_account: bool = True
+        self.playfab_id: str = None
         self.is_admin: bool = False
-        self.is_banned: bool = False
         self._clan: str = None
         # Avatar
         self.primary_color: str | None = None
@@ -231,7 +226,7 @@ class PlayerProfile:
     @property
     def win_ratio(self) -> str:
         return f"{self.wins / max(1, self.matches) * 100:.1f}%"
-    
+
     @property
     def clan(self) -> str | None:
         if not self._clan:
@@ -260,7 +255,7 @@ class PlayerProfile:
                 weapon = WEAPON_PARSING_TABLE.get(weapon)
             weapons_text.append(f"> **{weapon.replace('_', ' ').title()}**: {count:,}")
         return '\n'.join(weapons_text) if weapons_text else None
-    
+
     @property
     def avatar_mods(self) -> str | None:
         mods_text: list[str] = []
@@ -274,11 +269,14 @@ class PlayerProfile:
 
 async def fetch_player(playfab_connection: PlayFabClient, name: str) -> PlayerProfile | None:
     # https://learn.microsoft.com/en-us/rest/api/playfab/client/account-management/get-account-info?view=playfab-rest
+    player = PlayerProfile()
     profile = await playfab_connection.call_client_api(PlayFabAPI.SEARCH_PLAYER, {"TitleDisplayName": name})
     if not profile:
         profile = await playfab_connection.call_client_api(PlayFabAPI.SEARCH_PLAYER, {"Username": name})
         if not profile:
             return None
+        player.username = name
+
     target_player_id: str = profile["data"]["AccountInfo"]["PlayFabId"]
 
     player_data = await playfab_connection.call_client_api(PlayFabAPI.GET_PLAYER_DATA, {
@@ -288,73 +286,59 @@ async def fetch_player(playfab_connection: PlayFabClient, name: str) -> PlayerPr
         }
     })
 
-    result = player_data["data"]["FunctionResult"]
-    logs = player_data["data"]["Logs"]
-
-    profile = PlayerProfile(name=str(result["DisplayName"]), playfab_id=target_player_id)
-
-    if logs:
-        try:
-            log_data = dict(json.loads(logs[0]["Message"]))
-            info_payload = dict(log_data["InfoResultPayload"]["AccountInfo"])
-
-            profile.username = info_payload.get("Username")
-            profile.repuls_account = not bool(info_payload.get("GoogleInfo"))
-            profile.created = datetime.fromisoformat(info_payload["Created"])
-            profile.last_login = datetime.fromisoformat(info_payload["TitleInfo"]["LastLogin"])
-            profile.is_banned = bool(info_payload["TitleInfo"]["isBanned"])
-        except Exception:
-            pass
+    result = dict(player_data["data"]["FunctionResult"])
+    player.display_name = str(result.get("DisplayName"))
+    player.playfab_id = target_player_id
 
     try:
         properties = dict(json.loads(result["UserReadOnlyData"]["Properties"]["Value"]))
 
-        profile.level = properties.get("Level", 0)
-        profile.xp = properties.get("Experience", 0)
-        profile.is_admin = bool(properties.get("isAdmin", False))
-        profile._clan = properties.get("verificationProperties", None)
+        player.level = properties.get("Level", 0)
+        player.xp = properties.get("Experience", 0)
+        player.is_admin = bool(properties.get("isAdmin", False))
+        player._clan = properties.get("verificationProperties", None)
 
         achievements = {item["Id"]: item["count"] for item in properties.get("achievementProgressions", [])}
-        profile.kills = achievements.get("kills", 0)
-        profile.deaths = achievements.get("deaths", 0)
-        profile.matches = achievements.get("games", 0)
-        profile.wins = achievements.get("wins", 0)
-        profile.flags  = achievements.get("flags", 0)
-        profile.skulls = achievements.get("skulls", 0)
-        profile.winstreak = achievements.get("winstreak", 0)
-        profile.vehicle_kills = achievements.get("vehKills", 0)
-        profile.headshot = achievements.get("headshot", 0)
-        profile.double_kill = achievements.get("kchain_x2", 0)
-        profile.triple_kill = achievements.get("kchain_x3", 0)
-        profile.quad_kill = achievements.get("kchain_x4", 0)
-        profile.mega_kill = achievements.get("kchain_x5", 0)
-        profile.ultra_kill = achievements.get("kchain_x6", 0)
-        profile.monster_kill = achievements.get("kchain_x7", 0)
-        profile.killing_spree = achievements.get("killStreak_x4", 0)
-        profile.dominating = achievements.get("killStreak_x6", 0)
-        profile.unstoppable = achievements.get("killStreak_x8", 0)
-        profile.godlike = achievements.get("killStreak_x10", 0)
-        profile.assist = achievements.get("assist", 0)
+        player.kills = achievements.get("kills", 0)
+        player.deaths = achievements.get("deaths", 0)
+        player.matches = achievements.get("games", 0)
+        player.wins = achievements.get("wins", 0)
+        player.flags  = achievements.get("flags", 0)
+        player.skulls = achievements.get("skulls", 0)
+        player.winstreak = achievements.get("winstreak", 0)
+        player.vehicle_kills = achievements.get("vehKills", 0)
+        player.headshot = achievements.get("headshot", 0)
+        player.double_kill = achievements.get("kchain_x2", 0)
+        player.triple_kill = achievements.get("kchain_x3", 0)
+        player.quad_kill = achievements.get("kchain_x4", 0)
+        player.mega_kill = achievements.get("kchain_x5", 0)
+        player.ultra_kill = achievements.get("kchain_x6", 0)
+        player.monster_kill = achievements.get("kchain_x7", 0)
+        player.killing_spree = achievements.get("killStreak_x4", 0)
+        player.dominating = achievements.get("killStreak_x6", 0)
+        player.unstoppable = achievements.get("killStreak_x8", 0)
+        player.godlike = achievements.get("killStreak_x10", 0)
+        player.assist = achievements.get("assist", 0)
 
         kill_stats = {str(stat["Id"]).lower(): stat["count"] for stat in properties.get("killStats", [])}
-        profile._best_weapons = dict(sorted(kill_stats.items(), key=lambda item: item[1], reverse=True)[:5])
+        player._best_weapons = dict(sorted(kill_stats.items(), key=lambda item: item[1], reverse=True)[:5])
 
         avatar = dict(json.loads(result["UserData"]["Loadout"]["Value"]))
-        profile._avatar_mods = [str(mod) for mod in avatar.get("avatarMods", [])]
+        player._avatar_mods = [str(mod) for mod in avatar.get("avatarMods", [])]
         if avatar.get("color_pri", None):
-            profile.primary_color = f"#{avatar["color_pri"]}"
+            player.primary_color = f"#{avatar["color_pri"]}"
         if avatar.get("color_sec", None):
-            profile.secondary_color = f"#{avatar["color_sec"]}"
+            player.secondary_color = f"#{avatar["color_sec"]}"
 
-        if profile.primary_color and profile.secondary_color:
+        if player.primary_color and player.secondary_color:
             buffer = BytesIO()
-            image = Image.new("RGB", (60, 60), color=profile.secondary_color)
+            image = Image.new("RGB", (60, 60), color=player.secondary_color)
             draw = ImageDraw.Draw(image)
-            draw.polygon(((0, 0), (0, 60), (60, 0)), fill=profile.primary_color)
+            draw.polygon(((0, 0), (0, 60), (60, 0)), fill=player.primary_color)
             image.save(buffer, format='PNG')
             buffer.seek(0)
-            profile.color_theme = (buffer, f"{profile.primary_color}|{profile.secondary_color}.png")
+            player.color_theme = (buffer, f"{player.primary_color}|{player.secondary_color}.png")
     except Exception:
         pass
 
-    return profile
+    return player

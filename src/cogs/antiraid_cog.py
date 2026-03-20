@@ -50,7 +50,7 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         self.user_messages = defaultdict(lambda: deque(maxlen=100))
         self.channel_triggers = defaultdict(lambda: deque(maxlen=50))
         self.user_triggers = defaultdict(list)
-    
+
     @property
     async def config(self) -> dict | None:
         return await self.bot.moderation_storage.get_antiraid_settings()
@@ -116,23 +116,22 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 await self.apply_mod_action(user, ModActionType.BAN, reason="New suspicious account (sending image/link)")
 
             """
-            Otherwise, if it is simply spam, we delete and warn (if too many times in too short a time,
-            we launch a moderation action on the user, depending on their seniority).
+            Otherwise, if it is simply spam, we delete + timeout (if too many times in too short a time,
+            we launch a moderation action (kick/ban) on the user, depending on their seniority).
             """
             now = time.time()
             self.user_triggers[user_id].append(now)
             self.user_triggers[user_id] = [t for t in self.user_triggers[user_id] if now - t <= 1800]  # 30mn
-
             spam_repeat = len(self.user_triggers[user_id])
+
             if spam_repeat >= config.get("user_max_repeat_before_mod", DefaultAntiraidSettings.USER_MAX_TRIGGERS_BEFORE_MOD):
-                if is_recently_joined:
-                    await self.apply_mod_action(user, ModActionType.BAN, reason=f"Recently joined + spam repeated {spam_repeat} times")
-                elif is_new_account:
-                    await self.apply_mod_action(user, ModActionType.KICK, reason=f"New account + spam repeated {spam_repeat} times")
+                if is_recently_joined or is_new_account:
+                    await self.apply_mod_action(user, ModActionType.BAN, reason=f"New user/member + spam repeated {spam_repeat} times")
                 else:
-                    await self.apply_mod_action(user, ModActionType.TIMEOUT, reason=f"Spam repeated {spam_repeat} times")
+                    await self.apply_mod_action(user, ModActionType.KICK, reason=f"Spam repeated {spam_repeat} times")
             else:
                 await message.channel.send(f"> 🚫 {message.author.mention} You sent messages too quickly!", delete_after=4)
+                await self.apply_mod_action(user, ModActionType.TIMEOUT, reason=f"Spam repeated {spam_repeat} times")
 
             def is_spam_message(m: discord.Message) -> bool:
                 return (

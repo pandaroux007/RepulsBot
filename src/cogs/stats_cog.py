@@ -11,11 +11,7 @@ from discord import app_commands
 import datetime
 # bot files
 from data.cogs import CogsNames
-from tools.utils import (
-    GamePlaylist,
-    possessive
-)
-
+from tools.utils import GamePlaylist
 from tools.stats_parser import (
     fetch_server_stats,
     fetch_game_version,
@@ -50,66 +46,57 @@ class PlayerInfoView(discord.ui.LayoutView):
             )))
             return self
 
-        if self.player.is_banned:
-            self.container.add_item(discord.ui.TextDisplay(content=(
-                f"## ⛔️ Unable to display {possessive(self.player.name)} profile\n"
-                "➜ *This player is banned from the game, so I am not displaying their statistics.*"
-            )))
-            return self
-
-        if self.player_stats_mode is True:
-            stats = discord.ui.TextDisplay(content=(
-                f"## `{f"[{self.player.clan}] " if self.player.clan else ''}{self.player.name}` (level {self.player.level})\n"
-                f"🏅 {self.player.xp_progress()}\n"
-                f"💀 **{self.player.kills}** kills | **{self.player.deaths}** deaths | **{self.player.kd_ratio or '-'} K/D**\n"
-                f"⚔️ In **{self.player.matches}** matches, **{self.player.wins}** wins (*{self.player.win_ratio} win rate*)\n" +
-                (f"> 🛡️ **`{self.player.name}` is an in-game administrator!**\n" if self.player.is_admin else '')
+        stats = discord.ui.TextDisplay(content=(
+            f"## `{f"[{self.player.clan}] " if self.player.clan else ''}{self.player.name}` (level {self.player.level})\n"
+            f"🏅 {self.player.xp_progress()}\n"
+            f"💀 **{self.player.kills}** kills | **{self.player.deaths}** deaths | **{self.player.kd_ratio or '-'} K/D**\n"
+            f"⚔️ In **{self.player.matches}** matches, **{self.player.wins}** wins (*{self.player.win_ratio} win rate*)\n" +
+            (f"> 🛡️ **`{self.player.name}` is an in-game administrator!**\n" if self.player.is_admin else '')
+        ))
+        if self.player.color_theme:
+            self.container.add_item(discord.ui.Section(stats, accessory=discord.ui.Thumbnail(
+                    media=f"attachment://{self.player.color_theme[1]}",
+                    description=f"Primary: {self.player.primary_color} | Secondary: {self.player.secondary_color}"
+                )
             ))
-            if self.player.color_theme:
-                self.container.add_item(discord.ui.Section(stats, accessory=discord.ui.Thumbnail(
-                        media=f"attachment://{self.player.color_theme[1]}",
-                        description=f"Primary: {self.player.primary_color} | Secondary: {self.player.secondary_color}"
-                    )
-                ))
-            else:
-                self.container.add_item(stats)
-
-            advanced_stats = (
-                (f"{self.player.vehicle_kills} Vehicle Kills\n" if self.player.vehicle_kills else '') +
-                (f"{self.player.headshot} Headshots\n" if self.player.headshot else '') +
-                (f"{self.player.flags} Flags\n" if self.player.flags else '') +
-                (f"{self.player.assist} Assists\n" if self.player.assist else '') +
-                (f"{self.player.skulls} Skulls (halloween event)\n" if self.player.skulls else '')
-            )
-            achievements = (
-                (f"{self.player.winstreak} Winstreak\n" if self.player.winstreak else '') +
-                (f"{self.player.double_kill} Double Kill\n" if self.player.double_kill else '') +
-                (f"{self.player.triple_kill} Triple Kill\n" if self.player.triple_kill else '') +
-                (f"{self.player.quad_kill} Quad Kill\n" if self.player.quad_kill else '') +
-                (f"{self.player.mega_kill} Mega Kill\n" if self.player.mega_kill else '') +
-                (f"{self.player.ultra_kill} Ultra Kill\n" if self.player.ultra_kill else '') +
-                (f"{self.player.monster_kill} Monster Kill" if self.player.monster_kill else '') +
-                (f"{self.player.killing_spree} Killing Spree\n" if self.player.killing_spree else '') +
-                (f"{self.player.dominating} Dominating\n" if self.player.dominating else '') +
-                (f"{self.player.unstoppable} Unstoppable\n" if self.player.unstoppable else '') +
-                (f"{self.player.godlike} Godlike\n" if self.player.godlike else '')
-            )
-            self.container.add_item(discord.ui.TextDisplay(content=(
-                (f"## Advanced stats\n{advanced_stats}" if advanced_stats else '') +
-                (f"## Achievements\n{achievements}" if achievements else '')
-            )))
         else:
-            self.container.add_item(discord.ui.TextDisplay(content=(
-                (f"## Top 5 weapons\n{self.player.best_weapons}\n" if self.player.best_weapons else '') +
-                (f"## Current avatar mods\n{self.player.avatar_mods}" if self.player.avatar_mods else '')
-            )))
-        self.container.add_item(discord.ui.Separator())
-        self.container.add_item(discord.ui.TextDisplay(content=(
-            f"\n-# Logged in with {"repuls.io" if self.player.repuls_account else "Google"} account "
-            f"(Created {discord.utils.format_dt(self.player.created, 'D') if self.player.created else "N/A"} ・ Last login {discord.utils.format_dt(self.player.last_login, 'D') if self.player.last_login else "N/A"})"
-        )))
+            self.container.add_item(stats)
 
-        self.container.add_item(self.menu_row)
+        advanced_stats = (
+            (f"{self.player.vehicle_kills} Vehicle Kills\n" if self.player.vehicle_kills else '') +
+            (f"{self.player.headshot} Headshots\n" if self.player.headshot else '') +
+            (f"{self.player.flags} Flags\n" if self.player.flags else '') +
+            (f"{self.player.assist} Assists\n" if self.player.assist else '') +
+            (f"{self.player.skulls} Skulls (halloween event)\n" if self.player.skulls else '')
+        )
+        achievements = (
+            (f"{self.player.winstreak} Winstreak\n" if self.player.winstreak else '') +
+            (f"{self.player.double_kill} Double Kill\n" if self.player.double_kill else '') +
+            (f"{self.player.triple_kill} Triple Kill\n" if self.player.triple_kill else '') +
+            (f"{self.player.quad_kill} Quad Kill\n" if self.player.quad_kill else '') +
+            (f"{self.player.mega_kill} Mega Kill\n" if self.player.mega_kill else '') +
+            (f"{self.player.ultra_kill} Ultra Kill\n" if self.player.ultra_kill else '') +
+            (f"{self.player.monster_kill} Monster Kill" if self.player.monster_kill else '') +
+            (f"{self.player.killing_spree} Killing Spree\n" if self.player.killing_spree else '') +
+            (f"{self.player.dominating} Dominating\n" if self.player.dominating else '') +
+            (f"{self.player.unstoppable} Unstoppable\n" if self.player.unstoppable else '') +
+            (f"{self.player.godlike} Godlike\n" if self.player.godlike else '')
+        )
+        if self.player_stats_mode is True:
+            if advanced_stats or achievements:
+                self.container.add_item(discord.ui.TextDisplay(content=(
+                    (f"## Advanced stats\n{advanced_stats}" if advanced_stats else '') +
+                    (f"## Achievements\n{achievements}" if achievements else '')
+                )))
+        else:
+            if self.player.best_weapons or self.player.avatar_mods:
+                self.container.add_item(discord.ui.TextDisplay(content=(
+                    (f"## Top 5 weapons\n{self.player.best_weapons}\n" if self.player.best_weapons else '') +
+                    (f"## Current avatar mods\n{self.player.avatar_mods}" if self.player.avatar_mods else '')
+                )))
+        if self.player.best_weapons or self.player.avatar_mods:
+            self.container.add_item(discord.ui.Separator())
+            self.container.add_item(self.menu_row)
 
         return self
 

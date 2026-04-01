@@ -51,7 +51,8 @@ class PlayerInfoView(discord.ui.LayoutView):
             f"🏅 {self.player.xp_progress()}\n"
             f"💀 **{self.player.kills}** kills | **{self.player.deaths}** deaths | **{self.player.kd_ratio or '-'} K/D**\n"
             f"⚔️ In **{self.player.matches}** matches, **{self.player.wins}** wins (*{self.player.win_ratio} win rate*)\n" +
-            (f"> 🛡️ **`{self.player.name}` is an in-game administrator!**\n" if self.player.is_admin else '')
+            (f"> 🛡️ **`{self.player.name}` is an in-game administrator!**\n" if self.player.is_admin else '') +
+            f"-# Account created on {discord.utils.format_dt(self.player.created)}"
         ))
         if self.player.color_theme:
             self.container.add_item(discord.ui.Section(stats, accessory=discord.ui.Thumbnail(

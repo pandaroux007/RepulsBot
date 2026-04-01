@@ -91,12 +91,16 @@ class DefaultAntiraidSettings:
     ANTIRAID_STATE = 1 # (0/1 = SQL boolean) antiraid enabled by default
 
     USER_MAX_TRIGGERS_BEFORE_MOD = 3 # maximum number of triggers before auto-moderator action
-    USER_MSG_SPAM_THRESHOLD = 4
-    USER_MSG_SPAM_INTERVAL_S = 2
+    USER_MSG_SPAM_THRESHOLD = 4 # maximum number of messages allowed within the given time
+    USER_MSG_SPAM_INTERVAL_S = 2 # minimum interval in which this quantity of message is allowed
 
-    CHANNEL_LOCK_DURATION_MN = 30
+    USER_CHANNEL_SPAM_THRESHOLD = 3 # number of messages from a user across multiple channels on which to perform sampling
+    USER_CHANNEL_SPAM_INTERVAL_S = USER_CHANNEL_SPAM_THRESHOLD * 4 # 3s (margin of 1s) for 1 message per channel on average * number of messages
+
     CHANNEL_MAX_TRIGGERS_BEFORE_LOCK = 5
-    CHANNEL_TRIGGERS_INTERVAL_S = 300 # 5mn
+    CHANNEL_LOCK_DURATION_MN = 30
+    CHANNEL_SPAM_INTERVAL_S = 5
+    CHANNEL_SPAM_THRESHOLD = 12
 
 # ------------------------------------- texts and links
 """
@@ -114,6 +118,7 @@ class DefaultEmojis:
     ERROR = CROSS
     CRITICAL = '\U0001F6A8' # :police_car_light:
     INFO = f'\u2139{VARIATION_SELECTOR_IMG}' # :information_source:
+    MODERATION = '\U0001f6e1' # :shield:
     NO_ENTRY = '\u26D4' # :no_entry:
     UP_ARROW = '\u2B06' # :up_arrow:
     OFFLINE = '\U0001F534' # :red_circle:

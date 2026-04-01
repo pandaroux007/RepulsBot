@@ -128,8 +128,9 @@ class LogCog(commands.Cog, name=CogsNames.LOG):
             .description(f"[Jump to message]({after.jump_url})")
             .footer(f"Message ID: {after.id}")
         )
+        before_text = before.content if before.content else "*Contained only media*" if before.attachments else "*Empty*"
         if text_changed:
-            builder.add_field(name="Before", value=before.content or "*Empty*")
+            builder.add_field(name="Before", value=before_text)
             builder.add_field(name="After", value=after.content or "*Empty*")
         if attach_removed:
             builder.add_media(title="Attachments removed", files=attach_removed)

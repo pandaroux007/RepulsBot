@@ -25,6 +25,7 @@ from data.constants import (
 from tools.log_builder import (
     LogBuilder,
     LogColor,
+    MODLOG,
     BOTLOG
 )
 
@@ -135,7 +136,7 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=300) # 5 minutes
         log_msg = await (
-            LogBuilder(self.bot, type=BOTLOG, color=LogColor.GREEN)
+            LogBuilder(self.bot, type=MODLOG, color=LogColor.GREEN)
             .title(f"🎟️ New ticket [`{ticket_name}`]({ticket_channel.jump_url}) of type `{self._get_ticket_label(ticket_type)}` created by {ticket_author.mention}")
             .add_field(name="Ticket title", value=f"> {ticket_title}")
             .add_field(name="Description", value=f">>> *{ticket_content if len(ticket_content) <= 400 else ticket_content[:400].strip() + "..."}*")
@@ -279,7 +280,7 @@ class TicketsCog(commands.Cog, name=CogsNames.TICKETS):
         else: # close ticket
             ticket = await self.bot.tickets_storage.get_ticket(interaction.channel.name)
             log = (
-                LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
+                LogBuilder(self.bot, type=MODLOG, color=LogColor.RED)
                 .title(f"🎟️ The ticket {ticket.mention} has been closed by {interaction.user.mention}")
                 .add_field(name="Ticket Title", value=f"> {ticket.title}")
                 .add_field(name="Ticket Author", value=ticket.author)

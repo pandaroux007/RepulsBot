@@ -90,12 +90,18 @@ class ModerationStorage():
                     CREATE TABLE IF NOT EXISTS settings (
                         id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
                         antiraid_enabled BOOLEAN NOT NULL DEFAULT {DefaultAntiraidSettings.ANTIRAID_STATE},
-                        user_max_repeat_before_mod INTEGER DEFAULT {DefaultAntiraidSettings.USER_MAX_TRIGGERS_BEFORE_MOD},
+
+                        user_max_triggers_before_mod INTEGER DEFAULT {DefaultAntiraidSettings.USER_MAX_TRIGGERS_BEFORE_MOD},
                         user_msg_spam_threshold INTEGER DEFAULT {DefaultAntiraidSettings.USER_MSG_SPAM_THRESHOLD},
                         user_msg_spam_interval_s INTEGER DEFAULT {DefaultAntiraidSettings.USER_MSG_SPAM_INTERVAL_S},
-                        channel_lock_duration_mn INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_LOCK_DURATION_MN},
+
+                        user_channel_spam_threshold INTEGER DEFAULT {DefaultAntiraidSettings.USER_CHANNEL_SPAM_THRESHOLD},
+                        user_channel_spam_interval_s INTEGER DEFAULT {DefaultAntiraidSettings.USER_CHANNEL_SPAM_INTERVAL_S},
+
                         channel_max_triggers_before_lock INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_MAX_TRIGGERS_BEFORE_LOCK},
-                        channel_triggers_interval_s INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_TRIGGERS_INTERVAL_S}
+                        channel_lock_duration_mn INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_LOCK_DURATION_MN},
+                        channel_spam_interval_s INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_SPAM_INTERVAL_S},
+                        channel_spam_threshold INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_SPAM_THRESHOLD}
                     )
                     """
                 )
@@ -206,7 +212,7 @@ class ModerationStorage():
         Returns
         --------
         Optional[`datetime`]
-            end-of-lock datetime if the channel is locked, otherwise None
+            End-of-lock datetime if the channel is locked, otherwise None
         """
         try:
             async with self._pool.acquire() as conn:
@@ -220,7 +226,7 @@ class ModerationStorage():
             )
             return None
 
-    async def set_channel_lock(self, channel_id: int, duration_minutes: int = 30) -> bool:
+    async def set_channel_lock(self, channel_id: int, lock_until: datetime) -> bool:
         """
         Parameters
         -----------
@@ -237,9 +243,8 @@ class ModerationStorage():
         try:
             async with self._pool.acquire() as conn:
                 await conn.execute(
-                    """INSERT OR REPLACE INTO channel_locks (channel_id, locked_until)
-                    VALUES (?, DATETIME('now', '+' || ? || ' minutes'))""",
-                    (channel_id, duration_minutes)
+                    "INSERT OR REPLACE INTO channel_locks (channel_id, locked_until) VALUES (?, ?)",
+                    (channel_id, lock_until.isoformat())
                 )
                 await conn.commit()
                 await self.load_channel_locks() # update cache

@@ -37,25 +37,25 @@ Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one
 ### Main contributors
 - [*itsdocski*](https://github.com/tahirG)
 - *sergiolan55*
-- *AmanLovesCats*
+- [*AmanLovesCats*](https://github.com/AmanLovesCats)
 ### Question/answer creators for the FAQ
 - *snipertoad*
 - *BratzelBrezel*
-- *Abyss*
+- [*Abyss*](https://github.com/abysmal-abyss)
 - *eagoose*
 - *AlfaStephano48*
 ### Other contributors
 #### NaN server
 - *martin_9202*
-- *the_yerminator*
-- *lexedia*
+- [*the_yerminator*](https://github.com/YoannDev90)
+- [*lexedia*](https://github.com/Lexedia)
 #### discord.py server
 - *solstice/solsticeshard*
-- *Lillifr/fretgfr*
+- [*Lillifr/fretgfr*](https://github.com/fretgfr)
 - *Mellow/codinglyl*
-- *Sheeb/soheab_*
-- *Link/hyliantwink*
-- *死/iyad8888*
+- [*Sheeb/soheab_*](https://github.com/Soheab)
+- [*Link/hyliantwink*](https://github.com/AbstractUmbra)
+- [*死/iyad8888*](https://github.com/iyad-f)
 
 </details>
 

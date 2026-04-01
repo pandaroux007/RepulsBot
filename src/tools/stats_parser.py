@@ -1,6 +1,7 @@
 import json
 import aiohttp
 import re
+from datetime import datetime
 from io import BytesIO
 from PIL import (
     Image,
@@ -181,6 +182,7 @@ class PlayerProfile:
         self.username: str = None
         self.playfab_id: str = None
         self.is_admin: bool = False
+        self.created: datetime = None
         self._clan: str = None
         # Avatar
         self.primary_color: str | None = None
@@ -277,6 +279,7 @@ async def fetch_player(playfab_connection: PlayFabClient, name: str) -> PlayerPr
             return None
         player.username = name
 
+    player.created = datetime.fromisoformat(profile["data"]["AccountInfo"]["Created"])
     target_player_id: str = profile["data"]["AccountInfo"]["PlayFabId"]
 
     player_data = await playfab_connection.call_client_api(PlayFabAPI.GET_PLAYER_DATA, {

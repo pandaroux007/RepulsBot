@@ -55,8 +55,8 @@ class YouTubeStorage():
         """
         try:
             async with self._pool.acquire() as conn:
-                await conn.execute("DROP TABLE posted_videos")
-                await conn.execute("DROP TABLE forced_video")
+                await conn.execute("DROP TABLE IF EXISTS posted_videos")
+                await conn.execute("DROP TABLE IF EXISTS forced_video")
                 await conn.commit()
             await self.init_tables()
             return True

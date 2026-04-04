@@ -5,8 +5,9 @@ who want to mess with the server
 :copyright: (c) 2026-present pandaroux007
 :license: MIT, see LICENSE.txt for details.
 """
-
+from __future__ import annotations
 import discord
+from discord import app_commands
 from discord.ext import (
     commands,
     tasks
@@ -30,20 +31,41 @@ from collections import (
 from data.cogs import CogsNames
 from data.constants import (
     DefaultAntiraidSettings,
-    DefaultEmojis
+    DefaultEmojis,
+    AUTHORIZED_ROLES,
+    ADMIN_CMD,
+    CMD_PREFIX
 )
 
 from tools.log_builder import (
     LogBuilder,
     LogColor,
     BOTLOG,
-    MODLOG
+    MODLOG,
+    # log
 )
 
-from typing import TYPE_CHECKING
+from typing import (
+    Callable,
+    TYPE_CHECKING
+)
 if TYPE_CHECKING:
     from main import RepulsBot
 
+# ---------------------------------- unlock command interface
+class UnlockButton(discord.ui.Button):
+    def __init__(self, bot: RepulsBot, callback: Callable):
+        super().__init__(label="Unlock", emoji='🔓️')
+        self.bot = bot
+        self.callback_func = callback
+
+    async def callback(self, interaction: discord.Interaction):
+        if await self.callback_func(interaction):
+            await interaction.edit_original_response(f"> {DefaultEmojis.CHECK} The channel has been successfully reopened.")
+        else:
+            await interaction.edit_original_response(f"> {DefaultEmojis.WARN} The attempt to reopen failed.")
+
+# ---------------------------------- antiraid config
 MAX_MESSAGE_LIFESPAN = 60 # 1mn
 MAX_TRIGGER_DURATION = 900 # 15mn
 MAX_LOG_MESSAGES = 5000
@@ -70,7 +92,7 @@ class AntiraidState:
     reason: str | None = None
 
 class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
-    def __init__(self, bot: "RepulsBot"):
+    def __init__(self, bot: RepulsBot):
         self.bot = bot
         self.antiraid_current_state = AntiraidState()
         # https://www.geeksforgeeks.org/python/defaultdict-in-python/
@@ -78,7 +100,7 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         self.message_log: deque[LoggedMessage] = deque(maxlen=MAX_LOG_MESSAGES)
         self.user_triggers = defaultdict(deque)
         self.channel_triggers = defaultdict(deque)
-        self.unlock_tasks: set[asyncio.Task] = set()
+        self.unlock_tasks: dict[int, asyncio.Task] = {}
 
     # ---------------------------------- utility functions
     @property
@@ -87,54 +109,46 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
     @tasks.loop(seconds=60)
     async def memory_cleanup(self):
-        print("ANTIRAID > memory_cleanup")
         NOW = time.time()
 
         for user_id in list(self.user_triggers.keys()):
             dq = self.user_triggers[user_id]
-            print(f"ANTIRAID > memory cleanup: user {user_id} | {dq}")
             while dq and NOW - dq[0] > MAX_TRIGGER_DURATION:
-                print(f"ANTIRAID > trigger cleaned (user {user_id}, {len(dq)} triggers)")
                 dq.popleft()
             if not dq:
-                print(f"ANTIRAID > triggers entry for user {user_id} deleted")
                 del self.user_triggers[user_id]
 
         for channel_id in list(self.channel_triggers.keys()):
             dq = self.channel_triggers[channel_id]
-            print(f"ANTIRAID > memory cleanup: channel {channel_id} | {dq}")
             while dq and NOW - dq[0] > MAX_TRIGGER_DURATION:
-                print(f"ANTIRAID > trigger cleaned (channel {channel_id}, {len(dq)} triggers)")
                 dq.popleft()
             if not dq:
-                print(f"ANTIRAID > triggers entry for channel {channel_id} deleted")
                 del self.channel_triggers[channel_id]
 
         message_cleaned_count = 0
         while self.message_log and (NOW - self.message_log[0].timestamp) > MAX_MESSAGE_LIFESPAN:
             self.message_log.popleft()
             message_cleaned_count += 1
-        print(f"ANTIRAID > {message_cleaned_count} messages cleaned")
 
     async def cog_load(self):
-        print("ANTIRAID > cog_load")
         channel_locks = await self.bot.moderation_storage.load_channel_locks()
         if channel_locks:
             now = discord.utils.utcnow()
             for channel_id, locked_until in channel_locks.items():
+                is_in_past = bool(now >= locked_until)
                 task = self.bot.loop.create_task(
-                    self.unlock_channel(channel_id, locked_until, "Expired lock on restart" if (now >= locked_until) else "Automatic unlocking")
+                    self.unlock_channel(channel_id, None if is_in_past else locked_until, "Expired lock on restart" if is_in_past else "Automatic unlocking")
                 )
-                self.unlock_tasks.add(task)
-                task.add_done_callback(lambda t: self.unlock_tasks.discard(t))
+                self.unlock_tasks[channel_id] = task
+                task.add_done_callback(lambda t, cid=channel_id: self.unlock_tasks.pop(cid, None))
 
-        self.memory_cleanup.start()
+        if not self.memory_cleanup.is_running():
+            self.memory_cleanup.start()
 
     def cog_unload(self):
-        print("ANTIRAID > cog_unload")
         self.memory_cleanup.cancel()
 
-        for task in self.unlock_tasks:
+        for task in list(self.unlock_tasks.values()):
             if not task.done():
                 task.cancel()
         self.unlock_tasks.clear()
@@ -162,7 +176,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 break
             if msg.user_id == user_id:
                 messages.append(msg)
-        print(f"ANTIRAID > get_user_messages performed on {len(messages)} messages")
         return messages
 
     def get_channel_messages(self, channel_id: int, window_s: int, now: float) -> list[LoggedMessage]:
@@ -178,7 +191,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 break
             if msg.channel_id == channel_id:
                 messages.append(msg)
-        print(f"ANTIRAID > get_channel_messages performed on {len(messages)} messages")
         return messages
 
     def add_user_trigger(self, user_id: int, now: float) -> int:
@@ -193,7 +205,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         dq.append(now)
         while dq and now - dq[0] > MAX_TRIGGER_DURATION:
             dq.popleft()
-        print(f"ANTIRAID > trigger added for user {user_id} (total {len(dq)}): {dq}")
         return len(dq)
     
     def add_channel_trigger(self, channel_id: int, now: float) -> int:
@@ -208,7 +219,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         dq.append(now)
         while dq and now - dq[0] > MAX_TRIGGER_DURATION:
             dq.popleft()
-        print(f"ANTIRAID > trigger added for channel {channel_id} (total {len(dq)}): {dq}")
         return len(dq)
 
     def get_spam_message(self, user_id: int, window_s: int, now: float) -> dict[int, list[discord.Object]]:
@@ -231,14 +241,12 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
         if user.bot or not message.guild or not config or config.get("antiraid_enabled", DefaultAntiraidSettings.ANTIRAID_STATE) == 0:
             return
-        # if user.guild_permissions.administrator or any(role.id in AUTHORIZED_ROLES for role in user.roles):
-        #     return
+        if user.guild_permissions.administrator or any(role.id in AUTHORIZED_ROLES for role in user.roles):
+            return
 
-        print(f"ANTIRAID > start handling message {message.jump_url}")
-        start_time = time.perf_counter()
         NOW = time.time()
-        is_recently_joined = False # bool(isinstance(user, discord.Member) and (discord.utils.utcnow() - user.joined_at) < timedelta(days=3))
-        is_new_account = False # bool((discord.utils.utcnow() - user.created_at) < timedelta(weeks=1))
+        is_recently_joined = bool(isinstance(user, discord.Member) and (discord.utils.utcnow() - user.joined_at) < timedelta(days=3))
+        is_new_account = bool((discord.utils.utcnow() - user.created_at) < timedelta(weeks=1))
 
         entry = LoggedMessage(
             user_id=user.id,
@@ -277,7 +285,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         MSG_SPAM_WINDOW = config.get("user_msg_spam_interval_s", DefaultAntiraidSettings.USER_MSG_SPAM_INTERVAL_S)
         user_msg_count = len(self.get_user_messages(entry.user_id, MSG_SPAM_WINDOW, NOW))
         if user_msg_count >= MSG_SPAM_THRESHOLD:
-            print(f"ANTIRAID > burst_spam detected for user {user.id}")
             burst_spam = True
 
         # Rapid spamming between multiple channels
@@ -285,7 +292,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         CHANNELS_SPAM_WINDOW = config.get("user_channel_spam_interval_s", DefaultAntiraidSettings.USER_CHANNEL_SPAM_INTERVAL_S)
         user_channel_count = len(set(msg.channel_id for msg in self.get_user_messages(entry.user_id, CHANNELS_SPAM_WINDOW, NOW)))
         if user_channel_count >= CHANNELS_SPAM_THRESHOLD:
-            print(f"ANTIRAID > multi_channel_spam detected for user {user.id}")
             multi_channel_spam = True
 
         if burst_spam or multi_channel_spam:
@@ -310,7 +316,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         CHANNEL_SPAM_WINDOW = config.get("channel_spam_interval_s", DefaultAntiraidSettings.CHANNEL_SPAM_INTERVAL_S)
         channel_msg_count = len(self.get_channel_messages(entry.channel_id, CHANNEL_SPAM_WINDOW, NOW))
         if channel_msg_count >= CHANNEL_SPAM_THRESHOLD:
-            print(f"ANTIRAID > spam in channel {entry.channel_id} detected")
             self.add_channel_trigger(entry.channel_id, NOW)
 
         MAX_CHANNEL_TRIGGERS = config.get("channel_max_triggers_before_lock", DefaultAntiraidSettings.CHANNEL_MAX_TRIGGERS_BEFORE_LOCK)
@@ -334,7 +339,7 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                         await channel.delete_messages(messages, reason=PURGE_REASON)
 
                     await (
-                        LogBuilder(self.bot, type=BOTLOG, color=LogColor.ORANGE)
+                        LogBuilder(self.bot, type=MODLOG, color=LogColor.ORANGE)
                         .title(f"{DefaultEmojis.MODERATION} Purge(s) performed")
                         .description(f"Target user: {user.id}\nReason: {PURGE_REASON}\n**{len(channels_to_delete.keys())}** channel(s) | **{deleted_count}** messages")
                         .send()
@@ -346,7 +351,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                         .description(f"Target user: {user.id}\nReason: {PURGE_REASON}\n```\n{e}\n```")
                         .send()
                     )
-        print(f"ANTIRAID > end handling message {message.jump_url} ({time.perf_counter() - start_time:.4f}s)")
 
     async def lock_channel(self, config: dict, channel: discord.TextChannel):
         lock_duration_mn = config.get("channel_lock_duration_mn", DefaultAntiraidSettings.CHANNEL_LOCK_DURATION_MN)
@@ -362,18 +366,18 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 reason=f"Antispam - channel locked for {lock_duration_mn} minutes"
             )
             await self.bot.moderation_storage.set_channel_lock(channel.id, lock_until)
-            task = self.bot.loop.create_task(
-                self.unlock_channel(channel.id, lock_until, "Automatic unlock")
-            )
-            self.unlock_tasks.add(task)
-            task.add_done_callback(lambda t: self.unlock_tasks.discard(t))
+            task = self.bot.loop.create_task(self.unlock_channel(channel.id, lock_until, "Automatic unlock"))
+            previous_task = self.unlock_tasks.pop(channel.id, None)
+            if previous_task and not previous_task.done():
+                previous_task.cancel()
+            self.unlock_tasks[channel.id] = task
+            task.add_done_callback(lambda t, cid=channel.id: self.unlock_tasks.pop(cid, None))
             await (
                 LogBuilder(self.bot, type=MODLOG, color=LogColor.ORANGE)
                 .title(f"{DefaultEmojis.MODERATION} Channel {channel.mention} locked")
                 .description(f"Auto lock (by anti-spam) until: {discord.utils.format_dt(lock_until)}")
                 .send()
             )
-            print(f"ANTIRAID > locked {channel.jump_url}")
         except Exception as e:
             await (
                 LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
@@ -382,27 +386,30 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 .send()
             )
 
-    async def unlock_channel(self, channel_id: int, lock_until: datetime = None, reason: str = None):
+    async def unlock_channel(self, channel_id: int, lock_until: datetime = None, reason: str = None) -> bool:
         if lock_until is not None:
             # If the datetime is in the past, the function will execute instantly
             await discord.utils.sleep_until(when=lock_until)
 
+        self.unlock_tasks.pop(channel_id, None)
         await self.bot.moderation_storage.del_channel_lock(channel_id)
         channel = self.bot.get_channel(channel_id)
         if not channel:
-            return
+            return False
         try:
             await channel.set_permissions(channel.guild.default_role, reason=reason, send_messages=True)
             await channel.send(embed=discord.Embed(
                 color=discord.Color.dark_blue(),
-                title=f"🔓️ Channel unlocked ({reason if reason else ''})",
+                title="🔓️ Channel unlocked",
                 description=f"The channel {channel.mention} has been reopened (reason: *{reason}*)"
             ))
             await (
                 LogBuilder(self.bot, type=MODLOG, color=LogColor.ORANGE)
                 .title(f"{DefaultEmojis.MODERATION} Channel {channel.mention} unlocked")
+                .description(f"> {reason}" if reason else None)
                 .send()
             )
+            return True
         except Exception as e:
             await (
                 LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
@@ -410,6 +417,7 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 .description(f"Target channel: {channel.mention}\n```\n{e}\n```")
                 .send()
             )
+            return False
 
     async def apply_mod_action(self, user: discord.Member, action: ModActionType, reason: str = None):
         try:
@@ -427,7 +435,6 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 NOTE: There's no need to purge messages here; it will
                 be done when they expire via the cleanup loop.
                 """
-            print(f"ANTIRAID > mod action applied on {user.id} (reason: {reason}) {action.name}")
         except Exception as e:
             await (
                 LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
@@ -435,6 +442,70 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 .description(f"Target user: {user.id}\nModerator action attempted: {action.name}{f"\nReason: *{reason}*" if reason else ''}\n```\n{e}\n```")
                 .send()
             )
+
+    @commands.command(description="[ADMIN] Allows you to define the value of an antiraid threshold")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ADMIN_CMD)
+    async def antiraid_set_param(self, ctx: commands.Context, param: str, value: int):
+        await ctx.message.delete()
+        if await self.bot.moderation_storage.set_antiraid_setting(ctx.author, param, value):
+            await ctx.send(content=f"> {DefaultEmojis.CHECK} `{param}` set to the value `{value}`", delete_after=4)
+        else:
+            await ctx.send(content=f"> {DefaultEmojis.ERROR} Recording failed (does the parameter/value exist?). *See logs for details*.", delete_after=4)
+
+    @commands.command(description="[ADMIN] Resets all settings to default values (antiraid enabled)")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ADMIN_CMD)
+    async def antiraid_set_default(self, ctx: commands.Context):
+        await ctx.message.delete()
+        if await self.bot.moderation_storage.set_antiraid_default(ctx.author):
+            await ctx.send(content=(
+                f"> {DefaultEmojis.CHECK} Anriraid settings reset to default\n"
+                f"➜ *To change a specific setting, use `{CMD_PREFIX}antiraid_set_param`: **`param`**, **`value`***\n"
+                f"➜ *To view current settings, use `{CMD_PREFIX}view_antiraid_settings`*"
+            ), delete_after=4)
+        else:
+            await ctx.send(content=f"> {DefaultEmojis.ERROR} Default values cannot be used. *See logs for details*.", delete_after=4)
+
+    @commands.command(description="[ADMIN] Display a simple view of the current settings")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ADMIN_CMD)
+    async def view_antiraid_settings(self, ctx: commands.Context):
+        await ctx.message.delete()
+        config = await self.config
+        if config:
+            display = '\n'.join(f"- `{param}`: ***`{value}`***" for param, value in config.items())
+            await ctx.author.send(content=f"> {DefaultEmojis.CHECK} Raw list of current parameters\n{display}")
+        else:
+            await ctx.send(content=f"> {DefaultEmojis.ERROR} Unable to access values.. *See logs for details*.", delete_after=4)
+
+    @app_commands.command(description="[ADMIN] Allows you to unlock a channel for everyone")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ADMIN_CMD)
+    @app_commands.describe(channel="The channel you want to unlock now")
+    async def unlock(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        await interaction.response.defer(ephemeral=True)
+
+        view = discord.ui.LayoutView()
+        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        container.add_item(discord.ui.TextDisplay(content=f"### {DefaultEmojis.MODERATION} Manual unlocking"))
+
+        lock_until = await self.bot.moderation_storage.get_channel_lock(channel.id)
+        if lock_until is not None:
+            container.add_item(discord.ui.TextDisplay(content=f"{channel.mention} has been locked until {discord.utils.format_dt(lock_until)}"))
+            container.add_item(discord.ui.Separator())
+            container.add_item(discord.ui.Section(
+                discord.ui.TextDisplay(content=f"> Do you want to reopen {channel.mention} now ?"),
+                accessory=UnlockButton(self.bot, self.unlock_channel(channel.id, reason=f"Administrator {interaction.user.mention} manually reopened the channel"))
+            ))
+        else:
+            container.add_item(discord.ui.TextDisplay(content=(
+                f"{channel.mention} is not currently locked\n"
+                f"*There are currently `{len(self.channel_triggers.get(channel.id, 0))}` antispam triggers here.*"
+            )))
+
+        view.add_item(container)
+        await interaction.followup.send(view=view, ephemeral=True)
 
 async def setup(bot: "RepulsBot"):
     await bot.add_cog(AntiRaidCog(bot))

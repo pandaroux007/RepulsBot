@@ -159,7 +159,11 @@ class LogCog(commands.Cog, name=CogsNames.LOG):
     async def on_member_join(self, member: discord.Member):
         welcome_channel: discord.PartialMessageable = self.bot.get_partial_messageable(IDs.serverChannel.WELCOME)
         rules_channel: discord.PartialMessageable = self.bot.get_partial_messageable(IDs.serverChannel.RULES)
-        await welcome_channel.send(content=f"Welcome {member.mention} ({number(member.guild.member_count)} member)! Please read {rules_channel.jump_url}, then have fun!")
+        verification_channel: discord.PartialMessageable = self.bot.get_partial_messageable(IDs.serverChannel.VERIFICATION)
+        await welcome_channel.send(content=(
+            f"Welcome {member.mention} ({number(member.guild.member_count)} member)! "
+            f"Please complete the captcha at {verification_channel.jump_url} and read {rules_channel.jump_url}, then have fun!"
+        ))
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(LogCog(bot))

@@ -283,27 +283,34 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
     @app_commands.command(description="[ADMIN] Force a \"video message\" to be featured")
     @app_commands.guild_only()
     @app_commands.default_permissions(ADMIN_CMD)
-    @app_commands.describe(message_link="Link to the message containing the video to force to be featured")
+    @app_commands.describe(message="Link/ID to the message containing the video to force to be featured")
     @app_commands.choices(
         forced_until=[app_commands.Choice(name=f"{index} {plurial("day", index)}", value=index) for index in range(1, 8)]
     )
-    async def set_forced_video(self, interaction: discord.Interaction, message_link: str, forced_until: app_commands.Choice[int]):
+    async def set_forced_video(self, interaction: discord.Interaction, message: str, forced_until: app_commands.Choice[int]):
         await interaction.response.defer(ephemeral=True)
         result = discord.Embed(
             title="Set the forced featured video",
             color=discord.Color.dark_blue()
         )
 
-        match = re.search(DISCORD_MSG_ID_REGEX, message_link)
-        if not match:
-            result.description = f"{DefaultEmojis.ERROR} Couldn't parse a message id from input message link"
+        message_id = None
+        if message.isdigit(): # ID
+            message_id = int(message)
+        else: # link
+            match = re.search(DISCORD_MSG_ID_REGEX, message)
+            if match:
+                message_id = int(match.group(1))
+        match = re.search(DISCORD_MSG_ID_REGEX, message)
+        if not message_id:
+            result.description = f"{DefaultEmojis.ERROR} Couldn't parse a valid message ID from input"
             await interaction.followup.send(embed=result, ephemeral=True)
             return
         message_id = int(match.group(1))
         try:
             featured_videos_channel: discord.PartialMessageable = self.bot.get_partial_messageable(IDs.serverChannel.FEATURED_VIDEO)
-            message = await featured_videos_channel.fetch_message(message_id)
-            if not is_validated(message):
+            video_message = await featured_videos_channel.fetch_message(message_id)
+            if not is_validated(video_message):
                 result.description = (
                     f"{DefaultEmojis.WARN} The video you're trying to feature hasn't been approved, "
                     "so I don't know if it complies with Poki's publishing guidelines.\n\n"
@@ -312,11 +319,11 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                 await interaction.followup.send(embed=result, ephemeral=True)
                 return
         except discord.NotFound:
-            result.description = f"{DefaultEmojis.ERROR} The link must come from the featured videos channel\n(*couldn't found the specified message from link*)"
+            result.description = f"{DefaultEmojis.ERROR} Couldn't found the specified message from link\n(*The link must come from the featured videos channel*)"
             await interaction.followup.send(embed=result, ephemeral=True)
             return
 
-        if not get_yt_url(message=message.content):
+        if not get_yt_url(message=video_message.content):
             result.description = f"{DefaultEmojis.ERROR} This message doesn't contain a video!"
             await interaction.followup.send(embed=result, ephemeral=True)
             return
@@ -324,17 +331,17 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         edited = await self.bot.youtube_storage.set_forced_video(message_id, forced_until.value)
         if edited:
             result.description = (
-                f"{DefaultEmojis.CHECK} [This video has been configured]({message.jump_url}) as forced for {forced_until.value} {plurial("day", forced_until.value)}\n"
+                f"{DefaultEmojis.CHECK} [This video has been configured]({video_message.jump_url}) as forced for {forced_until.value} {plurial("day", forced_until.value)}\n"
                 "*Note that the countdown will start when the video is actually sent to the site, not now.* "
                 "**To refresh the site video, please restart the system**"
             )
             await log(
                 bot=self.bot, type=BOTLOG, color=LogColor.BLUE,
                 title=f"{DefaultEmojis.INFO} {interaction.user.mention} forced a video",
-                msg=f"➜ {message_link} (for {forced_until.value} {plurial("day", forced_until.value)})"
+                msg=f"➜ {video_message.jump_url} (for {forced_until.value} {plurial("day", forced_until.value)})"
             )
         else:
-            result.description = f"{DefaultEmojis.ERROR} ID of {message.jump_url} registration failed"
+            result.description = f"{DefaultEmojis.ERROR} ID of {video_message.jump_url} registration failed"
         await interaction.followup.send(embed=result, ephemeral=True)
 
     @app_commands.command(description="[ADMIN] Clear the forced featured video")

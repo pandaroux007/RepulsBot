@@ -69,8 +69,8 @@ class TicketsStorage():
         """
         try:
             async with self._pool.acquire() as conn:
-                await conn.execute("DROP TABLE tickets")
-                await conn.execute("DROP TABLE ticket_cooldown")
+                await conn.execute("DROP TABLE IF EXISTS tickets")
+                await conn.execute("DROP TABLE IF EXISTS ticket_cooldown")
                 await conn.commit()
             await self.init_tables()
             return True

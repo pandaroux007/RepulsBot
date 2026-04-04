@@ -29,7 +29,10 @@ from tools.log_builder import (
     BOTLOG
 )
 
-from typing import TYPE_CHECKING
+from typing import (
+    Callable,
+    TYPE_CHECKING
+)
 if TYPE_CHECKING:
     from main import RepulsBot
 
@@ -186,12 +189,8 @@ class TicketModal(discord.ui.Modal, title="Create a new ticket"):
 
 # ---------------------------------- closing and cancel closing view
 class CancelClosingButton(discord.ui.Button):
-    def __init__(self, callback: callable):
-        super().__init__(
-            style=discord.ButtonStyle.danger,
-            label="Cancel closing",
-            emoji='✋'
-        )
+    def __init__(self, callback: Callable):
+        super().__init__(style=discord.ButtonStyle.danger, label="Cancel closing", emoji='✋')
         self.callback_func = callback
 
     async def callback(self, interaction: discord.Interaction):

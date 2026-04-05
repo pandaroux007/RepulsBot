@@ -4,14 +4,11 @@
 
 💬 ***The official bot for the repuls.io discord server***
 
-[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 [![Join the repuls.io discord!](https://img.shields.io/discord/603655329120518223?logo=discord&logoColor=white&color=black)](https://discord.com/invite/2YKgx2HSfR)
 [![GitHub](https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white)](https://github.com/pandaroux007/RepulsBot/releases)
-
-**Project statistics**
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 [![Built with Python3](https://img.shields.io/badge/built%20with-Python3-yellow.svg)](https://www.python.org/)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![GitHub Release](https://img.shields.io/github/v/release/pandaroux007/RepulsBot?include_prereleases&style=flat&logo=auto&color=blue&link=https%3A%2F%2Fgithub.com%2Fpandaroux007%RepulsBot%2Freleases)](https://github.com/pandaroux007/RepulsBot/releases)
 [![Commits](https://img.shields.io/github/commit-activity/t/pandaroux007/RepulsBot)](https://github.com/pandaroux007/RepulsBot/commits/main/)
 [![Stars](https://img.shields.io/github/stars/pandaroux007/RepulsBot.svg?style=social&label=Stars)](https://github.com/pandaroux007/RepulsBot)
@@ -20,6 +17,9 @@
 
 # ✨ About
 ## What's repuls.io ?
+
+<img align="right" width="100" height="100" src="https://repuls.io/img/repuls_logo_icon.png">
+
 [Repuls.io](https://repuls.io/home) is the future of browser games.
 The best free instantly accessible multiplayer first-person shooter for your browser with no sign-up or payment required!
 
@@ -64,7 +64,7 @@ ___
 You can find details about the front-end operation of the bot in [the wiki](https://github.com/pandaroux007/RepulsBot/wiki), this section is intended for developers only.
 
 > [!NOTE]
-> **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!** Even if you don't want to contribute, you can find all the details for configuring and launching the bot in [CONTRIBUTING.md](CONTRIBUTING.md)
+> **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!**
 
 ### Useful tools for contributing
 - Create interfaces with Components v2: https://discord.builders/

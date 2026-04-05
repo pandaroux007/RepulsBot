@@ -65,9 +65,7 @@ class LogBuilder:
         return self
 
     async def send(self, enable_ping: bool = False) -> discord.Message | None: 
-        log_channel = self.bot.get_channel(IDs.serverChannel.BOTLOG if self.logtype == BOTLOG else IDs.serverChannel.MODLOG)
-        if not log_channel:
-            return None
+        log_channel = self.bot.get_partial_messageable(IDs.serverChannel.BOTLOG if self.logtype == BOTLOG else IDs.serverChannel.MODLOG)
         container = discord.ui.Container(accent_color = self.color)
 
         if self._title:

@@ -34,8 +34,7 @@ from data.constants import (
     DefaultEmojis,
     IDs,
     AUTHORIZED_ROLES,
-    ADMIN_CMD,
-    CMD_PREFIX
+    ADMIN_CMD
 )
 
 from tools.log_builder import (
@@ -43,7 +42,7 @@ from tools.log_builder import (
     LogColor,
     BOTLOG,
     MODLOG,
-    # log
+    log
 )
 
 from typing import (
@@ -75,8 +74,64 @@ class UnlockButton(discord.ui.Button):
         view.add_item(container)
         await interaction.response.edit_message(view=view)
 
-# ---------------------------------- raid alerts ui
-...
+# ---------------------------------- raid status ui
+class MarkAlertAsComplete(discord.ui.Button):
+    def __init__(self, parent_view: "RaidStatusView"):
+        super().__init__(emoji='🛡️', label="Mark as complete", style=discord.ButtonStyle.danger)
+        self.parent_view = parent_view
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        self.parent_view.antiraid.antiraid_current_state.active = False
+        await self.parent_view.generate_interface()
+        await interaction.response.edit_message(view=self.parent_view)
+        await log(
+            bot=self.parent_view.antiraid.bot, type=BOTLOG, color=LogColor.ORANGE,
+            title=f"{DefaultEmojis.MODERATION} An antiraid alert has been cancelled by {interaction.user.mention}"
+        )
+
+class RaidStatusView(discord.ui.LayoutView):
+    def __init__(self, parent_cog: "AntiraidCog"):
+        super().__init__()
+        self.container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        self.add_item(self.container)
+        self.antiraid = parent_cog
+
+    async def generate_interface(self):
+        self.container.clear_items()
+
+        state = self.antiraid.antiraid_current_state
+        channel_locks = await self.antiraid.channels_lock
+        _config = await self.antiraid.config
+        antiraid_enabled = bool(_config.get("antiraid_enabled", DefaultAntiraidSettings.ANTIRAID_STATE))
+
+        self.container.add_item(discord.ui.TextDisplay(content=(
+            f"### {DefaultEmojis.MODERATION} Antiraid System Status\n"
+            f"The antiraid system is currently `{f"{DefaultEmojis.ONLINE} enabled" if antiraid_enabled else f"{DefaultEmojis.OFFLINE} disabled"}`"
+        )))
+        self.container.add_item(discord.ui.Separator())
+        self.container.add_item(discord.ui.TextDisplay(content=(
+            f"**Users tracked**: {len(self.antiraid.user_triggers)}\n"
+            f"**Channels tracked**: {len(self.antiraid.channel_triggers)}\n"
+            f"**Logged messages**: {len(self.antiraid.message_log)}\n"
+            f"**Scheduled unlock(s)**: {len(self.antiraid.unlock_tasks)} | {len(channel_locks)} channel(s) locked"
+        )))
+        self.container.add_item(discord.ui.Separator())
+        raid_status = discord.ui.TextDisplay(content=(
+            f"**Raid status**: {f"{DefaultEmojis.WARN} Active" if state.active else f"{DefaultEmojis.CHECK} Inactive"}\n" +
+            (f"**Latest antiraid alert**: {discord.utils.format_dt(state.last_alert, style='R')}" if state.last_alert else "*No previous alerts*") +
+            (f"\n> **Reason**: {state.reason}\n" if state.reason else '')
+        ))
+        if state.active:
+            self.container.add_item(discord.ui.Section(raid_status, accessory=MarkAlertAsComplete(self)))
+        else:
+            self.container.add_item(raid_status)
+        self.container.add_item(discord.ui.Separator())
+        self.container.add_item(discord.ui.TextDisplay(content=(
+            f"-# Message retention: {MAX_MESSAGE_LIFESPAN}s | Max messages in buffer: `{MAX_LOG_MESSAGES}`\n"
+            f"-# Trigger retention: {MAX_TRIGGER_LIFESPAN}s | Cooldown of antiraid alerts: {ANTIRAID_ALERTS_COOLDOWN_MN}mn"
+        )))
+
+        return self
 
 # ---------------------------------- antiraid config
 MAX_MESSAGE_LIFESPAN = 60 # 1mn
@@ -104,7 +159,7 @@ class AntiraidState:
     last_alert: datetime | None = None
     reason: str | None = None
 
-class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
+class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
     def __init__(self, bot: RepulsBot):
         self.bot = bot
         self.antiraid_current_state = AntiraidState()
@@ -148,6 +203,7 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
             message_cleaned_count += 1
 
     async def cog_load(self):
+        await self.bot.wait_until_ready()
         channel_locks = await self.channels_lock
         if channel_locks:
             now = discord.utils.utcnow()
@@ -223,7 +279,7 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         while dq and now - dq[0] > MAX_TRIGGER_LIFESPAN:
             dq.popleft()
         return len(dq)
-    
+
     def add_channel_trigger(self, channel_id: int, now: float) -> int:
         """
         Increments the trigger counter for the given channel
@@ -251,6 +307,7 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                     break
         return dict(channel_with_msg_ids)
 
+    # ---------------------------------- handle raid alerts
     async def trigger_raid_alert(self, reason: str, affected_channels: Optional[list[discord.TextChannel]] = None):
         now = discord.utils.utcnow()
 
@@ -260,23 +317,23 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
         view = discord.ui.LayoutView()
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
-        container.add_item(discord.ui.TextDisplay(content=f"### {DefaultEmojis.CRITICAL} Potential raid detected\n**Reason**:\n*{reason}*"))
+        container.add_item(discord.ui.TextDisplay(content=(
+            f"### {DefaultEmojis.CRITICAL} <@&{IDs.serverRoles.ADMIN}> Potential raid detected\n"
+            f"**Reason**: *{reason}*\n"
+        )))
         if affected_channels:
-            display = '\n'.join(f"- {channel.jump_url}" for channel in affected_channels)
+            display = ", ".join(channel.jump_url for channel in affected_channels)
             container.add_item(discord.ui.TextDisplay(content=f"**Affected channels**\n{display}"))
 
         container.add_item(discord.ui.Separator())
-        """ async def _mark_raid_complete():
-            self.antiraid_current_state.active = False
-            return True """
+        container.add_item(discord.ui.TextDisplay(content=(
+            f"-# Next alert available: {discord.utils.format_dt((now + timedelta(minutes=ANTIRAID_ALERTS_COOLDOWN_MN)), 'R')}. "
+            f"{DefaultEmojis.WARN} *The system will not return to normal alert status until an admin has completed the raid via the `status` command!*"
+        )))
 
-        container.add_item(discord.ui.Section(
-            discord.ui.TextDisplay(content=f"-# Next alert available: {discord.utils.format_dt((now + timedelta(minutes=ANTIRAID_ALERTS_COOLDOWN_MN)), 'R')}"),
-            accessory=discord.ui.Button(label="Mark the raid as complete", emoji='🛡️')
-        ))
         view.add_item(container)
         log_channel = self.bot.get_partial_messageable(IDs.serverChannel.BOTLOG)
-        await log_channel.send(view=view, ephemeral=True)
+        await log_channel.send(view=view)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -377,10 +434,17 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 try:
                     deleted_count = 0
                     channels_to_delete = self.get_spam_message(user.id, PURGE_WINDOW, NOW)
+                    purged_message_ids = set()
                     for channel_id, messages in channels_to_delete.items():
                         deleted_count += len(messages)
                         channel = message.guild.get_channel(int(channel_id))
                         await channel.delete_messages(messages, reason=PURGE_REASON)
+                        purged_message_ids.update(msg.id for msg in messages)
+                    if purged_message_ids:
+                        self.message_log = deque(
+                            [msg for msg in self.message_log if msg.message_id not in purged_message_ids],
+                            maxlen=MAX_LOG_MESSAGES
+                        )
 
                     await (
                         LogBuilder(self.bot, type=MODLOG, color=LogColor.ORANGE)
@@ -398,14 +462,14 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
         # Check if too many events have occurred to trigger a raid alert
         if self.antiraid_current_state.last_alert is None or (discord.utils.utcnow() - self.antiraid_current_state.last_alert).total_seconds() >= ANTIRAID_ALERTS_COOLDOWN_MN * 60:
-            channels_currently_locked = len(self.channel_triggers)
-            if channels_currently_locked >= 3:
-                channel_locks = await self.channels_lock
-                await self.trigger_raid_alert(
-                    reason=f"{channels_currently_locked} channels currently locked",
-                    affected_channels=[self.bot.get_channel(cid) for cid in channel_locks]
-                )
-                return
+            channels_currently_locked = len(self.unlock_tasks)
+            if channels_currently_locked:
+                if channels_currently_locked >= 2:
+                    await self.trigger_raid_alert(
+                        reason=f"{channels_currently_locked} channels currently locked",
+                        affected_channels=[self.bot.get_channel(cid) for cid in self.unlock_tasks]
+                    )
+                    return
             problematic_users = len(set(user_id for user_id in self.user_triggers if len(self.user_triggers[user_id]) >= MAX_USER_TRIGGERS))
             if problematic_users >= 5:
                 await self.trigger_raid_alert(reason=f"{channels_currently_locked} users above the detection thresholds")
@@ -450,12 +514,10 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
             # If the datetime is in the past, the function will execute instantly
             await discord.utils.sleep_until(when=lock_until)
 
-        self.unlock_tasks.pop(channel_id, None)
-        await self.bot.moderation_storage.del_channel_lock(channel_id)
-        channel = self.bot.get_channel(channel_id)
-        if not channel:
-            return False
         try:
+            channel = self.bot.get_channel(channel_id)
+            if not channel:
+                return False
             await channel.set_permissions(channel.guild.default_role, reason=reason, send_messages=True)
             await channel.send(embed=discord.Embed(
                 color=discord.Color.dark_blue(),
@@ -465,6 +527,8 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                     (f"\n**Reason**: *{reason}*" if reason else '')
                 )
             ))
+            self.unlock_tasks.pop(channel_id, None)
+            await self.bot.moderation_storage.del_channel_lock(channel_id)
             await (
                 LogBuilder(self.bot, type=MODLOG, color=LogColor.ORANGE)
                 .title(f"{DefaultEmojis.MODERATION} Channel {channel.mention} unlocked")
@@ -517,84 +581,65 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 .send()
             )
 
-    @commands.command(description="[ADMIN] Allows you to define the value of an antiraid threshold")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
-    async def antiraid_set_param(self, ctx: commands.Context, param: str, value: int):
-        await ctx.message.delete()
-        if await self.bot.moderation_storage.set_antiraid_setting(ctx.author, param, value):
-            await ctx.send(content=f"> {DefaultEmojis.CHECK} `{param}` set to the value `{value}`", delete_after=4)
-        else:
-            await ctx.send(content=f"> {DefaultEmojis.ERROR} Recording failed (does the parameter/value exist?). *See logs for details*.", delete_after=4)
+    # ---------------------------------- discord commands
+    # https://about.abstractumbra.dev/discord.py/2023/01/30/app-command-examples.html#cog-opt
+    antiraid = app_commands.Group(
+        name="antiraid", guild_only=True, default_permissions=ADMIN_CMD,
+        description="[ADMIN] Allows you to manage the entire antiraid system"
+    )
 
-    @commands.command(description="[ADMIN] Resets all settings to default values (antiraid enabled)")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
-    async def antiraid_set_default(self, ctx: commands.Context):
-        await ctx.message.delete()
-        if await self.bot.moderation_storage.set_antiraid_default(ctx.author):
-            await ctx.send(content=(
+    @antiraid.command(description="[ADMIN] Allows you to define the value of an antiraid threshold")
+    async def set_param(self, interaction: discord.Interaction, param: str, value: int):
+        is_edited = await self.bot.moderation_storage.set_antiraid_setting(interaction.user, param, value)
+        if is_edited:
+            await interaction.response.send_message(
+                content=f"> {DefaultEmojis.CHECK} `{param}` set to the value `{value}`",
+                ephemeral=True
+            )
+            await log(
+                bot=self.bot, type=BOTLOG, color=LogColor.ORANGE,
+                title=f"{DefaultEmojis.CRITICAL} Modifying an antiraid setting",
+                msg=f"Param `{param}` set to the value `{value}` by {interaction.user.mention}"
+            )
+        else:
+            await interaction.response.send_message(
+                content=f"> {DefaultEmojis.ERROR} Recording failed (does the parameter/value exist?). *See logs for details*.",
+                ephemeral=True
+            )
+
+    @antiraid.command(description="[ADMIN] Resets all settings to default values (antiraid enabled)")
+    async def reset_default(self, interaction: discord.Interaction):
+        if await self.bot.moderation_storage.set_antiraid_default(interaction.user):
+            await interaction.response.send_message(content=(
                 f"> {DefaultEmojis.CHECK} Anriraid settings reset to default\n"
-                f"➜ *To change a specific setting, use `{CMD_PREFIX}antiraid_set_param`: **`param`**, **`value`***\n"
-                f"➜ *To view current settings, use `{CMD_PREFIX}view_antiraid_settings`*"
-            ), delete_after=4)
+            ), ephemeral=True)
+            await log(
+                bot=self.bot, type=BOTLOG, color=LogColor.ORANGE,
+                title=f"{DefaultEmojis.CRITICAL} Antiraid setting reset to default values (by {interaction.user.mention})"
+            )
         else:
-            await ctx.send(content=f"> {DefaultEmojis.ERROR} Default values cannot be used. *See logs for details*.", delete_after=4)
+            await interaction.response.send_message(content=f"> {DefaultEmojis.ERROR} Default values cannot be used. *See logs for details*.", ephemeral=True)
 
-    @commands.command(description="[ADMIN] Display a simple view of the current settings")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
-    async def view_antiraid_settings(self, ctx: commands.Context):
-        await ctx.message.delete()
+    @antiraid.command(description="[ADMIN] Display a simple view of the current settings")
+    async def view_settings(self, interaction: discord.Interaction):
         config = await self.config
         if config:
             display = '\n'.join(f"- `{param}`: ***`{value}`***" for param, value in config.items())
-            await ctx.author.send(content=f"> {DefaultEmojis.CHECK} Raw list of current parameters\n{display}")
+            await interaction.response.send_message(content=f"> {DefaultEmojis.CHECK} Raw list of current parameters\n{display}")
         else:
-            await ctx.send(content=f"> {DefaultEmojis.ERROR} Unable to access values.. *See logs for details*.", delete_after=4)
+            await interaction.response.send_message(
+                content=f"> {DefaultEmojis.ERROR} Unable to access values.. *See logs for details*.",
+                ephemeral=True
+            )
 
-    @app_commands.command(description="[ADMIN] Display the current antiraid system state")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
-    async def antiraid_status(self, interaction: discord.Interaction):
+    @antiraid.command(description="[ADMIN] Display the current antiraid system state")
+    async def status(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-
-        state = self.antiraid_current_state
-        _config = await self.config
-        antiraid_enabled = bool(_config.get("antiraid_enabled", DefaultAntiraidSettings.ANTIRAID_STATE))
- 
-        view = discord.ui.LayoutView()
-        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
-        container.add_item(discord.ui.TextDisplay(content=(
-            f"### {DefaultEmojis.MODERATION} Antiraid System Status\n"
-            f"The antiraid system is currently `{f"{DefaultEmojis.ONLINE} enabled" if antiraid_enabled else f"{DefaultEmojis.OFFLINE} disabled"}`"
-            f"\n**Available antiraid commands**:\n{'\n'.join(f"➜ `{CMD_PREFIX}{cmd.name}`: {'\u0020'.join(f"***`{param}`***" for param in cmd.params)}" for cmd in self.get_commands())}"
-        )))
-        container.add_item(discord.ui.Separator())
-        container.add_item(discord.ui.TextDisplay(content=(
-            f"**Users tracked**: {len(self.user_triggers)}\n"
-            f"**Channels tracked**: {len(self.channel_triggers)}\n"
-            f"**Logged messages**: {len(self.message_log)}\n"
-            f"**Scheduled unlocks**: {len(self.unlock_tasks)}"
-        )))
-        container.add_item(discord.ui.Separator())
-        container.add_item(discord.ui.TextDisplay(content=(
-            f"**Raid status**: {f"{DefaultEmojis.WARN} Active" if state.active else f"{DefaultEmojis.CHECK} Inactive"}\n" +
-            (f"**Latest antiraid alert**: {discord.utils.format_dt(state.last_alert, style='R')}" if state.last_alert else "*No previous alerts*") +
-            (f"\n> **Reason**: {state.reason}\n" if state.reason else '')
-        )))
-        container.add_item(discord.ui.Separator())
-        container.add_item(discord.ui.TextDisplay(content=(
-            f"-# Message retention: {MAX_MESSAGE_LIFESPAN}s | Max messages in buffer: `{MAX_LOG_MESSAGES}`\n"
-            f"-# Trigger retention: {MAX_TRIGGER_LIFESPAN}s | Cooldown of antiraid alerts: {ANTIRAID_ALERTS_COOLDOWN_MN}mn"
-        )))
-        view.add_item(container)
+        view = RaidStatusView(self)
+        await view.generate_interface()
         await interaction.followup.send(view=view, ephemeral=True)
 
-    @app_commands.command(description="[ADMIN] Allows you to unlock a channel for everyone")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
-    @app_commands.describe(channel="The channel you want to unlock now (by default this one)")
+    @antiraid.command(description="[ADMIN] Allows you to unlock a channel (this one by default) for everyone")
     async def unlock(self, interaction: discord.Interaction, channel: Optional[discord.TextChannel]):
         await interaction.response.defer(ephemeral=True)
 
@@ -602,7 +647,7 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         container.add_item(discord.ui.TextDisplay(content=f"### {DefaultEmojis.MODERATION} Manual unlocking"))
 
-        channel = channel if channel else interaction.channel
+        channel = channel or interaction.channel
         lock_until = await self.bot.moderation_storage.get_channel_lock(channel.id)
         if lock_until is not None:
             container.add_item(discord.ui.TextDisplay(content=f"{channel.mention} has been locked until {discord.utils.format_dt(lock_until)}"))
@@ -621,4 +666,4 @@ class AntiRaidCog(commands.Cog, name=CogsNames.ANTIRAID):
         await interaction.followup.send(view=view, ephemeral=True)
 
 async def setup(bot: "RepulsBot"):
-    await bot.add_cog(AntiRaidCog(bot))
+    await bot.add_cog(AntiraidCog(bot))

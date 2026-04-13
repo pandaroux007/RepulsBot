@@ -110,7 +110,7 @@ class ReportModal(discord.ui.Modal, title="Report a message to the staff"):
             gallery.items = [discord.MediaGalleryItem(media=attachment.url) for attachment in self.target_message.attachments][:10]
             container.add_item(gallery)
 
-        report_channel = interaction.guild.get_channel(IDs.serverChannel.REPORTS)
+        report_channel = interaction.guild.get_channel(IDs.serverChannel.BOTLOG)
         await report_channel.send(view=view)
         await self.bot.moderation_storage.add_report_to_user(interaction.user.id)
         await interaction.followup.send(content=f"> {DefaultEmojis.CHECK} Message reported - thank you for helping to make our community safer!", ephemeral=True)

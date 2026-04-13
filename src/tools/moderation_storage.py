@@ -209,11 +209,6 @@ class ModerationStorage():
                 await conn.commit()
                 await self._generate_default_antiraid_settings(conn)
                 await conn.commit()
-                await log(
-                    bot=self._bot, type=BOTLOG, color=LogColor.BLUE,
-                    title=f"{DefaultEmojis.CHECK} Antiraid setting reset to default values!",
-                    msg=(f"Initiated by {action_author.mention} moderator")
-                )
                 await self.get_antiraid_settings() # update cache
                 return True
         except Exception as e:

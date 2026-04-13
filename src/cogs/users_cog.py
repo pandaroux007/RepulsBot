@@ -87,12 +87,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
     @app_commands.command(description="Get the server member count")
     @app_commands.guild_only()
     async def member_count(self, interaction: discord.Interaction):
-        embed = discord.Embed(
-            color=discord.Color.dark_blue(),
-            timestamp=discord.utils.utcnow()
-        )
-        embed.add_field(name="Members", value=interaction.guild.member_count)
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(content=f"> There are currently **{interaction.guild.member_count} members** here! ({discord.utils.format_dt(discord.utils.utcnow())})")
 
     @app_commands.command(description="Displays the eSports competitions of the year")
     @app_commands.guild_only()
@@ -154,18 +149,21 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
                 f"**Member name**: {member.name}" + (f" | **Nickname**: {member.nick}\n" if member.nick else '\n') +
                 f"**Account created**: {discord.utils.format_dt(member.created_at, 'D')}\n"
                 f"**Joined guild**: {discord.utils.format_dt(member.joined_at, 'D')}\n" +
-                (f"**Nitro subscriber**: since {discord.utils.format_dt(member.premium_since)}\n" if member.premium_since else '')
+                (f"**Latest server boost**: {discord.utils.format_dt(member.premium_since)}" if member.premium_since else '')
             ))
             container.add_item(discord.ui.Section(content, accessory=discord.ui.Thumbnail(member.display_avatar.url)))
-            if len(member.roles) - 1:
-                container.add_item(discord.ui.TextDisplay(content=f"### Roles ({max(len(member.roles) - 1, 0)})\n>>> {get_roles(member.roles)}"))
+            roles_number = len(member.roles) - 1
+            if roles_number >= 1:
+                container.add_item(discord.ui.TextDisplay(content=(
+                    f"### Roles ({roles_number})\n**Most important role**: {member.top_role.mention}\n>>> {get_roles(member.roles)}"
+                )))
 
         container.add_item(discord.ui.Separator())
         container.add_item(discord.ui.TextDisplay(content=f"-# Member ID: *{member.id}* ・ **{FOOTER_EMBED}**"))
 
         view = discord.ui.LayoutView()
         view.add_item(container)
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.response.send_message(view=view, allowed_mentions=discord.AllowedMentions.none())
 
     @app_commands.command(description="Displays information about this discord server")
     @app_commands.guild_only()
@@ -179,12 +177,12 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
             container.add_item(discord.ui.Separator())
 
         content = discord.ui.TextDisplay(content=(
-            f"**Owner**: {guild.owner.mention}\n"
-            f"{bool(guild.rules_channel) * f"**Rules**: {guild.rules_channel.jump_url}\n"}"
+            f"**Owner**: {guild.owner.mention}\n" +
+            (f"**Rules**: {guild.rules_channel.jump_url}\n" if guild.rules_channel else '') +
             f"**Members**: {guild.member_count}\n"
             f"**Created on**: {discord.utils.format_dt(guild.created_at)}\n"
-            f"**Channels**: {len(guild.text_channels)} Text | {len(guild.voice_channels)} Voice | {len(guild.categories)} Categories\n"
-            f"{bool(guild.premium_subscription_count) * f"**Boosts**: {guild.premium_subscription_count}\n"}"
+            f"**Channels**: {len(guild.text_channels)} Text | {len(guild.voice_channels)} Voice | {len(guild.categories)} Categories\n" +
+            (f"### Boosts ({len(guild.premium_subscription_count)})\n>>> **From these members**:\n{'\n'.join([f"- {member.mention} (since {discord.utils.format_dt(member.premium_since)})" for member in guild.premium_subscribers])}"  if guild.premium_subscription_count else '')
         ))
         container.add_item(discord.ui.Section(content, accessory=discord.ui.Thumbnail(guild.icon.url)) if guild.icon else content)
 
@@ -200,7 +198,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
 
         view = discord.ui.LayoutView()
         view.add_item(container)
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.response.send_message(view=view, allowed_mentions=discord.AllowedMentions.none())
 
     @app_commands.command(description="Displays information about repuls.io game")
     @app_commands.guild_only()
@@ -273,7 +271,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
             color=discord.Color.dark_blue()
         )
         view = FAQView(ServerFAQ.get_data(), custom_id=ServerFAQ.get_id())
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command(description="Frequently Asked Questions about the repuls.io game")
     @app_commands.guild_only()
@@ -284,7 +282,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
             color=discord.Color.dark_blue()
         )
         view = FAQView(GameFAQ.get_data(), custom_id=GameFAQ.get_id())
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        await interaction.response.send_message(embed=embed, view=view)
 
 async def setup(bot: commands.Bot):
     # https://github.com/Rapptz/discord.py/blob/master/examples/views/persistent.py

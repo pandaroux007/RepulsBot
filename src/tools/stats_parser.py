@@ -2,6 +2,7 @@ import json
 import aiohttp
 import re
 from datetime import datetime
+from dataclasses import dataclass
 from io import BytesIO
 from PIL import (
     Image,
@@ -175,6 +176,13 @@ WEAPON_PARSING_TABLE = {
     "dBarrel": "Double Barrel"
 }
 
+@dataclass
+class ModEntry:
+    moderator: str = None
+    created_at: datetime = None
+    title: str = None
+    content: str = None
+
 class PlayerProfile:
     def __init__(self):
         # Account information
@@ -184,6 +192,7 @@ class PlayerProfile:
         self.is_admin: bool = False
         self.created: datetime = None
         self._clan: str = None
+        self.mod_history: list[ModEntry] = []
         # Avatar
         self.primary_color: str | None = None
         self.secondary_color: str | None = None
@@ -265,7 +274,7 @@ class PlayerProfile:
             mod = mod.strip()
             if not mod:
                 continue
-            if "none" not in mod or "unknown" not in mod:
+            if mod != "none" and mod != "unknown":
                 mods_text.append(f"> - **{mod.removeprefix("mod_").replace('_', ' ').title()}**") 
         return '\n'.join(mods_text) if mods_text else None
 
@@ -284,49 +293,90 @@ async def fetch_player(playfab_connection: PlayFabClient, name: str) -> PlayerPr
 
     player_data = await playfab_connection.call_client_api(PlayFabAPI.GET_PLAYER_DATA, {
         "FunctionName": "getRemoteUserProfile",
-        "FunctionParameter": {
-            "remoteId": target_player_id
-        }
+        "FunctionParameter": { "remoteId": target_player_id }
     })
 
     result = dict(player_data["data"]["FunctionResult"])
     player.display_name = str(result.get("DisplayName"))
     player.playfab_id = target_player_id
 
-    try:
-        properties = dict(json.loads(result["UserReadOnlyData"]["Properties"]["Value"]))
+    mod_notes = list(json.loads(result.get("UserReadOnlyData", {}).get("mod_notes", {}).get("Value", "[]")))
+    if mod_notes:
+        moderators_cache: dict[str, str | None] = {}
+        for entry in mod_notes:
+            try:
+                assert isinstance(entry, dict)
+                _timestamp = int(entry.get("ts", 0))
+                _moderator_id = str(entry.get("by") or '')
+                _message = str(entry.get("msg") or '')
 
+                if _moderator_id not in moderators_cache.keys():
+                    moderator_name = None
+                    if _moderator_id:
+                        get_mod_name = await playfab_connection.call_client_api(PlayFabAPI.SEARCH_PLAYER, {"PlayFabId": _moderator_id})
+                        if not get_mod_name:
+                            moderator_name = None
+                        mod_account_info = dict(get_mod_name.get("data", {})).get("AccountInfo")
+                        if mod_account_info:
+                            moderator_name = mod_account_info.get("Username")
+                            if not moderator_name:
+                                moderator_name = mod_account_info.get("TitleInfo", {}).get("DisplayName")
+                    moderators_cache[_moderator_id] = moderator_name
+                else:
+                    moderator_name = moderators_cache[_moderator_id]
+
+                _message = str(entry.get("msg"))
+                if ':' in _message:
+                    _message = _message.split(':', 1)
+                    title = _message[0].strip() or None
+                    content = _message[1].strip() or None
+                else:
+                    title, content = None, _message
+
+                player.mod_history.append(ModEntry(
+                    moderator=moderator_name,
+                    title=title,
+                    content=content,
+                    created_at=(datetime.fromtimestamp(_timestamp/1000) if _timestamp else None)
+                ))
+            except Exception:
+                pass
+
+    properties = dict(json.loads(result.get("UserReadOnlyData", {}).get("Properties", {}).get("Value", {})))
+    if properties:
         player.level = properties.get("Level", 0)
         player.xp = properties.get("Experience", 0)
         player.is_admin = bool(properties.get("isAdmin", False))
         player._clan = properties.get("verificationProperties", None)
 
         achievements = {item["Id"]: item["count"] for item in properties.get("achievementProgressions", [])}
-        player.kills = achievements.get("kills", 0)
-        player.deaths = achievements.get("deaths", 0)
-        player.matches = achievements.get("games", 0)
-        player.wins = achievements.get("wins", 0)
-        player.flags  = achievements.get("flags", 0)
-        player.skulls = achievements.get("skulls", 0)
-        player.winstreak = achievements.get("winstreak", 0)
-        player.vehicle_kills = achievements.get("vehKills", 0)
-        player.headshot = achievements.get("headshot", 0)
-        player.double_kill = achievements.get("kchain_x2", 0)
-        player.triple_kill = achievements.get("kchain_x3", 0)
-        player.quad_kill = achievements.get("kchain_x4", 0)
-        player.mega_kill = achievements.get("kchain_x5", 0)
-        player.ultra_kill = achievements.get("kchain_x6", 0)
-        player.monster_kill = achievements.get("kchain_x7", 0)
-        player.killing_spree = achievements.get("killStreak_x4", 0)
-        player.dominating = achievements.get("killStreak_x6", 0)
-        player.unstoppable = achievements.get("killStreak_x8", 0)
-        player.godlike = achievements.get("killStreak_x10", 0)
-        player.assist = achievements.get("assist", 0)
+        if achievements:
+            player.kills = achievements.get("kills", 0)
+            player.deaths = achievements.get("deaths", 0)
+            player.matches = achievements.get("games", 0)
+            player.wins = achievements.get("wins", 0)
+            player.flags  = achievements.get("flags", 0)
+            player.skulls = achievements.get("skulls", 0)
+            player.winstreak = achievements.get("winstreak", 0)
+            player.vehicle_kills = achievements.get("vehKills", 0)
+            player.headshot = achievements.get("headshot", 0)
+            player.double_kill = achievements.get("kchain_x2", 0)
+            player.triple_kill = achievements.get("kchain_x3", 0)
+            player.quad_kill = achievements.get("kchain_x4", 0)
+            player.mega_kill = achievements.get("kchain_x5", 0)
+            player.ultra_kill = achievements.get("kchain_x6", 0)
+            player.monster_kill = achievements.get("kchain_x7", 0)
+            player.killing_spree = achievements.get("killStreak_x4", 0)
+            player.dominating = achievements.get("killStreak_x6", 0)
+            player.unstoppable = achievements.get("killStreak_x8", 0)
+            player.godlike = achievements.get("killStreak_x10", 0)
+            player.assist = achievements.get("assist", 0)
 
         kill_stats = {str(stat["Id"]).lower(): stat["count"] for stat in properties.get("killStats", [])}
         player._best_weapons = dict(sorted(kill_stats.items(), key=lambda item: item[1], reverse=True)[:5])
 
-        avatar = dict(json.loads(result["UserData"]["Loadout"]["Value"]))
+    avatar = dict(json.loads(result.get("UserData", {}).get("Loadout", {}).get("Value", "{}")))
+    if avatar:
         player._avatar_mods = [str(mod) for mod in avatar.get("avatarMods", [])]
         if avatar.get("color_pri", None):
             player.primary_color = f"#{avatar["color_pri"]}"
@@ -341,7 +391,5 @@ async def fetch_player(playfab_connection: PlayFabClient, name: str) -> PlayerPr
             image.save(buffer, format='PNG')
             buffer.seek(0)
             player.color_theme = (buffer, f"{player.primary_color}|{player.secondary_color}.png")
-    except Exception:
-        pass
 
     return player

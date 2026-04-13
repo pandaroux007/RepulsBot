@@ -9,8 +9,10 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import datetime
+from enum import Enum
 # bot files
 from data.cogs import CogsNames
+from data.constants import DefaultEmojis
 from tools.utils import GamePlaylist
 from tools.stats_parser import (
     fetch_server_stats,
@@ -23,17 +25,23 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import RepulsBot
 
+class ViewState(Enum):
+    STATS = 1
+    LOADOUT = 2
+    MODINFO = 3
+
 class PlayerInfoView(discord.ui.LayoutView):
     menu_row = discord.ui.ActionRow()
 
-    def __init__(self, requested_name: str, player: PlayerProfile | None):
+    def __init__(self, requested_name: str, player: PlayerProfile | None, author: discord.User | discord.Member):
         super().__init__()
         self.container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         self.add_item(self.container)
 
-        self.requested_name: str = requested_name
-        self.player: PlayerProfile | None = player
-        self.player_stats_mode: bool = True
+        self.request_author = author
+        self.requested_name = requested_name
+        self.player = player
+        self.current_view: ViewState = ViewState.STATS
         self.attachment = discord.File(self.player.color_theme[0], self.player.color_theme[1]) if self.player and self.player.color_theme else None
 
     async def generate_interface(self):
@@ -51,7 +59,6 @@ class PlayerInfoView(discord.ui.LayoutView):
             f"🏅 {self.player.xp_progress()}\n"
             f"💀 **{self.player.kills}** kills | **{self.player.deaths}** deaths | **{self.player.kd_ratio or '-'} K/D**\n"
             f"⚔️ In **{self.player.matches}** matches, **{self.player.wins}** wins (*{self.player.win_ratio} win rate*)\n" +
-            (f"> 🛡️ **`{self.player.name}` is an in-game administrator!**\n" if self.player.is_admin else '') +
             f"-# Account created on {discord.utils.format_dt(self.player.created)}"
         ))
         if self.player.color_theme:
@@ -62,6 +69,12 @@ class PlayerInfoView(discord.ui.LayoutView):
             ))
         else:
             self.container.add_item(stats)
+        if self.player.is_admin or self.player.mod_history:
+            self.container.add_item(discord.ui.Separator())
+            self.container.add_item(discord.ui.TextDisplay(content=(
+                (f"> 🛡️ **`{self.player.name}` is an in-game administrator!**\n" if self.player.is_admin else '') +
+                ("> 🚩 This player has already been flagged by moderation" if self.player.mod_history else '')
+            )))
 
         advanced_stats = (
             (f"{self.player.vehicle_kills} Vehicle Kills\n" if self.player.vehicle_kills else '') +
@@ -83,33 +96,67 @@ class PlayerInfoView(discord.ui.LayoutView):
             (f"{self.player.unstoppable} Unstoppable\n" if self.player.unstoppable else '') +
             (f"{self.player.godlike} Godlike\n" if self.player.godlike else '')
         )
-        if self.player_stats_mode is True:
+        if self.current_view == ViewState.STATS:
+            self.stats_view_button.disabled = True
             if advanced_stats or achievements:
                 self.container.add_item(discord.ui.TextDisplay(content=(
                     (f"## Advanced stats\n{advanced_stats}" if advanced_stats else '') +
                     (f"## Achievements\n{achievements}" if achievements else '')
                 )))
-        else:
+        elif self.current_view == ViewState.LOADOUT:
+            self.loadout_view_button.disabled = True
             if self.player.best_weapons or self.player.avatar_mods:
                 self.container.add_item(discord.ui.TextDisplay(content=(
                     (f"## Top 5 weapons\n{self.player.best_weapons}\n" if self.player.best_weapons else '') +
                     (f"## Current avatar mods\n{self.player.avatar_mods}" if self.player.avatar_mods else '')
                 )))
+        elif self.current_view == ViewState.MODINFO:
+            self.mod_view_button.disabled = True
+            if self.player.mod_history:
+                self.container.add_item(discord.ui.TextDisplay(content=(
+                    f"## History of moderation actions ({len(self.player.mod_history)})\n" +
+                    ('\n'.join([f"➜ {f" **{entry.title}**" if entry.title else ''} (By __{entry.moderator}__ at {discord.utils.format_dt(entry.created_at)})\n> *{entry.content}*\n" for entry in self.player.mod_history])).strip()
+                )))
+
+        self.menu_row.clear_items()
+        if advanced_stats or achievements:
+            self.menu_row.add_item(self.stats_view_button)
         if self.player.best_weapons or self.player.avatar_mods:
+            self.menu_row.add_item(self.loadout_view_button)
+        if self.request_author.guild_permissions.administrator and self.player.mod_history:
+            self.menu_row.add_item(self.mod_view_button)
+
+        if len(self.menu_row.children) >= 1:
             self.container.add_item(discord.ui.Separator())
             self.container.add_item(self.menu_row)
 
         return self
 
-    @menu_row.button(emoji='⚔️', label="View specific statistics", style=discord.ButtonStyle.secondary)
-    async def toggle_view_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.player_stats_mode = not self.player_stats_mode
-        if self.player_stats_mode is True:
-            self.toggle_view_button.label = "View specific statistics"
-            self.toggle_view_button.emoji = '⚔️'
-        else:
-            self.toggle_view_button.label = "View player statistics"
-            self.toggle_view_button.emoji = '👤'
+    @menu_row.button(emoji='👤', label="View statistics", style=discord.ButtonStyle.secondary)
+    async def stats_view_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.current_view = ViewState.STATS
+        self.loadout_view_button.disabled = False
+        self.mod_view_button.disabled = False
+        await self.generate_interface()
+        await interaction.response.edit_message(view=self)
+    
+    @menu_row.button(emoji='⚔️', label="View loadout", style=discord.ButtonStyle.secondary)
+    async def loadout_view_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.current_view = ViewState.LOADOUT
+        self.stats_view_button.disabled = False
+        self.mod_view_button.disabled = False
+        await self.generate_interface()
+        await interaction.response.edit_message(view=self)
+
+    @menu_row.button(label="Moderation history", emoji='🛡️', style=discord.ButtonStyle.danger)
+    async def mod_view_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not self.request_author.guild_permissions.administrator or interaction.user.id != self.request_author.id:
+            await interaction.response.send_message(f"> {DefaultEmojis.WARN} You don't have permission to view this.", ephemeral=True)
+            return
+
+        self.current_view = ViewState.MODINFO
+        self.stats_view_button.disabled = False
+        self.loadout_view_button.disabled = False
         await self.generate_interface()
         await interaction.response.edit_message(view=self)
 
@@ -169,12 +216,9 @@ class StatsCog(commands.Cog, name=CogsNames.STATS):
         await interaction.response.defer(ephemeral=True)
 
         player = await fetch_player(self.bot.playfab_manager, name)
-        view = PlayerInfoView(name, player)
+        view = PlayerInfoView(name, player, interaction.user)
         await view.generate_interface()
-        if view.attachment:
-            await interaction.followup.send(view=view, file=view.attachment, ephemeral=True)
-        else:
-            await interaction.followup.send(view=view, ephemeral=True)
+        await interaction.followup.send(view=view, file=(view.attachment or discord.utils.MISSING), ephemeral=True)
 
 async def setup(bot: "RepulsBot"):
     await bot.add_cog(StatsCog(bot))

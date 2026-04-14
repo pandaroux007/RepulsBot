@@ -113,7 +113,7 @@ class RaidStatusView(discord.ui.LayoutView):
             f"**Users tracked**: {len(self.antiraid.user_triggers)}\n"
             f"**Channels tracked**: {len(self.antiraid.channel_triggers)}\n"
             f"**Logged messages**: {len(self.antiraid.message_log)}\n"
-            f"**Scheduled unlock(s)**: {len(self.antiraid.unlock_tasks)} | {len(channel_locks)} channel(s) locked"
+            f"**Scheduled unlock(s)**: {len(self.antiraid.unlock_tasks)}" + (f" | {len(channel_locks)} channel(s) locked" if channel_locks else '')
         )))
         self.container.add_item(discord.ui.Separator())
         raid_status = discord.ui.TextDisplay(content=(
@@ -201,8 +201,8 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
         while self.message_log and (NOW - self.message_log[0].timestamp) > MAX_MESSAGE_LIFESPAN:
             self.message_log.popleft()
             message_cleaned_count += 1
-
-    async def cog_load(self):
+    
+    async def init_auto_unlocking(self):
         await self.bot.wait_until_ready()
         channel_locks = await self.channels_lock
         if channel_locks:
@@ -215,6 +215,8 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 self.unlock_tasks[channel_id] = task
                 task.add_done_callback(lambda t, cid=channel_id: self.unlock_tasks.pop(cid, None))
 
+    async def cog_load(self):
+        self.bot.loop.create_task(self.init_auto_unlocking())
         if not self.memory_cleanup.is_running():
             self.memory_cleanup.start()
 

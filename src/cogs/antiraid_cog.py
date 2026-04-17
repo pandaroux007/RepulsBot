@@ -199,9 +199,8 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
         while self.message_log and (NOW - self.message_log[0].timestamp) > MAX_MESSAGE_LIFESPAN:
             self.message_log.popleft()
-            message_cleaned_count += 1
 
-    async def cog_load(self):
+    async def init_auto_unlocking(self):
         await self.bot.wait_until_ready()
         channel_locks = await self.channels_lock
         if channel_locks:
@@ -214,6 +213,8 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 self.unlock_tasks[channel_id] = task
                 task.add_done_callback(lambda t, cid=channel_id: self.unlock_tasks.pop(cid, None))
 
+    async def cog_load(self):
+        self.bot.loop.create_task(self.init_auto_unlocking())
     async def cog_load(self):
         self.bot.loop.create_task(self.init_auto_unlocking())
         if not self.memory_cleanup.is_running():

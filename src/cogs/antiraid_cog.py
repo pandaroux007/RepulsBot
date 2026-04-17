@@ -199,8 +199,9 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
         while self.message_log and (NOW - self.message_log[0].timestamp) > MAX_MESSAGE_LIFESPAN:
             self.message_log.popleft()
+            message_cleaned_count += 1
 
-    async def init_auto_unlocking(self):
+    async def cog_load(self):
         await self.bot.wait_until_ready()
         channel_locks = await self.channels_lock
         if channel_locks:

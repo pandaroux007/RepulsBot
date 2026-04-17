@@ -25,7 +25,7 @@ The best free instantly accessible multiplayer first-person shooter for your bro
 
 Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one, you played them all! Repuls has you riding bikes, grappling cliffs, piloting mechs and firing miniguns and plasma rifles and stomping vehicles with a giant mech! **That's** the repuls experience son!
 ## And what about RepulsBot
-- Authors : [pandaroux007](https://github.com/pandaroux007)
+- Author : [pandaroux007](https://github.com/pandaroux007)
 - License : the bot and everything that composes it (icon, code, etc.) are under [the MIT license](https://opensource.org/license/mit) (see [LICENSE.txt](LICENSE.txt) file). **By contributing (whether it be code, graphics, links, or anything else), you agree to publish it under the same license.**
 - GitHub created at : ***May 10, 2025, 4:49:10 PM***
 - Added to the main server at : ***19 Jul 2025***
@@ -61,7 +61,7 @@ Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one
 
 ___
 # ⚙️ Development
-You can find details about the front-end operation of the bot in [the wiki](https://github.com/pandaroux007/RepulsBot/wiki), this section is intended for developers only.
+You can find details about the front-end operation of the bot in [the wiki](https://github.com/pandaroux007/RepulsBot/wiki), this section is intended for developers.
 
 > [!NOTE]
 > **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!**
@@ -73,3 +73,11 @@ You can find details about the front-end operation of the bot in [the wiki](http
 #### Useful resources
 - [`discord.py` documentation](https://discordpy.readthedocs.io/)
 - [`uv` guide](https://github.com/astral-sh/uv)
+
+### Features on Standby
+I would like to replace the RCA Bot translation functionality (which uses Google Translate) by making it more reliable, bandwidth-efficient, and privacy-friendly. Several tools exist for this purpose (notably [`LibreTranslate`](https://libretranslate.com/) - based on the [`Argos`](https://github.com/argosopentech/argos-translate/) engine, which can be used in combination with [`langdetect`](https://pypi.org/project/langdetect/) to download the necessary language models if needed). This is a local solution that meets my requirements (free, no limitations, no requests), but it is more complex to implement (may require a Docker container to contain memory leaks; I am investigating this) and therefore must wait for the VPS.
+> There are several translation APIs ([Google Translate](https://docs.cloud.google.com/translate/docs), [Lingvanex](https://lingvanex.com), [DeepL](https://www.deepl.com/en/pro-api), etc.), but they have several drawbacks:
+> - You can't guarantee 100% what happens to the messages you send (privacy)
+> - Most are not free and/or require accounts/API keys, which greatly reduces maintainability (and the ability to work as a team on the bot)
+> - Most have fairly low limits on length, number of requests, etc.
+> - Sending and receiving requests (especially if the texts are long) is very polluting

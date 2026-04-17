@@ -61,26 +61,6 @@ class TicketsStorage():
                 title=f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - An exception was raised during init of the ticketing system tables.", msg=f"```\n{e}\n```"
             )
 
-    async def reset_table(self) -> bool:
-        """
-        Returns
-        --------
-        `bool`: True if successful, False otherwise
-        """
-        try:
-            async with self._pool.acquire() as conn:
-                await conn.execute("DROP TABLE IF EXISTS tickets")
-                await conn.execute("DROP TABLE IF EXISTS ticket_cooldown")
-                await conn.commit()
-            await self.init_tables()
-            return True
-        except Exception as e:
-            await log(
-                bot=self._bot, type=BOTLOG, color=LogColor.RED,
-                title=f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - An exception was raised during reset of the ticketing system tables.", msg=f"```\n{e}\n```"
-            )
-            return False
-
     # ---------------------------------- manage tickets
     async def add_ticket(self, name: str, title: str, author: discord.Member, open_log_url: str, cooldown_hours: int) -> None:
         try:

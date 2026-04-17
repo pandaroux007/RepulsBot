@@ -1,6 +1,4 @@
-from __future__ import annotations
 from discord.ext import commands
-from enum import Enum
 # bot file
 from data.constants import IDs
 
@@ -44,32 +42,3 @@ def possessive(word: str) -> str:
 def number(n: str) -> str:
     # https://leancrew.com/all-this/2020/06/ordinals-in-python/
     return str(n) + {1: "st", 2: "nd", 3: "rd"}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
-
-class GamePlaylist(Enum):
-    """
-    Chap. 8.13.8: https://docs.python.org/3.5/library/enum.html#allowed-members-and-attributes-of-enumerations
-    Example (8.13.13.4): https://docs.python.org/3.5/library/enum.html#planet
-    """
-    WARFARE = ("wf", "Warfare", "Team play and vehicle based maps")
-    HARDCORE = ("hc", "Hardcore", "Arena maps, no vehicles")
-    CASUAL = ("ws", "Casual", "Crasy modes focused on fun")
-    CUSTOMS = ("cm", "Customs", "User created modes")
-
-    def __init__(self, code: str, label: str, desc: str):
-        self.code: str = code
-        self.label: str = label
-        self.description: str = desc
-
-    def __str__(self):
-        return self.label
-    
-    def __repr__(self):
-        return super().__repr__()
-
-    @classmethod
-    def from_code(cls, code: str) -> GamePlaylist | None:
-        code = code.lower()
-        for pl in cls:
-            if pl.code == code:
-                return pl
-        return None

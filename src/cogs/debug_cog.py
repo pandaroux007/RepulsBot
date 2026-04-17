@@ -13,6 +13,7 @@ import psutil
 import os
 import platform
 import time
+from datetime import datetime
 from pathlib import Path
 import asyncio
 # bot files
@@ -36,7 +37,8 @@ from data.constants import (
 from tools.log_builder import (
     LogBuilder,
     LogColor,
-    MODLOG
+    MODLOG,
+    BOTLOG
 )
 
 # https://www.reddit.com/r/learnpython/comments/ukidl7/what_is_typingtype_checking_for/
@@ -84,12 +86,13 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
         bot_process = psutil.Process(os.getpid())
         bot_ram_used = round((bot_process.memory_info().rss / (1024 * 1024)), 2)
         bot_cpu_used = bot_process.cpu_percent(interval=0.1)
-        bot_uptime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(bot_process.create_time()))
+
+        bot_uptime = datetime.fromtimestamp(time.mktime(time.localtime(bot_process.create_time())))
 
         embed.add_field(inline=False, name="Resource usage by the bot", value=(
             f"RAM: {round(bot_ram_used, 2)}MB\n"
             f"CPU: {bot_cpu_used}%\n"
-            f"Up time: since {bot_uptime}"
+            f"Up time: since {discord.utils.format_dt(bot_uptime, 'R')} ({discord.utils.format_dt(bot_uptime, 'F')})"
         ))
 
         global_cpu_used = psutil.cpu_percent(interval=1)
@@ -156,39 +159,52 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
             
             await ctx.author.send(embed=embed)
 
-    @commands.command(description="[DEBUG] Reset a given section in the database")
+    @commands.command(description="[DEBUG] Reset a given table in the database")
     @commands.guild_only()
     @check_if_maintainer()
-    async def reset_db_section(self, ctx: commands.Context, *, section_name: str):
+    async def reset_table(self, ctx: commands.Context, *, table: str):
         await ctx.message.delete()
         embed = discord.Embed(
-            title="Reset a section",
+            title="Reset a table from the database...",
             color=discord.Color.dark_gray(),
             timestamp=discord.utils.utcnow()
         )
         is_successful: bool = False
-        if section_name == "videos":
-            is_successful = await self.bot.youtube_storage.reset_table()
-        elif section_name == "tickets":
-            is_successful = await self.bot.tickets_storage.reset_table()
-        elif section_name == "moderation":
-            is_successful = await self.bot.moderation_storage.reset_table()
-        else:
-            embed.description = f"> {DefaultEmojis.WARN} The `{section_name}` section doesn't exist, try another"
-            await ctx.author.send(embed=embed)
-            return
+        try:
+            async with self.bot.db_pool.acquire() as conn:
+                # https://stackoverflow.com/questions/82875/how-can-i-list-the-tables-in-a-sqlite-database-file-that-was-opened-with-attach#comment56322305_83195
+                raw_tables = await conn.fetchall("SELECT name FROM sqlite_master WHERE type='table'")
+                ALLOWED_TABLES = {str(row[0]) for row in raw_tables}
+                if table not in ALLOWED_TABLES:
+                    embed.description = f"> {DefaultEmojis.WARN} The `{table}` table doesn't exist, try another"
+                    await ctx.author.send(embed=embed)
+                    return
+                await conn.execute(f"DROP TABLE IF EXISTS {table}")
+                await conn.commit()
+                # Not very optimized, but we don't know in which system the table was deleted...
+                await self.bot.youtube_storage.init_tables()
+                await self.bot.moderation_storage.init_tables()
+                await self.bot.tickets_storage.init_tables()
+            is_successful = True
+        except Exception as e:
+            await (
+                LogBuilder(self.bot, type=BOTLOG, color=LogColor.BLUE)
+                .title(f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - Error during the attempt to reset the `{table}` table")
+                .description(f"```\n{e}\n```")
+                .send()
+            )
 
         if is_successful:
-            embed.description = f"> {DefaultEmojis.CHECK} The `{section_name}` section has been successfully reset"
+            embed.description = f"> {DefaultEmojis.CHECK} The `{table}` table has been successfully reset"
             await ctx.author.send(embed=embed)
             await (
                 LogBuilder(self.bot, type=MODLOG, color=LogColor.BLUE)
-                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - A section has been reset in the db!")
-                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the `{section_name}` section was reset by {ctx.author.mention}")
+                .title(f"{DefaultEmojis.INFO} CRITICAL INFO - A table has been reset in the db!")
+                .description(f"<@{IDs.repulsTeam.MAIN_DEVELOPER}>, the `{table}` table was reset by {ctx.author.mention}")
                 .send(enable_ping=True)
             )
         else:
-            embed.description = f"> {DefaultEmojis.ERROR} This section cannot be reset"
+            embed.description = f"> {DefaultEmojis.ERROR} This table cannot be reset (*see the logs for more details*)"
             await ctx.author.send(embed=embed)
 
     # ---------------------------------- potentially destructive commands

@@ -11,20 +11,17 @@ from discord import app_commands
 import math
 # bot files
 from data.cogs import CogsNames
+from tools.utils import plurial
+from tools.typing import GamePlaylist
+from tools.stats_parser import (
+    fetch_regions_list,
+    fetch_games_list
+)
+
 from data.constants import (
     DefaultEmojis,
     GameUrl,
     ASK_HELP
-)
-
-from tools.utils import (
-    plurial,
-    GamePlaylist
-)
-
-from tools.stats_parser import (
-    fetch_regions_list,
-    fetch_games_list
 )
 
 from tools.log_builder import (
@@ -143,7 +140,7 @@ class GameBrowserView(discord.ui.LayoutView):
         await self.generate_interface(interaction)
 
     # ---------------------------------- pagination buttons
-    @pagination_row.button(label="🞀", style=discord.ButtonStyle.secondary)
+    @pagination_row.button(label="🞀")
     async def _prev_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self._selected_page <= 1:
             self._selected_page = 1
@@ -151,31 +148,17 @@ class GameBrowserView(discord.ui.LayoutView):
             self._selected_page -= 1
         await self.generate_interface(interaction)
 
-    @pagination_row.button(label="1/1", style=discord.ButtonStyle.secondary, disabled=True)
+    @pagination_row.button(label="1/1", disabled=True)
     async def _page_indicator(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
 
-    @pagination_row.button(label="🞂", style=discord.ButtonStyle.secondary)
+    @pagination_row.button(label="🞂")
     async def _next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self._selected_page >= self._total_pages:
             self._selected_page = self._total_pages
         elif self._selected_page < self._total_pages:
             self._selected_page += 1
         await self.generate_interface(interaction)
-
-class RegionSelect(discord.ui.Select):
-    def __init__(self, bot: commands.Bot, options: list[discord.SelectOption], regions_list: list[str]):
-        super().__init__(
-            min_values=1, max_values=1,
-            placeholder="Choose a region...",
-            options=options
-        )
-        self.bot = bot
-        self.regions_list = regions_list
-
-    async def callback(self, interaction: discord.Interaction):
-        game_browser = GameBrowserView(self.bot, self.values[0], self.regions_list)
-        await game_browser.generate_interface(interaction)
 
 class GameBrowserCog(commands.Cog, name=CogsNames.GAME_BROWSER):
     def __init__(self, bot: commands.Bot):
@@ -197,15 +180,15 @@ class GameBrowserCog(commands.Cog, name=CogsNames.GAME_BROWSER):
             await interaction.followup.send(view=view, ephemeral=True)
             return
 
-        container.add_item(discord.ui.ActionRow(
-            RegionSelect(
-                self.bot, regions_list=regions_list,
-                options = [
-                    discord.SelectOption(label=region, value=region)
-                    for region in regions_list
-                ]
-            )
-        ))
+        select = discord.ui.Select(
+            min_values=1, max_values=1, placeholder="Choose a region...",
+            options = [discord.SelectOption(label=region, value=region) for region in regions_list]
+        )
+        async def callback(interaction: discord.Interaction):
+            game_browser = GameBrowserView(self.bot, select.values[0], regions_list)
+            await game_browser.generate_interface(interaction)
+        select.callback = callback
+        container.add_item(discord.ui.ActionRow(select))
 
         await interaction.followup.send(view=view, ephemeral=True)
 

@@ -1,25 +1,34 @@
 import json
 import aiohttp
 import re
-from datetime import datetime
 from dataclasses import dataclass
+from typing import Optional
 from io import BytesIO
 from PIL import (
     Image,
     ImageDraw
 )
 
+from datetime import (
+    datetime,
+    timezone
+)
+
 # bot files
-from data.constants import DefaultEmojis
-from tools.utils import GamePlaylist
+from tools.typing import (
+    GamePlaylist,
+    GameRegion,
+    GameInProgress
+)
+
 from tools.api_client import (
     PublicAPI,
     PlayFabAPI,
     PlayFabClient
 )
 
-# ---------------------------------- basic information function (game version, list of available regions)
-async def fetch_game_version(playfab_connection: PlayFabClient) -> str | None:
+# ---------------------------------- basic game info function
+async def fetch_game_version(playfab_connection: PlayFabClient) -> Optional[str]:
     """
     returns the formatted game version: v + MajorGameVersion.MinorGameVersion.ClientVersion
     """
@@ -29,6 +38,18 @@ async def fetch_game_version(playfab_connection: PlayFabClient) -> str | None:
     game_version = json.loads(data["data"]["Data"]["GameInfo"])["GameVersion"]
     return game_version
 
+async def fetch_build_date(url: str) -> Optional[datetime]:
+    """
+    Returns the last modified date for the requested build file
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.head(url, headers={ "User-Agent": "Mozilla/5.0" }) as resp:
+            last_mod = resp.headers.get("Last-Modified")
+            if last_mod:
+                return datetime.strptime(last_mod, "%a, %d %b %Y %H:%M:%S %Z")
+    return None
+
+# ---------------------------------- game ccu and server status
 async def fetch_regions_list() -> list[str]:
     """
     returns a list of available region **names** (nothing else)
@@ -41,95 +62,30 @@ async def fetch_regions_list() -> list[str]:
     regions: list[str] = [region["region"] for region in servers]
     return regions
 
-# ---------------------------------- game ccu and server status
-class GameServerRegion:
-    def __init__(self, name: str, players: dict[GamePlaylist, int] | None = None):
-        self.name: str = name
-        self.players: dict[GamePlaylist, int] = players or {}
-        self.status: str = "unknown"
-
-    @property
-    def total(self) -> int:
-        return sum(self.players.values())
-
-    def get(self, playlist: GamePlaylist) -> int:
-        return self.players.get(playlist, 0)
-
-async def fetch_server_stats() -> tuple[str | None, list[GameServerRegion], GameServerRegion] | None:
+async def fetch_server_stats() -> Optional[tuple[datetime, list[GameRegion], GameRegion]]:
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(PublicAPI.CCU) as resp_ccu:
                 ccu: dict = await resp_ccu.json()
-
-        regions = await fetch_regions_list()
     except Exception:
         return None
 
-    updated_at: str = ccu.get("timestamp", None)
-    region_dict: dict = ccu.get("perRegion", {})
-    global_dict: dict = ccu.get("global", {})
+    updated_at = datetime.fromisoformat(ccu.get("timestamp")) if ccu.get("timestamp") else datetime.now(timezone.utc)
+    global_stats = GameRegion(
+        name="GLOBAL",
+        players={playlist: dict(ccu.get("global", {})).get(playlist.code, 0) for playlist in GamePlaylist}
+    )
+    region_stats = [
+        GameRegion(
+            name=region_name,
+            players={playlist: dict(region_data).get(playlist.code, 0) for playlist in GamePlaylist}
+        )
+        for region_name, region_data in dict(ccu.get("perRegion", {})).items()
+    ]
 
-    global_players: dict[GamePlaylist, int] = {}
-    for pl in GamePlaylist:
-        global_players[pl] = global_dict.get(pl.code, 0)
-    global_stats = GameServerRegion(name="GLOBAL", players=global_players)
+    return (updated_at, region_stats, global_stats)
 
-    regions_ping: dict[str, str] = {
-        name: PublicAPI.REGION_PING.format(region=name)
-        for name in regions
-    }
-
-    region_stats: list[GameServerRegion] = []
-    for region_name, region_data in region_dict.items():
-        players: dict[GamePlaylist, int] = {}
-        for pl in GamePlaylist:
-            players[pl] = region_data.get(pl.code, 0)
-
-        region = GameServerRegion(name=region_name, players=players)
-
-        ping_url = regions_ping.get(region_name)
-        if ping_url:
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(ping_url, timeout=3) as resp_ping:
-                        if resp_ping.status == 200:
-                            data = await resp_ping.json(content_type=None)
-                            if isinstance(data, dict) and data.get("status") == "ok":
-                                region.status = DefaultEmojis.ONLINE
-                            else:
-                                region.status = "🟡 Down"
-                        else:
-                            region.status = f"{DefaultEmojis.OFFLINE} Unavailable"
-            except Exception:
-                region.status = f"{DefaultEmojis.ERROR} Error"
-
-        region_stats.append(region)
-
-    return updated_at, region_stats, global_stats
-
-# ---------------------------------- retrieves information from ongoing games
-class GameInProgress:
-    def __init__(self, name: str, map: str, mode: str, players: int, max_players: int, port: int):
-        self.name: str = name
-        self.map: str = map
-        self.mode: str = mode
-        self.web_port: int = port
-        self._players: int = players
-        self._max_players: int = max_players
-        
-    @property
-    def players(self) -> str:
-        return f"{self._players}/{self._max_players}"
-    
-    @property
-    def is_full(self) -> bool:
-        return self._players == self._max_players
-    
-    @property
-    def is_empty(self) -> bool:
-        return self._players == 0
-
-async def fetch_games_list(region: str) -> dict[GamePlaylist, list[GameInProgress]] | None:
+async def fetch_games_list(region: str) -> Optional[dict[GamePlaylist, list[GameInProgress]]]:
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(PublicAPI.GET_GAME_LIST.format(region=region)) as resp:
@@ -239,7 +195,7 @@ class PlayerProfile:
         return f"{self.wins / max(1, self.matches) * 100:.1f}%"
 
     @property
-    def clan(self) -> str | None:
+    def clan(self) -> Optional[str]:
         if not self._clan:
             return None
         match = re.search(r"<color=#[0-9a-fA-F]{6}>\[\s*(.*?)\s*\]<\/color>", self._clan)
@@ -257,7 +213,7 @@ class PlayerProfile:
         return f"|{bar}| {self.xp:,}/{xp_for_next_level:,} XP"
 
     @property
-    def best_weapons(self) -> str | None:
+    def best_weapons(self) -> Optional[str]:
         weapons_text: list[str] = []
         for weapon, count in self._best_weapons.items():
             if len(weapon) == 3:
@@ -268,7 +224,7 @@ class PlayerProfile:
         return '\n'.join(weapons_text) if weapons_text else None
 
     @property
-    def avatar_mods(self) -> str | None:
+    def avatar_mods(self) -> Optional[str]:
         mods_text: list[str] = []
         for mod in self._avatar_mods:
             mod = mod.strip()
@@ -278,12 +234,12 @@ class PlayerProfile:
                 mods_text.append(f"> - **{mod.removeprefix("mod_").replace('_', ' ').title()}**") 
         return '\n'.join(mods_text) if mods_text else None
 
-async def fetch_player(playfab_connection: PlayFabClient, name: str) -> PlayerProfile | None:
+async def fetch_player(playfab_connection: PlayFabClient, name: str) -> Optional[PlayerProfile]:
     # https://learn.microsoft.com/en-us/rest/api/playfab/client/account-management/get-account-info?view=playfab-rest
     player = PlayerProfile()
     profile = await playfab_connection.call_client_api(PlayFabAPI.SEARCH_PLAYER, {"TitleDisplayName": name})
     if not profile:
-        profile = await playfab_connection.call_client_api(PlayFabAPI.SEARCH_PLAYER, {"Username": name})
+        profile = await playfab_connection.call_client_api(PlayFabAPI.SEARCH_PLAYER, {"Username": ''.join(char for char in name if char.isalnum())})
         if not profile:
             return None
         player.username = name

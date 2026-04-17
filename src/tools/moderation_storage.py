@@ -116,28 +116,6 @@ class ModerationStorage():
                 title=f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - An exception was raised during init of moderation tables.", msg=f"```\n{e}\n```"
             )
 
-    async def reset_table(self) -> bool:
-        """
-        Returns
-        --------
-        `bool`: True if successful, False otherwise
-        """
-        try:
-            async with self._pool.acquire() as conn:
-                self.settings_cache = None
-                await conn.execute("DROP TABLE IF EXISTS report_cooldown")
-                await conn.execute("DROP TABLE IF EXISTS channel_locks")
-                await conn.execute("DROP TABLE IF EXISTS settings")
-                await conn.commit()
-            await self.init_tables()
-            return True
-        except Exception as e:
-            await log(
-                bot=self._bot, type=BOTLOG, color=LogColor.RED,
-                title=f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - An exception was raised during reset of moderation tables.", msg=f"```\n{e}\n```"
-            )
-            return False
-
     # ---------------------------------- anti-raid settings
     async def get_antiraid_settings(self) -> Optional[dict]:
         """

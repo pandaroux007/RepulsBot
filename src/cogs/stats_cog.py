@@ -8,13 +8,23 @@ This cog contain statistical commands
 import discord
 from discord.ext import commands
 from discord import app_commands
-import datetime
+from datetime import datetime
 from enum import Enum
 # bot files
 from data.cogs import CogsNames
-from data.constants import DefaultEmojis
-from tools.utils import GamePlaylist
+from data.constants import (
+    DefaultEmojis,
+    FOOTER_EMBED
+)
+
+from tools.api_client import PublicAPI
+from tools.typing import (
+    GamePlaylist,
+    GameRegion
+)
+
 from tools.stats_parser import (
+    fetch_build_date,
     fetch_server_stats,
     fetch_game_version,
     fetch_player,
@@ -25,7 +35,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import RepulsBot
 
-class ViewState(Enum):
+# ---------------------------------- player info
+class PlayerInfoState(Enum):
     STATS = 1
     LOADOUT = 2
     MODINFO = 3
@@ -37,11 +48,11 @@ class PlayerInfoView(discord.ui.LayoutView):
         super().__init__()
         self.container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         self.add_item(self.container)
+        self.current_view: PlayerInfoState = PlayerInfoState.STATS
 
         self.request_author = author
         self.requested_name = requested_name
         self.player = player
-        self.current_view: ViewState = ViewState.STATS
         self.attachment = discord.File(self.player.color_theme[0], self.player.color_theme[1]) if self.player and self.player.color_theme else None
 
     async def generate_interface(self):
@@ -96,21 +107,21 @@ class PlayerInfoView(discord.ui.LayoutView):
             (f"{self.player.unstoppable} Unstoppable\n" if self.player.unstoppable else '') +
             (f"{self.player.godlike} Godlike\n" if self.player.godlike else '')
         )
-        if self.current_view == ViewState.STATS:
+        if self.current_view == PlayerInfoState.STATS:
             self.stats_view_button.disabled = True
             if advanced_stats or achievements:
                 self.container.add_item(discord.ui.TextDisplay(content=(
                     (f"## Advanced stats\n{advanced_stats}" if advanced_stats else '') +
                     (f"## Achievements\n{achievements}" if achievements else '')
                 )))
-        elif self.current_view == ViewState.LOADOUT:
+        elif self.current_view == PlayerInfoState.LOADOUT:
             self.loadout_view_button.disabled = True
             if self.player.best_weapons or self.player.avatar_mods:
                 self.container.add_item(discord.ui.TextDisplay(content=(
                     (f"## Top 5 weapons\n{self.player.best_weapons}\n" if self.player.best_weapons else '') +
                     (f"## Current avatar mods\n{self.player.avatar_mods}" if self.player.avatar_mods else '')
                 )))
-        elif self.current_view == ViewState.MODINFO:
+        elif self.current_view == PlayerInfoState.MODINFO:
             self.mod_view_button.disabled = True
             if self.player.mod_history:
                 self.container.add_item(discord.ui.TextDisplay(content=(
@@ -132,17 +143,17 @@ class PlayerInfoView(discord.ui.LayoutView):
 
         return self
 
-    @menu_row.button(emoji='👤', label="View statistics", style=discord.ButtonStyle.secondary)
+    @menu_row.button(emoji='👤', label="View statistics")
     async def stats_view_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.current_view = ViewState.STATS
+        self.current_view = PlayerInfoState.STATS
         self.loadout_view_button.disabled = False
         self.mod_view_button.disabled = False
         await self.generate_interface()
         await interaction.response.edit_message(view=self)
     
-    @menu_row.button(emoji='⚔️', label="View loadout", style=discord.ButtonStyle.secondary)
+    @menu_row.button(emoji='⚔️', label="View loadout")
     async def loadout_view_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.current_view = ViewState.LOADOUT
+        self.current_view = PlayerInfoState.LOADOUT
         self.stats_view_button.disabled = False
         self.mod_view_button.disabled = False
         await self.generate_interface()
@@ -154,9 +165,92 @@ class PlayerInfoView(discord.ui.LayoutView):
             await interaction.response.send_message(f"> {DefaultEmojis.WARN} You don't have permission to view this.", ephemeral=True)
             return
 
-        self.current_view = ViewState.MODINFO
+        self.current_view = PlayerInfoState.MODINFO
         self.stats_view_button.disabled = False
         self.loadout_view_button.disabled = False
+        await self.generate_interface()
+        await interaction.response.edit_message(view=self)
+
+# ---------------------------------- game status
+class GameStatusView(discord.ui.LayoutView):
+    select_region_row = discord.ui.ActionRow()
+
+    def __init__(
+            self, game_version: str | None,
+            latest_game_update: datetime | None, latest_beta_update: datetime | None,
+            server_stats: tuple[datetime, list[GameRegion], GameRegion] | None
+        ):
+        super().__init__()
+        self.container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        self.add_item(self.container)
+
+        self.game_version = game_version
+        self.latest_game_update = latest_game_update
+        self.latest_beta_update = latest_beta_update
+
+        self.is_ccu_fetched = bool(server_stats is not None)
+        if self.is_ccu_fetched:
+            _updated_at, _regions, _global_stats = server_stats
+            self.updated_at: datetime = _updated_at
+            self.regions: dict[str, GameRegion] = {region.name: region for region in _regions}
+            self.selected_region: GameRegion = _global_stats # on global ccu by default
+            self.global_stats: GameRegion = _global_stats
+
+    async def generate_interface(self):
+        self.remove_item(self.select_region_row)
+        self.container.clear_items()
+
+        status_lines = []
+        if self.is_ccu_fetched:
+            for region in self.regions.values():
+                status = await region.status
+                status_lines.append(f"- `{region.name}`: {status}")
+
+        self.container.add_item(discord.ui.TextDisplay(content=(
+            "### ⚙️ Latest game update" +
+            (f"\nCurrent main game version: **{self.game_version}**" if self.game_version else '') +
+            f"\nMain version: {f"{discord.utils.format_dt(self.latest_game_update)} ({discord.utils.format_dt(self.latest_game_update, 'R')})" if self.latest_game_update else "*Unknown*"}"
+            f"\nBeta version: {f"{discord.utils.format_dt(self.latest_beta_update)} ({discord.utils.format_dt(self.latest_beta_update, 'R')})" if self.latest_beta_update else "*Unknown*"}"
+        )))
+        if status_lines:
+            self.container.add_item(discord.ui.Separator())
+            self.container.add_item(discord.ui.TextDisplay(content="### 📡 Game region servers\n" + '\n'.join(status_lines)))
+        if self.is_ccu_fetched:
+            self.container.add_item(discord.ui.TextDisplay(content=f"Total knights around the world: **{self.global_stats.total}**"))
+        self.container.add_item(discord.ui.Separator())
+        content = "### 📊 Current CCU of repuls.io\n"
+        if not self.is_ccu_fetched:
+            content += "*Oh! We're sorry, but something went wrong... Unable to retrieve CCU.*"
+        else:
+            lines: list[str] = []
+            for pl in GamePlaylist:
+                count = self.selected_region.get(pl)
+                if pl is GamePlaylist.CUSTOMS and count == 0:
+                    continue
+                lines.append(f"- {pl.label}: {count}")
+            content += '\n'.join(lines).strip()
+        self.container.add_item(discord.ui.TextDisplay(content=content))
+
+        if self.is_ccu_fetched and len(self.regions) >= 1:
+            self.container.add_item(self.select_region_row)
+            self.region_select.options = [
+                discord.SelectOption(label=region.name.upper(), value=region.name, default=(region == self.selected_region))
+                for region in self.regions.values()
+            ]
+            self.region_select.add_option(
+                label=self.global_stats.name.upper(),
+                value=self.global_stats.name,
+                default=(self.global_stats == self.selected_region)
+            )
+        self.container.add_item(discord.ui.TextDisplay(content=(
+            "-# Repuls live status" + (f" ・ (Data updated on {discord.utils.format_dt(self.updated_at)})" if self.is_ccu_fetched else FOOTER_EMBED)
+        )))
+
+        return self
+
+    @select_region_row.select(min_values=1, max_values=1, placeholder="Choose a region...")
+    async def region_select(self, interaction: discord.Interaction, select: discord.ui.Select):
+        self.selected_region = self.regions.get(select.values[0], self.global_stats)
         await self.generate_interface()
         await interaction.response.edit_message(view=self)
 
@@ -164,50 +258,17 @@ class StatsCog(commands.Cog, name=CogsNames.STATS):
     def __init__(self, bot: "RepulsBot"):
         self.bot = bot
 
-    @app_commands.command(description="Displays the current CCU of repuls (global and by region)")
-    async def game_ccu(self, interaction: discord.Interaction):
+    @app_commands.command(description="Displays some information (update, CCU, etc.) live from the game")
+    async def game_status(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
 
         game_version = await fetch_game_version(self.bot.playfab_manager)
+        server_stats = await fetch_server_stats()
+        latest_game_update = await fetch_build_date(PublicAPI.BUILD)
+        latest_beta_update = await fetch_build_date(PublicAPI.BETA_BUILD)
 
-        container = discord.ui.Container(accent_color=discord.Color.dark_blue())
-        view = discord.ui.LayoutView()
-        view.add_item(container)
-        container.add_item(discord.ui.TextDisplay(content="### 📊 Current CCU of repuls.io"))
-        if game_version:
-            container.add_item(discord.ui.TextDisplay(content=f"*Current game version: **`{game_version}`***"))
-
-        result = await fetch_server_stats()
-        if not result:
-            container.add_item(discord.ui.TextDisplay(content="*Oh! We're sorry, but something went wrong... Unable to retrieve CCU.*"))
-            await interaction.followup.send(view=view, ephemeral=True)
-            return
-
-        updated_at, regions, global_stats = result
-
-        lines: list[str] = []
-        for region in regions:
-            lines.append(f"(*{region.status}*) **`{region.name}`** - {region.total} players")
-            for pl in GamePlaylist:
-                count = region.get(pl)
-                if pl is GamePlaylist.CUSTOMS and count == 0:
-                    continue
-                lines.append(f"- {pl.label}: {count}")
-            lines.append('')
-
-        stats_text = '\n'.join(lines).strip()
-
-        container.add_item(
-            discord.ui.TextDisplay(
-                content=f"Total knights around the world: **{global_stats.total}**"
-            )
-        )
-        container.add_item(discord.ui.Separator())
-        container.add_item(discord.ui.TextDisplay(content=stats_text))
-        if updated_at:
-            container.add_item(discord.ui.Separator())
-            container.add_item(discord.ui.TextDisplay(content=f"-# Data updated on {discord.utils.format_dt(datetime.datetime.fromisoformat(updated_at))}"))
-
+        view = GameStatusView(game_version, latest_game_update, latest_beta_update, server_stats)
+        await view.generate_interface()
         await interaction.followup.send(view=view, ephemeral=True)
 
     @app_commands.command(description="Retrieves the precise in-game statistics of a given player")

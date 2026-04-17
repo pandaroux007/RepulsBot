@@ -11,7 +11,8 @@ import datetime
 # bot files
 from data.constants import (
     PrivateData,
-    DefaultEmojis
+    DefaultEmojis,
+    GameUrl
 )
 
 from tools.log_builder import (
@@ -24,10 +25,22 @@ class PublicAPI:
     CCU = "https://stats.docskigames.com/api/ccu-current"
     FEATURED_VIDEO = "https://community.docskigames.com/api/feature-video"
     # LEADERBOARD = "https://leaderboards.docskigames.com/api/getScore"
-    GAME_CHAT = "wss://chat.docskigames.com/socket"
+    BUILD = f"{GameUrl.GAME}/StreamingAssets/aa/settings.json"
+    BETA_BUILD = f"{GameUrl.GAME}/beta/StreamingAssets/aa/settings.json"
+    # GAME_CHAT = "wss://chat.docskigames.com/socket"
     REGIONS = "https://regions.docskigames.com/getServers"
     REGION_PING = "https://rep.{region}.docskigames.com/ping"
     GET_GAME_LIST = "https://rep.{region}.docskigames.com/serverList"
+
+class PlayFabAPI:
+    TITLE_ID = "df3ef"
+    BASE_URL = f"https://{TITLE_ID}.playfabapi.com/Client"
+    LOGIN = f"{BASE_URL}/LoginWithPlayFab"
+
+    GET_GAME_VERSION = f"{BASE_URL}/GetTitleData"
+    SEARCH_PLAYER = f"{BASE_URL}/GetAccountInfo"
+    GET_PLAYER_DATA = f"{BASE_URL}/ExecuteCloudScript"
+    # GET_CATALOG = f"{BASE_URL}/GetCatalogItems"
 
 # ---------------------------------- video system
 class VideoSystemClient:
@@ -60,16 +73,6 @@ class VideoSystemClient:
             return None, None
 
 # ---------------------------------- playfab connexion
-class PlayFabAPI:
-    TITLE_ID = "df3ef"
-    BASE_URL = f"https://{TITLE_ID}.playfabapi.com/Client"
-    LOGIN = f"{BASE_URL}/LoginWithPlayFab"
-
-    GET_GAME_VERSION = f"{BASE_URL}/GetTitleData"
-    SEARCH_PLAYER = f"{BASE_URL}/GetAccountInfo"
-    GET_PLAYER_DATA = f"{BASE_URL}/ExecuteCloudScript"
-    # GET_CATALOG = f"{BASE_URL}/GetCatalogItems"
-
 class PlayFabClient():
     def __init__(self, bot: commands.Bot):
         self._bot = bot
@@ -84,8 +87,9 @@ class PlayFabClient():
                 title=f"{DefaultEmojis.ERROR} An error occurred while attempting to connect to PlayFab.",
                 msg=(
                     f"Attempting to connect to: `...{api[-25:]}`\n"
-                    f"Code: {error["code"]} ({error["status"]}) | Error `{error["error"]}` ({error["errorCode"]})\n"
-                    f"**Error message**:\n```\n{error["errorMessage"]}\n```"
+                    f"Code: {error.get("code")} ({error.get("status")}) | Error `{error.get("error")}` ({error.get("errorCode")})\n"
+                    f"**Error message**:\n```\n{error.get("errorMessage")}\n```\n"
+                    f"**Details**:\n```\n{error.get("errorDetails")}\n```"
                 )
             )
 

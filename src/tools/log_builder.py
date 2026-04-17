@@ -98,7 +98,7 @@ class LogBuilder:
         return await log_channel.send(
             view=view,
             files=self._mediafiles,
-            silent=enable_ping,
+            silent=not enable_ping,
             allowed_mentions=discord.AllowedMentions.none() if not enable_ping else discord.AllowedMentions.all()
         )
 

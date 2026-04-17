@@ -113,7 +113,7 @@ class RaidStatusView(discord.ui.LayoutView):
             f"**Users tracked**: {len(self.antiraid.user_triggers)}\n"
             f"**Channels tracked**: {len(self.antiraid.channel_triggers)}\n"
             f"**Logged messages**: {len(self.antiraid.message_log)}\n"
-            f"**Scheduled unlock(s)**: {len(self.antiraid.unlock_tasks)} | {len(channel_locks)} channel(s) locked"
+            f"**Scheduled unlock(s)**: {len(self.antiraid.unlock_tasks)}" + (f" | {len(channel_locks)} channel(s) locked" if channel_locks else '')
         )))
         self.container.add_item(discord.ui.Separator())
         raid_status = discord.ui.TextDisplay(content=(
@@ -197,12 +197,10 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
             if not dq:
                 del self.channel_triggers[channel_id]
 
-        message_cleaned_count = 0
         while self.message_log and (NOW - self.message_log[0].timestamp) > MAX_MESSAGE_LIFESPAN:
             self.message_log.popleft()
-            message_cleaned_count += 1
 
-    async def cog_load(self):
+    async def init_auto_unlocking(self):
         await self.bot.wait_until_ready()
         channel_locks = await self.channels_lock
         if channel_locks:
@@ -215,6 +213,8 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 self.unlock_tasks[channel_id] = task
                 task.add_done_callback(lambda t, cid=channel_id: self.unlock_tasks.pop(cid, None))
 
+    async def cog_load(self):
+        self.bot.loop.create_task(self.init_auto_unlocking())
         if not self.memory_cleanup.is_running():
             self.memory_cleanup.start()
 
@@ -472,7 +472,7 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
                     return
             problematic_users = len(set(user_id for user_id in self.user_triggers if len(self.user_triggers[user_id]) >= MAX_USER_TRIGGERS))
             if problematic_users >= 5:
-                await self.trigger_raid_alert(reason=f"{channels_currently_locked} users above the detection thresholds")
+                await self.trigger_raid_alert(reason=f"{problematic_users} users above the detection thresholds")
 
     # ---------------------------------- lock/unlock channel
     async def lock_channel(self, config: dict, channel: discord.TextChannel):
@@ -539,7 +539,7 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
         except Exception as e:
             await (
                 LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
-                .title(f"{DefaultEmojis.CRITICAL} Unable to perform a channel lock")
+                .title(f"{DefaultEmojis.CRITICAL} Unable to perform a channel unlock")
                 .description(f"Target channel: {channel.mention}\n```\n{e}\n```")
                 .send()
             )
@@ -625,7 +625,7 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
         config = await self.config
         if config:
             display = '\n'.join(f"- `{param}`: ***`{value}`***" for param, value in config.items())
-            await interaction.response.send_message(content=f"> {DefaultEmojis.CHECK} Raw list of current parameters\n{display}")
+            await interaction.response.send_message(content=f"> {DefaultEmojis.CHECK} Raw list of current parameters\n{display}", ephemeral=True)
         else:
             await interaction.response.send_message(
                 content=f"> {DefaultEmojis.ERROR} Unable to access values.. *See logs for details*.",

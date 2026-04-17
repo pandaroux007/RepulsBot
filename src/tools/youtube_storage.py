@@ -47,26 +47,6 @@ class YouTubeStorage():
                 title=f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - An exception was raised during init of the video system tables", msg=f"```\n{e}\n```"
             )
 
-    async def reset_table(self) -> bool:
-        """
-        Returns
-        --------
-        `bool`: True if successful, False otherwise
-        """
-        try:
-            async with self._pool.acquire() as conn:
-                await conn.execute("DROP TABLE IF EXISTS posted_videos")
-                await conn.execute("DROP TABLE IF EXISTS forced_video")
-                await conn.commit()
-            await self.init_tables()
-            return True
-        except Exception as e:
-            await log(
-                bot=self._bot, type=BOTLOG, color=LogColor.RED,
-                title=f"{DefaultEmojis.CRITICAL} CRITICAL ERROR - An exception was raised during reset of the video system tables", msg=f"```\n{e}\n```"
-            )
-            return False
-
     # ---------------------------------- posted videos
     # https://stackoverflow.com/questions/12876177/how-to-create-a-singleton-tuple-with-only-one-element
     async def add_posted_video(self, video_id: str) -> bool:

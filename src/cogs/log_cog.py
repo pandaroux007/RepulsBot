@@ -46,7 +46,7 @@ async def get_removed_attachments(before: discord.Message, after: discord.Messag
             files.append(await attachment.to_file())
         except Exception:
             pass
-    return files or None
+    return files[:10] or None
 
 class LogCog(commands.Cog, name=CogsNames.LOG):
     def __init__(self, bot: commands.Bot):

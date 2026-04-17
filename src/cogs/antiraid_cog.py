@@ -215,8 +215,6 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
     async def cog_load(self):
         self.bot.loop.create_task(self.init_auto_unlocking())
-    async def cog_load(self):
-        self.bot.loop.create_task(self.init_auto_unlocking())
         if not self.memory_cleanup.is_running():
             self.memory_cleanup.start()
 

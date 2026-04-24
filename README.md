@@ -61,10 +61,8 @@ Tired of the same run, aim, shoot gameplay that every shooter does ?! Played one
 
 ___
 # ⚙️ Development
-You can find details about the front-end operation of the bot in [the wiki](https://github.com/pandaroux007/RepulsBot/wiki), this section is intended for developers.
-
 > [!NOTE]
-> **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!**
+> You can find details on how the bot and the game work in [the official fandom wiki](https://officialrepuls.fandom.com), this section is only for developers and maintainers of the bot. **Your contributions are welcome, be sure to read [CONTRIBUTING.md](CONTRIBUTING.md) first!**
 
 ### Useful tools for contributing
 - Create interfaces with Components v2: https://discord.builders/

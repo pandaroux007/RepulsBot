@@ -151,8 +151,9 @@ class AnnouncementModal(discord.ui.Modal, title="Send announcement message(s)"):
         )
     )
 
-    def __init__(self, messages: list[discord.Message], failed_links: list[str]):
+    def __init__(self, bot: "RepulsBot", messages: list[discord.Message], failed_links: list[str]):
         super().__init__()
+        self.bot = bot
         self.base_messages: list[discord.Message] = messages
         assert isinstance(self.info, discord.ui.TextDisplay)
         self.info.content += (
@@ -204,6 +205,18 @@ class AnnouncementModal(discord.ui.Modal, title="Send announcement message(s)"):
                 )))
 
         await interaction.followup.send(view=view, ephemeral=True)
+    
+    async def on_error(self, interaction: discord.Interaction, error):
+        await (
+            LogBuilder(self.bot, type=BOTLOG, color=LogColor.RED)
+            .title(f"{DefaultEmojis.ERROR} An error occurred when {interaction.user.mention} tried to send an announcement")
+            .description(f"```\n{error}\n```")
+            .send()
+        )
+        await interaction.followup.send(content=(
+            f"> {DefaultEmojis.ERROR} Something seems to have gone wrong (*see logs for details, to be provided to the developer*)"
+        ), ephemeral=True)
+        return await super().on_error(interaction, error)
 
 class AdminCog(commands.Cog, name=CogsNames.ADMIN):
     def __init__(self, bot: "RepulsBot"):
@@ -273,7 +286,7 @@ class AdminCog(commands.Cog, name=CogsNames.ADMIN):
             except discord.NotFound:
                 messages_not_found_list.append(link)
         if len(links) > 0 and len(links) > len(messages_not_found_list):
-            await interaction.response.send_modal(AnnouncementModal(messages_found_list, messages_not_found_list))
+            await interaction.response.send_modal(AnnouncementModal(self.bot, messages_found_list, messages_not_found_list))
         else:
             await interaction.response.send_message(content=f"{DefaultEmojis.WARN} None of the provided links appear to be valid?\n", ephemeral=True)
 

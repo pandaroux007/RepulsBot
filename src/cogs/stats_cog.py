@@ -14,6 +14,8 @@ from enum import Enum
 from data.cogs import CogsNames
 from data.constants import (
     DefaultEmojis,
+    GameUrl,
+    IDs,
     FOOTER_EMBED
 )
 
@@ -150,7 +152,7 @@ class PlayerInfoView(discord.ui.LayoutView):
         self.mod_view_button.disabled = False
         await self.generate_interface()
         await interaction.response.edit_message(view=self)
-    
+
     @menu_row.button(emoji='⚔️', label="View loadout")
     async def loadout_view_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.current_view = PlayerInfoState.LOADOUT
@@ -176,7 +178,7 @@ class GameStatusView(discord.ui.LayoutView):
     select_region_row = discord.ui.ActionRow()
 
     def __init__(
-            self, game_version: str | None,
+            self, bot: commands.Bot, game_version: str | None,
             latest_game_update: datetime | None, latest_beta_update: datetime | None,
             server_stats: tuple[datetime, list[GameRegion], GameRegion] | None
         ):
@@ -184,6 +186,7 @@ class GameStatusView(discord.ui.LayoutView):
         self.container = discord.ui.Container(accent_color=discord.Color.dark_blue())
         self.add_item(self.container)
 
+        self.bot = bot
         self.game_version = game_version
         self.latest_game_update = latest_game_update
         self.latest_beta_update = latest_beta_update
@@ -206,6 +209,13 @@ class GameStatusView(discord.ui.LayoutView):
                 status = await region.status
                 status_lines.append(f"- `{region.name}`: {status}")
 
+        self.container.add_item(discord.ui.TextDisplay(content="To stay up to date with the latest news, check the following links"))
+        announcements_channel = self.bot.get_channel(IDs.serverChannel.ANNOUNCEMENTS)
+        self.container.add_item(discord.ui.ActionRow(
+            discord.ui.Button(url=announcements_channel.jump_url, style=discord.ButtonStyle.link, label="📢 ANNOUNCEMENTS"),
+            discord.ui.Button(url=GameUrl.UPDATES, style=discord.ButtonStyle.link, label="UPDATES")
+        ))
+        self.container.add_item(discord.ui.Separator())
         self.container.add_item(discord.ui.TextDisplay(content=(
             "### ⚙️ Latest game update" +
             (f"\nCurrent main game version: **{self.game_version}**" if self.game_version else '') +
@@ -267,7 +277,7 @@ class StatsCog(commands.Cog, name=CogsNames.STATS):
         latest_game_update = await fetch_build_date(PublicAPI.BUILD)
         latest_beta_update = await fetch_build_date(PublicAPI.BETA_BUILD)
 
-        view = GameStatusView(game_version, latest_game_update, latest_beta_update, server_stats)
+        view = GameStatusView(self.bot, game_version, latest_game_update, latest_beta_update, server_stats)
         await view.generate_interface()
         await interaction.followup.send(view=view, ephemeral=True)
 

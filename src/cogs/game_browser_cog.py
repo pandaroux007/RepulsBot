@@ -38,14 +38,14 @@ class GameBrowserView(discord.ui.LayoutView):
     def __init__(self, bot: commands.Bot, selected_region: str, regions: list[str]):
         super().__init__()
         self.bot = bot
+        self.container = discord.ui.Container(accent_color=discord.Color.dark_blue())
+        self.add_item(self.container)
+
         self._regions: list[str] = regions
         self._selected_playlist: GamePlaylist = GamePlaylist.WARFARE
         self._selected_region: str = selected_region
         self._selected_page: int = 1
         self._total_pages: int = 1
-
-        self.container = discord.ui.Container(accent_color=discord.Color.dark_blue())
-        self.add_item(self.container)
 
     async def generate_interface(self, interaction: discord.Interaction):
         self.remove_item(self.pagination_row)

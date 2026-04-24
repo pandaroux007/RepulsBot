@@ -42,8 +42,9 @@ class ServerChannelID:
     RULES = 1389989335318794420              if _MODE == _MODE_DEV else 758364818348048444
     WELCOME = 1446881118061072467            if _MODE == _MODE_DEV else 665786571424923648
     VERIFICATION = 1489269017477779608       if _MODE == _MODE_DEV else 1483400111462551593
-    FEATURED_VIDEO = 1427982134857043990     if _MODE == _MODE_DEV else 1458152386404159599
+    ANNOUNCEMENTS = 1437510214126403584      if _MODE == _MODE_DEV else 733177088961544202
     SHARED_VIDEO = 1370706473155563581       if _MODE == _MODE_DEV else 800108276004028446
+    FEATURED_VIDEO = 1427982134857043990     if _MODE == _MODE_DEV else 1458152386404159599
     TICKETS_CATEGORY = 1390286889830842470   if _MODE == _MODE_DEV else 1398622102713667605
 
 class ServerRoleID: # "<@&role_id>"
@@ -125,7 +126,7 @@ class DefaultEmojis:
     ONLINE = '\U0001F7E2' # :green_circle:
 
 class BotInfo:
-    VERSION = "1.7.1"
+    VERSION = "1.7.2"
     GITHUB = "https://github.com/pandaroux007/RepulsBot"
     REPORT = f"{GITHUB}/issues"
 
@@ -135,18 +136,19 @@ class GameUrl:
     HOME = f"{GAME}/home"
     LEADERBOARD = f"{GAME}/leaderboard"
     UPDATES = f"{GAME}/updates"
-    TERMS = f"{GAME}/terms"
+    TERMS = f"{GAME}/terms" # and https://docskigames.com/privacy/
     ESPORTS_ROADMAP = f"{GAME}/esports"
     ESPORTS_ROADMAP_IMG = f"{ESPORTS_ROADMAP}/REPULS_eSPORTS_ROADMAP.png"
     ICON = f"{GAME}/img/repuls_logo_icon.png"
-
-class Links:
-    # PRIVACY = "https://docskigames.com/privacy/"
-    # MAIN_SERVER = "https://discord.com/invite/2YKgx2HSfR"
+    # ------------------------------------- external
     RWNC_SERVER = "https://discord.com/invite/YzfQndsdn3"
-    WIKI = "https://repulsio.fandom.com/wiki/Repuls.io_Wiki"
-    CLEAR_DATA_TUTORIAL = "https://github.com/pandaroux007/RepulsBot/wiki/Troubleshoot-game-loading-issues"
-    EXPLANATION_VIDEO_SYSTEM = "https://github.com/pandaroux007/RepulsBot/wiki/How-video-voting-works"
+    WIKI = "https://officialrepuls.fandom.com"
+    # WIKIS_LIST = [
+    #     {"name": "Official Wiki", "url": WIKI},
+    #     {"name": "Official Historical Wiki", "url": "https://repulsio.fandom.com"},
+    #     {"name": "Unofficial Player Wiki", "url": "https://repulsplayer.fandom.com"},
+    #     {"name": "Unofficial Wiki", "url": "https://repuls.fandom.com"}
+    # ]
 
 ASK_HELP = "\n**Ask an administrator for help!**"
 FOOTER_EMBED = "repuls.io is developed with ♥️ by docski"

@@ -216,11 +216,11 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
                                     f"➜ The countdown will expire on {discord.utils.format_dt(generated_forced_until_dt)}"
                                 )
                             )
-                        return
                     else:
                         embed.description = f"{DefaultEmojis.ERROR} **Forced video** failed to send to repuls.io ({status} error)"
                         await featured_videos_channel.send(embed=embed)
                         await log(bot=self.bot, type=BOTLOG, color=LogColor.RED, title=embed.description)
+                    return
                 else:
                     is_clean_successful_no_video = await self.bot.youtube_storage.clear_forced_video()
                     await (
@@ -280,14 +280,17 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
         await self.bot.wait_until_ready()
 
     # ---------------------------------- control commands
-    @app_commands.command(description="[ADMIN] Force a \"video message\" to be featured")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
+    video = app_commands.Group(
+        name="video", guild_only=True, default_permissions=ADMIN_CMD,
+        description="[ADMIN] Grouping of all video voting system commands"
+    )
+
+    @video.command(description="[ADMIN] Force a \"video message\" to be featured")
     @app_commands.describe(message="Link/ID to the message containing the video to force to be featured")
     @app_commands.choices(
         forced_until=[app_commands.Choice(name=f"{index} {plurial("day", index)}", value=index) for index in range(1, 8)]
     )
-    async def set_forced_video(self, interaction: discord.Interaction, message: str, forced_until: app_commands.Choice[int]):
+    async def set_forced(self, interaction: discord.Interaction, message: str, forced_until: app_commands.Choice[int]):
         await interaction.response.defer(ephemeral=True)
         result = discord.Embed(
             title="Set the forced featured video",
@@ -344,10 +347,8 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             result.description = f"{DefaultEmojis.ERROR} ID of {video_message.jump_url} registration failed"
         await interaction.followup.send(embed=result, ephemeral=True)
 
-    @app_commands.command(description="[ADMIN] Clear the forced featured video")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
-    async def clear_forced_video(self, interaction: discord.Interaction):
+    @video.command(description="[ADMIN] Clear the forced featured video")
+    async def clear_forced(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         result = discord.Embed(
             title="Clear the forced featured video",
@@ -365,31 +366,37 @@ class VoteCog(commands.Cog, name=CogsNames.VOTE):
             result.description = f"{DefaultEmojis.ERROR} An error occurred while clearing"
         await interaction.followup.send(embed=result, ephemeral=True)
 
-    @app_commands.command(description="[ADMIN] Force the bot to find and send the featured video now")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
-    async def restart_featured_loop(self, interaction: discord.Interaction, and_vote_loop: bool = False):
-        self.featured_video_task.restart()
-        if and_vote_loop:
+    @video.command(description="[ADMIN] Forces the bot to restart loop(s) (by default only the feature loop)")
+    async def restart_loop(self, interaction: discord.Interaction, feature_loop: bool = True, vote_loop: bool = False):
+        if not feature_loop and not vote_loop:
+            await interaction.response.send_message(
+                content=f"> {DefaultEmojis.WARN} No action was requested (I didn't restart anything in this case, but perhaps you'd like to try again?)",
+                ephemeral=True
+            )
+            return
+        content = []
+        if vote_loop:
             self.vote_task.restart()
+            content.append("- The loop for retrieving nominated videos has been restarted")
+        if feature_loop:
+            self.featured_video_task.restart()
+            content.append("- The video feature loop has been restarted")
 
         result = discord.Embed(
-            title=f"Restart the video {plurial("system", 2 if and_vote_loop else 1)}",
-            description=f"{DefaultEmojis.CHECK} Restarting the video {plurial("system", 2 if and_vote_loop else 1)} completed",
+            title="Restart operation complete (details below)",
+            description=f"{DefaultEmojis.CHECK} Restart completed (list of actions below)\n{'\n'.join(content)}",
             color=discord.Color.dark_blue()
         )
         await interaction.response.send_message(embed=result, ephemeral=True)
         await log(
             bot=self.bot, type=BOTLOG, color=LogColor.ORANGE,
             title=f"{DefaultEmojis.INFO} {interaction.user.mention} performed a video system restart",
-            msg="He/she restarted the featured video system" + (" as well as the voting system." if and_vote_loop else '')
+            msg=f"He/She restarted one or both loops\n{'\n'.join(content)}"
         )
 
     # ---------------------------------- informative command
-    @app_commands.command(description="[ADMIN] Indicates if a video is currently being forced to feature, and more")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ADMIN_CMD)
-    async def video_system_info(self, interaction: discord.Interaction):
+    @video.command(description="[ADMIN] Indicates if a video is currently being forced to feature, and more")
+    async def system_info(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
 
         container = discord.ui.Container(accent_color=discord.Color.dark_blue())

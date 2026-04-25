@@ -92,7 +92,8 @@ class DebugCog(commands.Cog, name=CogsNames.DEBUG):
         embed.add_field(inline=False, name="Resource usage by the bot", value=(
             f"RAM: {round(bot_ram_used, 2)}MB\n"
             f"CPU: {bot_cpu_used}%\n"
-            f"Up time: since {discord.utils.format_dt(bot_uptime, 'R')} ({discord.utils.format_dt(bot_uptime, 'F')})"
+            f"Up time: since {discord.utils.format_dt(bot_uptime, 'R')} ({discord.utils.format_dt(bot_uptime, 'F')})\n"
+            f"Discord WebSocket protocol latency: **{round(self.bot.latency * 1000, 2)}ms**"
         ))
 
         global_cpu_used = psutil.cpu_percent(interval=1)

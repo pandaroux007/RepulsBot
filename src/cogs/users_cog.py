@@ -318,8 +318,7 @@ class UsersCog(commands.Cog, name=CogsNames.USERS):
             container.add_item(discord.ui.TextDisplay(content=(
                 f"It's me, {self.bot.user.mention}, the official Discord bot for this server! "
                 "If you need help, look at the menu `/` in the bottom right corner and click on me to see what I can do. "
-                f"And if you prefer to have fun, **go meet the players on [repuls.io]({GameUrl.GAME})**!\n"
-                f"-# Discord WebSocket latency: **{round(self.bot.latency * 1000, 2)}ms**"
+                f"And if you prefer to have fun, **go meet the players on [repuls.io]({GameUrl.GAME})**!"
             )))
         else:
             content = discord.ui.TextDisplay(content=(

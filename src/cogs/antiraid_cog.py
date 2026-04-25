@@ -12,8 +12,8 @@ from discord.ext import (
     commands,
     tasks
 )
-import asyncio
 
+import asyncio
 import time
 from datetime import (
     timedelta,
@@ -29,8 +29,8 @@ from collections import (
 
 # bot files
 from data.cogs import CogsNames
+from tools.moderation_storage import Settings
 from data.constants import (
-    DefaultAntiraidSettings,
     DefaultEmojis,
     IDs,
     AUTHORIZED_ROLES,
@@ -102,7 +102,7 @@ class RaidStatusView(discord.ui.LayoutView):
         state = self.antiraid.antiraid_current_state
         channel_locks = await self.antiraid.channels_lock
         _config = await self.antiraid.config
-        antiraid_enabled = bool(_config.get("antiraid_enabled", DefaultAntiraidSettings.ANTIRAID_STATE))
+        antiraid_enabled = bool(Settings.ANTIRAID_STATE.get(_config))
 
         self.container.add_item(discord.ui.TextDisplay(content=(
             f"### {DefaultEmojis.MODERATION} Antiraid System Status\n"
@@ -173,7 +173,7 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
     # ---------------------------------- utility functions
     @property
     async def config(self) -> dict | None:
-        return await self.bot.moderation_storage.get_antiraid_settings()
+        return await self.bot.moderation_storage.get_all_settings()
 
     @property
     async def channels_lock(self) -> dict | None:
@@ -340,7 +340,7 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
         config = await self.config
         user = message.author
 
-        if user.bot or not message.guild or not config or config.get("antiraid_enabled", DefaultAntiraidSettings.ANTIRAID_STATE) == 0:
+        if user.bot or not message.guild or not config or not Settings.ANTIRAID_STATE.get(config):
             return
         if user.guild_permissions.administrator or any(role.id in AUTHORIZED_ROLES for role in user.roles):
             return
@@ -382,20 +382,20 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
             trigger_recorded = True
 
         # Burst spam detection on a single channel and user
-        MSG_SPAM_THRESHOLD = config.get("user_msg_spam_threshold", DefaultAntiraidSettings.USER_MSG_SPAM_THRESHOLD)
-        MSG_SPAM_WINDOW = config.get("user_msg_spam_interval_s", DefaultAntiraidSettings.USER_MSG_SPAM_INTERVAL_S)
+        MSG_SPAM_THRESHOLD = Settings.ANTIRAID_USER_MSG_SPAM_THRESHOLD.get(config)
+        MSG_SPAM_WINDOW = Settings.ANTIRAID_USER_MSG_SPAM_INTERVAL_S.get(config)
         user_msg_count = len(self.get_user_messages(entry.user_id, MSG_SPAM_WINDOW, NOW))
         if user_msg_count >= MSG_SPAM_THRESHOLD:
             burst_spam = True
 
         # Rapid spamming between multiple channels
-        CHANNELS_SPAM_THRESHOLD = config.get("user_channel_spam_threshold", DefaultAntiraidSettings.USER_CHANNEL_SPAM_THRESHOLD)
-        CHANNELS_SPAM_WINDOW = config.get("user_channel_spam_interval_s", DefaultAntiraidSettings.USER_CHANNEL_SPAM_INTERVAL_S)
+        CHANNELS_SPAM_THRESHOLD = Settings.ANTIRAID_USER_CHANNEL_SPAM_THRESHOLD.get(config)
+        CHANNELS_SPAM_WINDOW = Settings.ANTIRAID_USER_CHANNEL_SPAM_INTERVAL_S.get(config)
         user_channel_count = len(set(msg.channel_id for msg in self.get_user_messages(entry.user_id, CHANNELS_SPAM_WINDOW, NOW)))
         if user_channel_count >= CHANNELS_SPAM_THRESHOLD:
             multi_channel_spam = True
 
-        MAX_USER_TRIGGERS = config.get("user_max_triggers_before_mod", DefaultAntiraidSettings.USER_MAX_TRIGGERS_BEFORE_MOD)
+        MAX_USER_TRIGGERS = Settings.ANTIRAID_USER_MAX_TRIGGERS_BEFORE_MOD.get(config)
         if burst_spam or multi_channel_spam:
             user_triggers = self.add_user_trigger(entry.user_id, NOW) if not trigger_recorded else len(self.user_triggers[entry.user_id])
             trigger_recorded = True
@@ -413,13 +413,13 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
                 await message.channel.send(f"> 🚫 {message.author.mention} You sent messages too quickly!", delete_after=4)
 
         # Spam (potentially from multiple members) on a single channel
-        CHANNEL_SPAM_THRESHOLD = config.get("channel_spam_threshold", DefaultAntiraidSettings.CHANNEL_SPAM_THRESHOLD)
-        CHANNEL_SPAM_WINDOW = config.get("channel_spam_interval_s", DefaultAntiraidSettings.CHANNEL_SPAM_INTERVAL_S)
+        CHANNEL_SPAM_THRESHOLD = Settings.ANTIRAID_CHANNEL_SPAM_THRESHOLD.get(config)
+        CHANNEL_SPAM_WINDOW = Settings.ANTIRAID_CHANNEL_SPAM_INTERVAL_S.get(config)
         channel_msg_count = len(self.get_channel_messages(entry.channel_id, CHANNEL_SPAM_WINDOW, NOW))
         if channel_msg_count >= CHANNEL_SPAM_THRESHOLD:
             self.add_channel_trigger(entry.channel_id, NOW)
 
-        MAX_CHANNEL_TRIGGERS = config.get("channel_max_triggers_before_lock", DefaultAntiraidSettings.CHANNEL_MAX_TRIGGERS_BEFORE_LOCK)
+        MAX_CHANNEL_TRIGGERS = Settings.ANTIRAID_CHANNEL_MAX_TRIGGERS_BEFORE_LOCK.get(config)
         channel_triggers_count = len(self.channel_triggers[entry.channel_id])
         if channel_triggers_count >= MAX_CHANNEL_TRIGGERS:
             await self.lock_channel(config, message.channel)
@@ -476,7 +476,7 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
     # ---------------------------------- lock/unlock channel
     async def lock_channel(self, config: dict, channel: discord.TextChannel):
-        lock_duration_mn = config.get("channel_lock_duration_mn", DefaultAntiraidSettings.CHANNEL_LOCK_DURATION_MN)
+        lock_duration_mn = Settings.ANTIRAID_CHANNEL_LOCK_DURATION_MN.get(config)
         lock_until = discord.utils.utcnow() + timedelta(minutes=lock_duration_mn)
         try:
             await channel.send(embed=discord.Embed(
@@ -590,16 +590,30 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
     @antiraid.command(description="[ADMIN] Allows you to define the value of an antiraid threshold")
     async def set_param(self, interaction: discord.Interaction, param: str, value: int):
-        is_edited = await self.bot.moderation_storage.set_antiraid_setting(interaction.user, param, value)
+        setting = Settings._from_key(param)
+        if setting is None:
+            valid_settings = ", ".join(f"`{s.name}`" for s in Settings)
+            await interaction.response.send_message(
+                content=f"> {DefaultEmojis.ERROR} Unknown setting `{param}`.\n**Valid parameters**: {valid_settings}",
+                ephemeral=True
+            )
+            return
+        if setting.typing is bool and value not in (0, 1):
+            await interaction.response.send_message(
+                content=f"> {DefaultEmojis.ERROR} `{setting.name}` expects a boolean (0 or 1), got `{value}`",
+                ephemeral=True
+            )
+            return
+        is_edited = await self.bot.moderation_storage.set_setting(interaction.user, setting, value)
         if is_edited:
             await interaction.response.send_message(
-                content=f"> {DefaultEmojis.CHECK} `{param}` set to the value `{value}`",
+                content=f"> {DefaultEmojis.CHECK} `{setting.name}` set to the value `{value}`",
                 ephemeral=True
             )
             await log(
                 bot=self.bot, type=BOTLOG, color=LogColor.ORANGE,
                 title=f"{DefaultEmojis.CRITICAL} Modifying an antiraid setting",
-                msg=f"Param `{param}` set to the value `{value}` by {interaction.user.mention}"
+                msg=f"Setting `{setting.name}` set to `{value}` by {interaction.user.mention}"
             )
         else:
             await interaction.response.send_message(
@@ -609,7 +623,7 @@ class AntiraidCog(commands.Cog, name=CogsNames.ANTIRAID):
 
     @antiraid.command(description="[ADMIN] Resets all settings to default values (antiraid enabled)")
     async def reset_default(self, interaction: discord.Interaction):
-        if await self.bot.moderation_storage.set_antiraid_default(interaction.user):
+        if await self.bot.moderation_storage.reset_settings(interaction.user):
             await interaction.response.send_message(content=(
                 f"> {DefaultEmojis.CHECK} Anriraid settings reset to default\n"
             ), ephemeral=True)

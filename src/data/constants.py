@@ -87,22 +87,6 @@ class IDs:
     serverRoles = ServerRoleID
     repulsTeam = RepulsTeamMemberID
 
-class DefaultAntiraidSettings:
-    # NOTE: 1 trigger = one activation of the anti-spam system
-    ANTIRAID_STATE = 1 # (0/1 = SQL boolean) antiraid enabled by default
-
-    USER_MAX_TRIGGERS_BEFORE_MOD = 3 # maximum number of triggers before auto-moderator action
-    USER_MSG_SPAM_THRESHOLD = 4 # maximum number of messages allowed within the given time
-    USER_MSG_SPAM_INTERVAL_S = 2 # minimum interval in which this quantity of message is allowed
-
-    USER_CHANNEL_SPAM_THRESHOLD = 3 # number of messages from a user across multiple channels on which to perform sampling
-    USER_CHANNEL_SPAM_INTERVAL_S = USER_CHANNEL_SPAM_THRESHOLD * 4 # 3s (margin of 1s) for 1 message per channel on average * number of messages
-
-    CHANNEL_MAX_TRIGGERS_BEFORE_LOCK = 5
-    CHANNEL_LOCK_DURATION_MN = 30
-    CHANNEL_SPAM_INTERVAL_S = 5
-    CHANNEL_SPAM_THRESHOLD = 12
-
 # ------------------------------------- texts and links
 """
 CONTRIBUTORS: To avoid display issues, use this variable (added after the emoji's unicode value, for example

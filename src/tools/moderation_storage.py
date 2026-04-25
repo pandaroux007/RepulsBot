@@ -1,18 +1,20 @@
+from __future__ import annotations
 import asqlite
 import discord
 from discord.ext import commands
-from typing import Optional
+from enum import Enum
+from typing import (
+    Any,
+    Optional
+)
+
 from datetime import (
     datetime,
     timedelta
 )
 
 # bot files
-from data.constants import (
-    DefaultEmojis,
-    DefaultAntiraidSettings
-)
-
+from data.constants import DefaultEmojis
 from tools.log_builder import (
     LogColor,
     BOTLOG,
@@ -22,6 +24,82 @@ from tools.log_builder import (
 # memory cache lifetime (in minutes)
 LIFETIME_SETTINGS_CACHE = 60
 LIFETIME_CHANNEL_LOCK_CACHE = 30
+
+class Settings(Enum):
+    # NOTE: This class can accommodate settings other than those of the antiraid if needed.
+
+    @property
+    def default_value(self) -> Any:
+        """ Default value of this setting (e.g., if it is not found during a `get`) """
+        return self._value_[0]
+
+    @property
+    def typing(self) -> type:
+        """ Everything in the db is text; this is the type in which the value should be once extracted """
+        return self._value_[1]
+
+    def get(self, settings: Optional[dict]) -> Any:
+        """
+        Must be called on a constant of the enum
+
+        Parameters
+        -----------
+        settings: `Optional[dict]`
+            Dictionary representation of the contents of the settings table, in which to search.
+
+        Returns
+        --------
+        The (typed) value of this setting (and its default value if it does not exist)
+        """
+        if settings is None:
+            return self.default_value
+        return self._cast_value(settings.get(self.name, self.default_value), self.typing)
+
+    @staticmethod
+    def _cast_value(value: str, target_type: type = None) -> Any:
+        """ Internal method for converting a database value into a typed python value """
+        if isinstance(value, str):
+            if target_type is bool:
+                return value == '1' # 0/1 = SQL boolean
+            if target_type is int:
+                return int(value)
+            if target_type is float:
+                return float(value)
+        return value # No value, value already in string format, etc.
+
+    @classmethod
+    def _from_key(cls, key: str) -> Settings | None:
+        """ Internal method for finding a setting by its name (returns None otherwise) """
+        try:
+            return cls[key.strip().upper()]
+        except KeyError:
+            return None
+
+    def _serialize(self, value: Any) -> str:
+        """
+        Must be called on a constant of the enum.
+        This function is solely for converting Python booleans to SQL booleans (0/1).
+        Any non-boolean value will simply be converted to a string.
+        """
+        value = self._cast_value(value, self.typing)
+        if self.typing is bool:
+            return '1' if value else '0'
+        return str(value)
+
+    # ---------------------------------- antiraid
+    ANTIRAID_STATE = (1, bool) # antiraid enabled by default
+
+    ANTIRAID_USER_MAX_TRIGGERS_BEFORE_MOD = (3, int) # max. number of triggers before auto-moderator action
+    ANTIRAID_USER_MSG_SPAM_THRESHOLD = (4, int) # max. number of messages allowed within the given time
+    ANTIRAID_USER_MSG_SPAM_INTERVAL_S = (2, int) # min. interval in which this quantity of message is allowed
+
+    ANTIRAID_USER_CHANNEL_SPAM_THRESHOLD = (3, int) # number of messages from a user across multiple channels on which to perform sampling
+    ANTIRAID_USER_CHANNEL_SPAM_INTERVAL_S = (ANTIRAID_USER_CHANNEL_SPAM_THRESHOLD[0] * 4, int) # 3s (margin of 1s) for 1 message per channel on average * number of messages
+
+    ANTIRAID_CHANNEL_MAX_TRIGGERS_BEFORE_LOCK = (5, int)
+    ANTIRAID_CHANNEL_LOCK_DURATION_MN = (30, int)
+    ANTIRAID_CHANNEL_SPAM_INTERVAL_S = (5, int) # analysis interval (all users combined) for a channel
+    ANTIRAID_CHANNEL_SPAM_THRESHOLD = (12, int) # max. number of messages allowed within the given interval
 
 class ModerationStorage():
     def __init__(self, bot: commands.Bot, pool: asqlite.Pool):
@@ -39,55 +117,32 @@ class ModerationStorage():
 
     @settings_cache.setter
     def settings_cache(self, value: Optional[dict]) -> None:
-        self._last_settings_cache_update = discord.utils.utcnow() if value else None
+        self._last_settings_cache_update = discord.utils.utcnow() if value is not None else None
         self._settings_cache = value
 
     @property
     def is_settings_cache_outdated(self) -> bool:
-        if not self._last_settings_cache_update or not self.settings_cache:
+        if self._last_settings_cache_update is None or self.settings_cache is None:
             return True
         return self._last_settings_cache_update < (discord.utils.utcnow() - timedelta(minutes=LIFETIME_SETTINGS_CACHE))
 
-    # ---------------------------------- channel lock
+    # ---------------------------------- channel lock cache
     @property
     def channel_lock_cache(self) -> Optional[dict]:
         return self._channel_lock_cache
 
     @channel_lock_cache.setter
     def channel_lock_cache(self, value: Optional[dict]) -> None:
-        self._last_channel_lock_cache_update = discord.utils.utcnow() if value else None
+        self._last_channel_lock_cache_update = discord.utils.utcnow() if value is not None else None
         self._channel_lock_cache = value
 
     @property
     def is_channel_lock_cache_outdated(self) -> bool:
-        if not self._last_channel_lock_cache_update or not self._channel_lock_cache:
+        if self._last_channel_lock_cache_update is None or self._channel_lock_cache is None:
             return True
         return self._last_channel_lock_cache_update < (discord.utils.utcnow() - timedelta(minutes=LIFETIME_CHANNEL_LOCK_CACHE))
 
     # ---------------------------------- database management
-    async def _generate_default_antiraid_settings(self, conn: asqlite.Connection):
-        await conn.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS settings (
-                id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
-                antiraid_enabled BOOLEAN NOT NULL DEFAULT {DefaultAntiraidSettings.ANTIRAID_STATE},
-
-                user_max_triggers_before_mod INTEGER DEFAULT {DefaultAntiraidSettings.USER_MAX_TRIGGERS_BEFORE_MOD},
-                user_msg_spam_threshold INTEGER DEFAULT {DefaultAntiraidSettings.USER_MSG_SPAM_THRESHOLD},
-                user_msg_spam_interval_s INTEGER DEFAULT {DefaultAntiraidSettings.USER_MSG_SPAM_INTERVAL_S},
-
-                user_channel_spam_threshold INTEGER DEFAULT {DefaultAntiraidSettings.USER_CHANNEL_SPAM_THRESHOLD},
-                user_channel_spam_interval_s INTEGER DEFAULT {DefaultAntiraidSettings.USER_CHANNEL_SPAM_INTERVAL_S},
-
-                channel_max_triggers_before_lock INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_MAX_TRIGGERS_BEFORE_LOCK},
-                channel_lock_duration_mn INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_LOCK_DURATION_MN},
-                channel_spam_interval_s INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_SPAM_INTERVAL_S},
-                channel_spam_threshold INTEGER DEFAULT {DefaultAntiraidSettings.CHANNEL_SPAM_THRESHOLD}
-            )
-            """
-        )
-        await conn.execute("INSERT OR IGNORE INTO settings(id) VALUES(1)")
-
     async def init_tables(self) -> None:
         try:
             async with self._pool.acquire() as conn:
@@ -108,7 +163,37 @@ class ModerationStorage():
                     )
                     """
                 )
-                await self._generate_default_antiraid_settings(conn)
+                # generate default settings (manage the transition from the old structure)
+                existing_info = await conn.fetchall("PRAGMA table_info(settings)")
+                old_values = {}
+                if existing_info:
+                    column_names = [row["name"] for row in existing_info]
+                    if column_names != ["key", "value"]:
+                        old_row = await conn.fetchone("SELECT * FROM settings WHERE id = 1")
+                        if old_row:
+                            old_values = dict(old_row)
+                        await conn.execute("DROP TABLE IF EXISTS settings")
+
+                await conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS settings (
+                        key TEXT PRIMARY KEY NOT NULL,
+                        value TEXT NOT NULL
+                    )
+                    """
+                )
+                await conn.executemany(
+                    "INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)",
+                    [(setting.name, setting._serialize(setting.default_value)) for setting in Settings]
+                )
+                if old_values:
+                    for setting in Settings:
+                        key = setting.name
+                        if key in old_values:
+                            await conn.execute(
+                                "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                                (key, str(old_values[key]))
+                            )
                 await conn.commit()
         except Exception as e:
             await log(
@@ -117,7 +202,7 @@ class ModerationStorage():
             )
 
     # ---------------------------------- anti-raid settings
-    async def get_antiraid_settings(self) -> Optional[dict]:
+    async def get_all_settings(self) -> Optional[dict[str, Any]]:
         """
         Returns
         --------
@@ -128,19 +213,23 @@ class ModerationStorage():
         if self.settings_cache is None or self.is_settings_cache_outdated:
             try:
                 async with self._pool.acquire() as conn:
-                    row = await conn.fetchone("SELECT * FROM settings WHERE id = 1")
-                    self.settings_cache = dict(row) if row else None
+                    rows = await conn.fetchall("SELECT key, value FROM settings")
+                    self.settings_cache = {}
+                    for row in rows:
+                        key = row["key"]
+                        setting = Settings._from_key(key)
+                        self.settings_cache[key] = Settings._cast_value(str(row["value"]), setting.typing if setting else None)
             except Exception as e:
                 await log(
                     bot=self._bot, type=BOTLOG, color=LogColor.RED,
-                    title=f"{DefaultEmojis.ERROR} Unable to retrieve antiraid settings", msg=f"➜ cache set to `None`\n```\n{e}\n```"
+                    title=f"{DefaultEmojis.ERROR} Unable to retrieve settings", msg=f"➜ Settings cache set to `None`\n```\n{e}\n```"
                 )
                 self.settings_cache = None
         return self.settings_cache
 
-    async def set_antiraid_setting(self, action_author: discord.Member, param: str | dict, value: Optional[int]) -> bool:
+    async def set_setting(self, action_author: discord.Member, param: Settings, value: Any) -> bool:
         """
-        Allows editing of one or more anti-raid parameters
+        Allows you to modify the value of a parameter via its name
 
         Returns
         --------
@@ -149,50 +238,44 @@ class ModerationStorage():
         self.settings_cache = None
         try:
             async with self._pool.acquire() as conn:
-                db_edited = False
-                _allowed_column_raw = await conn.fetchall("PRAGMA table_info(settings)")
-                ALLOWED_COLUMNS = {row["name"] for row in _allowed_column_raw}
-                if isinstance(param, str):
-                    key = param.lower()
-                    if key in ALLOWED_COLUMNS:
-                        if value is None:
-                            raise TypeError(f"The value cannot be None when updating a single parameter ('{param}').")
-                        await conn.execute(f"UPDATE settings SET {key} = ? WHERE id = 1", (value,))
-                        db_edited = True
-                elif isinstance(param, dict):
-                    for key, val in param.items():
-                        if not isinstance(val, int):
-                            raise TypeError(f"The '{param}' parameter must be an integer")
-                        key = str(key).lower()
-                        if key in ALLOWED_COLUMNS:
-                            await conn.execute(f"UPDATE settings SET {key} = ? WHERE id = 1", (val,))
-                            db_edited = True
-                if db_edited:
-                    await conn.commit()
-                    await self.get_antiraid_settings() # update cache
+                await conn.execute(
+                    "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                    (param.name, param._serialize(value))
+                )
+                await conn.commit()
+                await self.get_all_settings()  # update cache
                 return True
         except Exception as e:
             await log(
                 bot=self._bot, type=BOTLOG, color=LogColor.RED,
-                title=f"{DefaultEmojis.ERROR} Error during antiraid settings update",
-                msg=(f"Initiated by {action_author.mention}\n**Request**:{f"\n```\n{param}\n```" if isinstance(param, dict) else f" `{param}` ➜ {value}"}\n**Error**:\n```\n{e}\n```")
+                title=f"{DefaultEmojis.ERROR} Error during settings update",
+                msg=(f"Initiated by {action_author.mention}\n**Request**: `{param.name}` ➜ {value}\n**Error**:\n```\n{e}\n```")
             )
             return False
 
-    async def set_antiraid_default(self, action_author: discord.Member) -> bool:
+    async def reset_settings(self, action_author: discord.Member) -> bool:
+        """
+        Resets all settings to default values
+
+        Returns
+        --------
+        `bool`: True if successful, False otherwise
+        """
         self.settings_cache = None
         try:
             async with self._pool.acquire() as conn:
-                await conn.execute("DROP TABLE IF EXISTS settings")
+                await conn.execute("DELETE FROM settings")
+                await conn.executemany(
+                    "INSERT INTO settings (key, value) VALUES (?, ?)",
+                    [(setting.name, setting._serialize(setting.default_value)) for setting in Settings]
+                )
                 await conn.commit()
-                await self._generate_default_antiraid_settings(conn)
-                await conn.commit()
-                await self.get_antiraid_settings() # update cache
+                await self.get_all_settings()  # update cache
                 return True
         except Exception as e:
             await log(
                 bot=self._bot, type=BOTLOG, color=LogColor.RED,
-                title=f"{DefaultEmojis.ERROR} Error resetting antiraid settings",
+                title=f"{DefaultEmojis.ERROR} Error resetting settings",
                 msg=(f"Initiated by {action_author.mention}\n**Error**:\n```\n{e}\n```")
             )
             return False
@@ -239,7 +322,7 @@ class ModerationStorage():
             await log(
                 bot=self._bot, type=BOTLOG, color=LogColor.RED,
                 title=f"{DefaultEmojis.ERROR} Unable to obtain channel lock status",
-                msg=(f"Requested channel: {channel_id})\n```\n{e}\n```")
+                msg=(f"Requested channel: {channel_id}\n```\n{e}\n```")
             )
             return None
 
